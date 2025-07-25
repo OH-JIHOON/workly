@@ -31,39 +31,38 @@ services:
   # Backend (NestJS)
   backend:
     build:
-      context: ./backend
-      dockerfile: Dockerfile.dev
+      context: .
+      dockerfile: backend/Dockerfile
     container_name: workly-backend
     environment:
       - NODE_ENV=development
       - DATABASE_HOST=postgres
       - DATABASE_PORT=5432
       - DATABASE_NAME=workly
-      - DATABASE_USER=workly
+      - DATABASE_USERNAME=workly
       - DATABASE_PASSWORD=workly123
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - JWT_SECRET=your-jwt-secret-key
       - GOOGLE_CLIENT_ID=your-google-client-id
       - GOOGLE_CLIENT_SECRET=your-google-client-secret
+      - FRONTEND_URL=http://localhost:3000
     ports:
       - "3001:3001"
     volumes:
-      - ./backend:/app
-      - /app/node_modules
       - ./backend/uploads:/app/uploads
     depends_on:
       - postgres
       - redis
     networks:
       - workly-network
-    command: npm run start:dev
+    restart: unless-stopped
 
   # Frontend (Next.js)
   frontend:
     build:
-      context: ./frontend
-      dockerfile: Dockerfile.dev
+      context: .
+      dockerfile: frontend/Dockerfile
     container_name: workly-frontend
     environment:
       - NODE_ENV=development
@@ -71,15 +70,11 @@ services:
       - NEXT_PUBLIC_SOCKET_URL=http://localhost:3001
     ports:
       - "3000:3000"
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-      - /app/.next
     depends_on:
       - backend
     networks:
       - workly-network
-    command: npm run dev
+    restart: unless-stopped
 
   # MinIO (S3 호환 로컬 스토리지 - 개발용)
   minio:

@@ -1,0 +1,53 @@
+# Dependencies
+node_modules
+*/node_modules
+
+# Build outputs
+dist
+*/dist
+.next
+*/.next
+build
+*/build
+coverage
+*/coverage
+
+# Generated files
+*.d.ts
+*.tsbuildinfo
+
+# Lock files
+package-lock.json
+*/package-lock.json
+yarn.lock
+*/yarn.lock
+
+# Logs
+*.log
+
+# Environment files
+.env
+.env.*
+
+# Storybook
+storybook-static
+
+# Database
+*.sqlite
+*.db
+
+# Docker
+Dockerfile
+docker-compose*.yml
+
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+
+# OS
+.DS_Store
+Thumbs.db
