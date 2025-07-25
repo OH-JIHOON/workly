@@ -21,24 +21,47 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 기술 스택
 
-- **Frontend**: Next.js 14+ (React 기반)
-- **스타일링**: Tailwind CSS
-- **개발 환경**: Node.js, npm/yarn
+### Frontend
+- **Next.js 14+**: React 기반 풀스택 프레임워크
+- **TypeScript**: 타입 안전성
+- **Tailwind CSS**: 유틸리티 우선 CSS
+- **Zustand**: 상태 관리
+
+### Backend
+- **NestJS**: Node.js 확장 가능한 프레임워크
+- **TypeORM**: TypeScript ORM
+- **PostgreSQL**: 관계형 데이터베이스
+- **Socket.io**: 실시간 통신
+- **JWT + Google OAuth**: 인증 시스템
+
+## 프로젝트 구조
+
+```
+/Workly
+├── frontend/         # Next.js + TypeScript + Tailwind CSS
+├── backend/          # NestJS + TypeORM + PostgreSQL
+├── shared/           # 공유 타입 및 상수
+├── docs/             # 프로젝트 문서
+└── docker-compose.yml # 개발 환경
+```
+
+자세한 구조는 [PROJECT_STRUCTURE.md](./PROJECT_STRUCTURE.md) 참조
 
 ## 개발 명령어
 
 ```bash
-# 프로젝트 생성
-npx create-next-app@latest workly --typescript --tailwind --eslint --app
+# 전체 개발 환경 실행 (Docker)
+docker-compose up -d
 
-# 개발 서버 (사용자가 직접 실행)
-npm run dev
+# 프론트엔드만 실행
+cd frontend && npm run dev
+
+# 백엔드만 실행
+cd backend && npm run start:dev
 
 # 빌드
-npm run build
-
-# 정적 배포용 빌드
-npm run build && npm run export
+cd frontend && npm run build
+cd backend && npm run build
 ```
 
 ## 깃 자동화 방안
