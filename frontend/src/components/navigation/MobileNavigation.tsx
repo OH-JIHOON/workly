@@ -54,8 +54,8 @@ export default function MobileNavigation() {
   const pathname = usePathname()
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 h-15 bg-card border-t border-border z-50">
-      <div className="flex justify-around items-center h-full max-w-md mx-auto">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 h-[60px] bg-card border-t border-border z-50">
+      <div className="flex justify-between items-center h-full px-6">
         {navigationItems.map((item) => {
           const isActive = pathname === item.href
           const Icon = isActive ? item.activeIcon : item.icon
@@ -64,7 +64,7 @@ export default function MobileNavigation() {
             <Link
               key={item.name}
               href={item.href}
-              className={`flex items-center justify-center w-11 h-11 transition-colors ${
+              className={`flex items-center justify-center flex-1 h-full transition-colors ${
                 isActive 
                   ? 'text-foreground' 
                   : 'text-muted-foreground hover:text-foreground'

@@ -101,3 +101,7 @@ git push origin main
 ## 워클리 비즈니스 이해
 
 워클리의 비즈니스 성공을 위해 사용자 경험과 비즈니스 가치를 최우선으로 고려하여 개발합니다.
+
+## Task Master AI Instructions
+**Import Task Master's development workflow commands and guidelines, treat as if import is in the main CLAUDE.md file.**
+@./.taskmaster/CLAUDE.md

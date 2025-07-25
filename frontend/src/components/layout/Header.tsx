@@ -1,90 +1,144 @@
 'use client'
 
-import { useState } from 'react'
-import { ChevronDownIcon, EllipsisHorizontalIcon } from '@heroicons/react/24/outline'
+import { useState, useEffect, useRef } from 'react'
+import { useRouter } from 'next/navigation'
+import { ChevronDownIcon, Bars3Icon } from '@heroicons/react/24/outline'
 
 interface HeaderProps {
   title: string
   showDropdown?: boolean
   dropdownItems?: string[]
+  onDropdownItemClick?: (item: string) => void
 }
 
 export default function Header({ 
   title, 
   showDropdown = false, 
-  dropdownItems = [] 
+  dropdownItems = [],
+  onDropdownItemClick
 }: HeaderProps) {
+  const router = useRouter()
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+  const mobileMenuRef = useRef<HTMLDivElement>(null)
+
+  const handleLoginClick = () => {
+    router.push('/login')
+  }
+
+  const handleSettingsClick = () => {
+    router.push('/settings')
+    setIsMobileMenuOpen(false)
+  }
+
+  // 바깥 클릭 시 메뉴 닫기
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false)
+      }
+      if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target as Node)) {
+        setIsMobileMenuOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [])
 
   return (
-    <header className="sticky top-0 h-15 bg-background border-b border-border flex items-center justify-center px-6 z-40">
-      {/* 모바일용 로고 */}
-      <div className="md:hidden absolute left-1/2 transform -translate-x-1/2">
+    <header className="sticky top-0 h-[60px] bg-background flex items-center px-6 z-40">
+      {/* 모바일 레이아웃 */}
+      <div className="md:hidden w-full flex items-center justify-between">
+        {/* 햄버거 메뉴 */}
+        <div className="relative" ref={mobileMenuRef}>
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="flex items-center justify-center w-8 h-8 text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <Bars3Icon className="w-5 h-5" />
+          </button>
+          
+          {isMobileMenuOpen && (
+            <div className="absolute top-full left-0 mt-2 bg-card border border-border rounded-xl shadow-lg min-w-36 py-2 z-50">
+              <div 
+                onClick={handleLoginClick}
+                className="px-4 py-3 text-sm text-foreground hover:bg-accent cursor-pointer transition-colors"
+              >
+                로그인
+              </div>
+              <div 
+                onClick={handleSettingsClick}
+                className="px-4 py-3 text-sm text-foreground hover:bg-accent cursor-pointer transition-colors"
+              >
+                설정
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* 로고 */}
         <div className="flex items-center justify-center w-8 h-8 font-bold text-xl text-foreground">
           W
         </div>
+
+        {/* 로그인 버튼 */}
+        <button 
+          onClick={handleLoginClick}
+          className="text-sm px-3 py-2 bg-foreground text-background rounded-xl font-medium transition-colors hover:opacity-90"
+        >
+          로그인
+        </button>
       </div>
 
-      {/* 데스크톱용 타이틀 섹션 */}
-      <div className="hidden md:flex items-center gap-2 relative">
-        <h1 className="text-base font-bold text-foreground">{title}</h1>
-        
-        {showDropdown && (
-          <>
-            <button
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="flex items-center justify-center w-5 h-5 text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <ChevronDownIcon className="w-4 h-4" />
-            </button>
-            
-            {isDropdownOpen && (
-              <div className="absolute top-full right-0 mt-2 bg-card border border-border rounded-xl shadow-lg min-w-36 py-2 z-50">
-                {dropdownItems.map((item, index) => (
-                  <div
-                    key={index}
-                    className="px-4 py-3 text-sm text-foreground hover:bg-accent cursor-pointer transition-colors"
-                  >
-                    {item}
-                  </div>
-                ))}
-              </div>
-            )}
-          </>
-        )}
-      </div>
+      {/* 데스크톱 레이아웃 */}
+      <div className="hidden md:flex w-full items-center justify-center relative">
+        {/* 타이틀 (중앙) */}
+        <div className="flex items-center gap-2 relative" ref={dropdownRef}>
+          <h1 className="text-base font-bold text-foreground">{title}</h1>
+          
+          {showDropdown && (
+            <>
+              <button
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                className="flex items-center justify-center w-5 h-5 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <ChevronDownIcon className="w-4 h-4" />
+              </button>
+              
+              {isDropdownOpen && (
+                <div className="absolute top-full right-0 mt-2 bg-card border border-border rounded-xl shadow-lg min-w-36 py-2 z-50">
+                  {dropdownItems.map((item, index) => (
+                    <div
+                      key={index}
+                      onClick={() => {
+                        onDropdownItemClick?.(item)
+                        setIsDropdownOpen(false)
+                      }}
+                      className="px-4 py-3 text-sm text-foreground hover:bg-accent cursor-pointer transition-colors"
+                    >
+                      {item}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+        </div>
 
-      {/* 데스크톱용 인증 버튼 */}
-      <div className="hidden md:flex absolute right-5 gap-3">
-        <button className="workly-button-outline">Sign in</button>
-        <button className="workly-button">Sign up</button>
+        {/* 인증 버튼 (오른쪽) */}
+        <div className="absolute right-0">
+          <button 
+            onClick={handleLoginClick}
+            className="workly-button"
+          >
+            Google로 시작하기
+          </button>
+        </div>
       </div>
-
-      {/* 모바일용 메뉴 버튼 */}
-      <button
-        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-        className="md:hidden absolute right-0 flex items-center justify-center w-8 h-8 text-muted-foreground hover:text-foreground transition-colors"
-      >
-        <EllipsisHorizontalIcon className="w-5 h-5" />
-        
-        {isMobileMenuOpen && (
-          <div className="absolute top-full right-0 mt-2 bg-card border border-border rounded-xl shadow-lg min-w-36 py-2 z-50">
-            <div className="px-4 py-3 text-sm text-foreground hover:bg-accent cursor-pointer transition-colors">
-              Sign in
-            </div>
-            <div className="px-4 py-3 text-sm text-foreground hover:bg-accent cursor-pointer transition-colors">
-              Sign up
-            </div>
-            <div className="px-4 py-3 text-sm text-foreground hover:bg-accent cursor-pointer transition-colors">
-              Settings
-            </div>
-            <div className="px-4 py-3 text-sm text-foreground hover:bg-accent cursor-pointer transition-colors">
-              Help
-            </div>
-          </div>
-        )}
-      </button>
     </header>
   )
 }

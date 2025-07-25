@@ -36,12 +36,14 @@
 /* 워클리 커스텀 스타일 */
 @layer components {
   .nav-item {
-    @apply flex items-center justify-center w-10 h-10 rounded-xl cursor-pointer transition-colors;
+    @apply flex items-center justify-center rounded-xl cursor-pointer transition-colors;
     @apply hover:bg-black/5 text-muted-foreground hover:text-foreground;
+    width: 60px;
+    height: 60px;
   }
   
   .nav-item.active {
-    @apply bg-black/8 text-foreground;
+    @apply bg-black/5 text-foreground;
   }
   
   .workly-card {
