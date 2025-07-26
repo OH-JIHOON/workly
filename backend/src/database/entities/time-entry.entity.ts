@@ -106,7 +106,7 @@ export class TimeEntry {
   // 시간 추적 시작
   start(): void {
     this.startTime = new Date();
-    this.endTime = null;
+    this.endTime = undefined;
   }
 
   // 시간 추적 중지
@@ -152,8 +152,8 @@ export class TimeEntry {
   // 승인 취소
   reject(): void {
     this.approved = false;
-    this.approvedBy = null;
-    this.approvedAt = null;
+    this.approvedBy = undefined;
+    this.approvedAt = undefined;
   }
 
   // 소유자 확인

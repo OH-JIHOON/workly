@@ -20,8 +20,10 @@ import {
   ProjectPriority, 
   ProjectVisibility,
   ProjectMemberRole,
-  PaginatedResponse 
-} from '../../shared/types/api.types';
+  PaginatedResponse,
+  TaskStatus,
+  ProjectPermission
+} from '@workly/shared';
 
 @Injectable()
 export class ProjectsService {
@@ -64,16 +66,17 @@ export class ProjectsService {
     const project = this.projectRepository.create({
       title,
       description,
-      status: 'planning',
-      priority,
-      startDate: startDate ? new Date(startDate) : null,
-      endDate: endDate ? new Date(endDate) : null,
+      ownerId,
+      status: ProjectStatus.ACTIVE,
+      priority: priority as ProjectPriority,
+      startDate: startDate ? new Date(startDate) : undefined,
+      endDate: endDate ? new Date(endDate) : undefined,
       budget,
       currency,
       tags,
       color,
       icon,
-      visibility,
+      visibility: visibility as ProjectVisibility,
       settings: {
         enableTimeTracking: true,
         enableComments: true,
@@ -81,22 +84,21 @@ export class ProjectsService {
         workflowStages: ['planning', 'in_progress', 'review', 'done'],
         ...settings,
       },
-      ownerId,
-    });
+    } as any);
 
-    const savedProject = await this.projectRepository.save(project);
+    const savedProject = await this.projectRepository.save(project) as unknown as Project;
 
     // 프로젝트 소유자를 관리자 멤버로 추가
     const ownerMember = this.projectMemberRepository.create({
       projectId: savedProject.id,
       userId: ownerId,
-      role: 'admin',
+      role: ProjectMemberRole.OWNER,
       permissions: [
         'read', 'write', 'delete', 
         'manage_members', 'manage_settings', 
         'manage_tasks', 'manage_files'
       ],
-    });
+    } as any);
 
     await this.projectMemberRepository.save(ownerMember);
 
@@ -104,7 +106,7 @@ export class ProjectsService {
     return this.projectRepository.findOne({
       where: { id: savedProject.id },
       relations: ['members', 'members.user', 'tasks'],
-    });
+    }) as Promise<Project>;
   }
 
   // 프로젝트 목록 조회
@@ -189,11 +191,19 @@ export class ProjectsService {
     });
 
     return {
-      items: itemsWithProgress,
+      success: true,
+      data: itemsWithProgress as any,
+      items: itemsWithProgress as any,
       total,
       page,
       limit,
       totalPages: Math.ceil(total / limit),
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
     };
   }
 
@@ -220,7 +230,7 @@ export class ProjectsService {
     // 진행률 계산
     const progress = this.calculateProjectProgress(project);
     
-    return { ...project, progress };
+    return { ...project, progress } as any;
   }
 
   // 프로젝트 수정
@@ -317,7 +327,7 @@ export class ProjectsService {
     }
 
     // 기본 권한 설정
-    const defaultPermissions = this.getDefaultPermissions(role);
+    const defaultPermissions = this.getDefaultPermissions(role as ProjectMemberRole);
     const finalPermissions = permissions.length > 0 ? permissions : defaultPermissions;
 
     // 멤버 추가
@@ -326,9 +336,9 @@ export class ProjectsService {
       userId: newMemberId,
       role,
       permissions: finalPermissions,
-    });
+    } as any);
 
-    return this.projectMemberRepository.save(projectMember);
+    return this.projectMemberRepository.save(projectMember) as unknown as Promise<ProjectMember>;
   }
 
   // 프로젝트 멤버 목록 조회
@@ -389,7 +399,7 @@ export class ProjectsService {
     return projects.map(project => ({
       ...project,
       progress: this.calculateProjectProgress(project),
-    }));
+    })) as any;
   }
 
   // 프로젝트 진행률 계산
@@ -398,7 +408,7 @@ export class ProjectsService {
       return 0;
     }
 
-    const completedTasks = project.tasks.filter(task => task.status === 'done').length;
+    const completedTasks = project.tasks.filter(task => task.status === TaskStatus.COMPLETED).length;
     return Math.round((completedTasks / project.tasks.length) * 100);
   }
 
@@ -422,7 +432,7 @@ export class ProjectsService {
     }
 
     const member = project.members?.find(m => m.userId === userId);
-    if (!member || (member.role !== 'admin' && !member.permissions.includes('manage_members'))) {
+    if (!member || (member.role !== 'admin' && !member.permissions.includes(ProjectPermission.MANAGE_MEMBERS))) {
       throw new ForbiddenException('프로젝트 관리 권한이 없습니다.');
     }
   }

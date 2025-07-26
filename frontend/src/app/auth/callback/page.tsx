@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { saveTokens, refreshUserProfile } from '@/lib/auth';
 
 export default function AuthCallbackPage() {
   const router = useRouter();
@@ -25,11 +26,13 @@ export default function AuthCallbackPage() {
 
         if (accessToken && refreshToken) {
           // 토큰이 URL에 직접 포함된 경우
-          localStorage.setItem('accessToken', accessToken);
-          localStorage.setItem('refreshToken', refreshToken);
+          saveTokens(
+            decodeURIComponent(accessToken),
+            decodeURIComponent(refreshToken)
+          );
           
           // 사용자 정보 가져오기
-          await fetchUserInfo(accessToken);
+          await refreshUserProfile();
           
           setStatus('success');
           setMessage('로그인이 완료되었습니다. 잠시 후 대시보드로 이동합니다.');
@@ -70,7 +73,7 @@ export default function AuthCallbackPage() {
 
   const fetchUserInfo = async (accessToken: string) => {
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
       
       const response = await fetch(`${backendUrl}/auth/profile`, {
         headers: {

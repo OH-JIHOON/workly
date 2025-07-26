@@ -20,13 +20,12 @@
     "resolveJsonModule": true,
     "paths": {
       "@/*": ["src/*"],
-      "@shared/*": ["../shared/*"]
+      "@workly/shared": ["../shared/dist/src"]
     },
     "lib": ["ES2020"]
   },
   "include": [
-    "src/**/*",
-    "../shared/**/*"
+    "src/**/*"
   ],
   "exclude": [
     "node_modules",

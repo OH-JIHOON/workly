@@ -18,6 +18,7 @@ import {
   BellIcon as BellIconSolid, 
   UserIcon as UserIconSolid 
 } from '@heroicons/react/24/solid'
+import { isAuthenticated, logout } from '@/lib/auth'
 
 const navigationItems = [
   { 
@@ -56,11 +57,27 @@ export default function LeftNavigation() {
   const pathname = usePathname()
   const router = useRouter()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
+  useEffect(() => {
+    setIsLoggedIn(isAuthenticated())
+  }, [])
+
   const handleLoginClick = () => {
-    router.push('/login')
+    router.push('/auth/login')
     setIsMenuOpen(false)
+  }
+
+  const handleLogoutClick = async () => {
+    try {
+      await logout()
+      setIsLoggedIn(false)
+      setIsMenuOpen(false)
+      router.push('/auth/login')
+    } catch (error) {
+      console.error('로그아웃 오류:', error)
+    }
   }
 
   const handleSettingsClick = () => {
@@ -141,13 +158,23 @@ export default function LeftNavigation() {
             role="menu"
             aria-label="메뉴 옵션"
           >
-            <button 
-              onClick={handleLoginClick}
-              className="w-full text-left px-4 py-3 text-sm text-foreground hover:bg-accent cursor-pointer transition-colors"
-              role="menuitem"
-            >
-              로그인
-            </button>
+            {isLoggedIn ? (
+              <button 
+                onClick={handleLogoutClick}
+                className="w-full text-left px-4 py-3 text-sm text-foreground hover:bg-accent cursor-pointer transition-colors"
+                role="menuitem"
+              >
+                로그아웃
+              </button>
+            ) : (
+              <button 
+                onClick={handleLoginClick}
+                className="w-full text-left px-4 py-3 text-sm text-foreground hover:bg-accent cursor-pointer transition-colors"
+                role="menuitem"
+              >
+                로그인
+              </button>
+            )}
             <button 
               onClick={handleSettingsClick}
               className="w-full text-left px-4 py-3 text-sm text-foreground hover:bg-accent cursor-pointer transition-colors"

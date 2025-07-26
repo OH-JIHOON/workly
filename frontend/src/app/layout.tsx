@@ -1,8 +1,7 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
-import LeftNavigation from '@/components/navigation/LeftNavigation'
-import MobileNavigation from '@/components/navigation/MobileNavigation'
+import ConditionalLayout from '@/components/layout/ConditionalLayout'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -19,18 +18,9 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body className={inter.className}>
-        <div className="min-h-screen bg-background">
-          {/* 좌측 네비게이션 (데스크톱) */}
-          <LeftNavigation />
-          
-          {/* 메인 콘텐츠 */}
-          <div className="md:ml-18">
-            {children}
-          </div>
-          
-          {/* 하단 네비게이션 (모바일) */}
-          <MobileNavigation />
-        </div>
+        <ConditionalLayout>
+          {children}
+        </ConditionalLayout>
       </body>
     </html>
   )

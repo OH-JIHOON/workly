@@ -17,7 +17,7 @@ import {
   Priority, 
   TaskType,
   WorkflowStage
-} from '@shared/types/api.types';
+} from '@workly/shared';
 import { User } from './user.entity';
 import { Project } from './project.entity';
 import { TaskLabel } from './task-label.entity';
@@ -95,7 +95,7 @@ export class Task {
   @Column({ type: 'decimal', precision: 8, scale: 2, default: 0 })
   actualHours: number;
 
-  @Column({ type: 'int', default: 0, min: 0, max: 100 })
+  @Column({ type: 'int', default: 0 })
   progress: number;
 
   @Column({ nullable: true })
@@ -182,7 +182,7 @@ export class Task {
       this.completedAt = new Date();
       this.progress = 100;
     } else if (this.status !== TaskStatus.COMPLETED) {
-      this.completedAt = null;
+      this.completedAt = undefined;
     }
   }
 
@@ -226,7 +226,7 @@ export class Task {
 
   // 담당자 해제
   unassign(): void {
-    this.assigneeId = null;
+    this.assigneeId = undefined;
   }
 
   // 우선순위 설정

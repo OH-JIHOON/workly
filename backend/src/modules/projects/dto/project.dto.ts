@@ -21,7 +21,7 @@ import {
   ProjectPriority, 
   ProjectVisibility,
   ProjectMemberRole 
-} from '../../../shared/types/api.types';
+} from '@workly/shared';
 
 export class CreateProjectDto {
   @ApiProperty({

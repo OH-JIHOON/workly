@@ -2,70 +2,65 @@ import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
 import { DataSource, DataSourceOptions } from 'typeorm';
 
-// Entity imports
-import { User } from '../database/entities/user.entity';
-import { Project } from '../database/entities/project.entity';
-import { ProjectMember } from '../database/entities/project-member.entity';
-import { Task } from '../database/entities/task.entity';
-import { TaskLabel } from '../database/entities/task-label.entity';
-import { TaskComment } from '../database/entities/task-comment.entity';
-import { TaskDependency } from '../database/entities/task-dependency.entity';
-import { TimeEntry } from '../database/entities/time-entry.entity';
-import { File } from '../database/entities/file.entity';
-
-export const getDatabaseConfig = (configService: ConfigService): TypeOrmModuleOptions => {
-  return {
-    type: 'postgres',
-    host: configService.get('DATABASE_HOST', 'localhost'),
-    port: configService.get('DATABASE_PORT', 5432),
-    username: configService.get('DATABASE_USERNAME', 'workly'),
-    password: configService.get('DATABASE_PASSWORD', 'workly123'),
-    database: configService.get('DATABASE_NAME', 'workly'),
-    entities: [
-      User,
-      Project,
-      ProjectMember,
-      Task,
-      TaskLabel,
-      TaskComment,
-      TaskDependency,
-      TimeEntry,
-      File,
-    ],
-    migrations: [__dirname + '/../database/migrations/*{.ts,.js}'],
-    seeds: [__dirname + '/../database/seeds/*{.ts,.js}'],
-    synchronize: configService.get('NODE_ENV') === 'development',
-    logging: configService.get('NODE_ENV') === 'development',
-    ssl: configService.get('NODE_ENV') === 'production' ? {
-      rejectUnauthorized: false
-    } : false,
-    extra: {
-      max: 20, // 최대 연결 수
-      idleTimeoutMillis: 30000, // 유휴 연결 타임아웃
-      connectionTimeoutMillis: 2000, // 연결 타임아웃
-    },
-  };
+// 환경변수를 읽는 헬퍼 함수
+const getEnvVar = (key: string, defaultValue: string): string => {
+  return process.env[key] || defaultValue;
 };
 
-// CLI용 데이터소스 설정 (마이그레이션 등)
-export const dataSourceOptions: DataSourceOptions = {
+const getEnvNumber = (key: string, defaultValue: number): number => {
+  const value = process.env[key];
+  return value ? parseInt(value, 10) : defaultValue;
+};
+
+const isProduction = (): boolean => {
+  return process.env.NODE_ENV === 'production';
+};
+
+const isDevelopment = (): boolean => {
+  return process.env.NODE_ENV === 'development';
+};
+
+// 단일 데이터베이스 설정 - Single Source of Truth
+const createDatabaseConfig = (): DataSourceOptions => ({
   type: 'postgres',
-  host: process.env.DATABASE_HOST || 'localhost',
-  port: parseInt(process.env.DATABASE_PORT || '5432'),
-  username: process.env.DATABASE_USERNAME || 'workly',
-  password: process.env.DATABASE_PASSWORD || 'workly123',
-  database: process.env.DATABASE_NAME || 'workly',
-  entities: [
-    __dirname + '/../database/entities/*{.ts,.js}'
-  ],
-  migrations: [
-    __dirname + '/../database/migrations/*{.ts,.js}'
-  ],
-  synchronize: false, // 프로덕션에서는 항상 false
-  logging: process.env.NODE_ENV === 'development',
-  ssl: process.env.NODE_ENV === 'production' ? {
+  host: getEnvVar('DATABASE_HOST', 'localhost'),
+  port: getEnvNumber('DATABASE_PORT', 5432),
+  username: getEnvVar('DATABASE_USERNAME', 'workly'),
+  password: getEnvVar('DATABASE_PASSWORD', 'workly123'),
+  database: getEnvVar('DATABASE_NAME', 'workly'),
+  entities: [__dirname + '/../database/entities/*{.ts,.js}'],
+  migrations: [__dirname + '/../database/migrations/*{.ts,.js}'],
+  synchronize: isDevelopment(), // 개발환경에서만 true
+  logging: isDevelopment(),
+  ssl: isProduction() ? {
     rejectUnauthorized: false
   } : false,
+  extra: {
+    max: 20, // 최대 연결 수
+    idleTimeoutMillis: 30000, // 유휴 연결 타임아웃
+    connectionTimeoutMillis: 2000, // 연결 타임아웃
+  },
+});
+
+// NestJS TypeORM 모듈용 설정
+export const getDatabaseConfig = (configService: ConfigService): TypeOrmModuleOptions => {
+  // ConfigService를 통해 환경변수를 다시 검증
+  const baseConfig = createDatabaseConfig();
+  
+  return {
+    ...baseConfig,
+    // ConfigService로 한번 더 검증하여 더 안전하게
+    host: configService.get<string>('DATABASE_HOST', getEnvVar('DATABASE_HOST', 'localhost')),
+    port: configService.get<number>('DATABASE_PORT', getEnvNumber('DATABASE_PORT', 5432)),
+    username: configService.get<string>('DATABASE_USERNAME', getEnvVar('DATABASE_USERNAME', 'workly')),
+    password: configService.get<string>('DATABASE_PASSWORD', getEnvVar('DATABASE_PASSWORD', 'workly123')),
+    database: configService.get<string>('DATABASE_NAME', getEnvVar('DATABASE_NAME', 'workly')),
+    synchronize: configService.get('NODE_ENV') === 'development',
+    logging: configService.get('NODE_ENV') === 'development',
+  } as TypeOrmModuleOptions;
 };
+
+// CLI용 데이터소스 설정 (마이그레이션 등) - 동일한 설정 재사용
+export const dataSourceOptions: DataSourceOptions = createDatabaseConfig();
 
 export default new DataSource(dataSourceOptions);

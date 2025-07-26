@@ -118,7 +118,7 @@ export class File {
       'application/xml',
     ];
     return codeTypes.includes(this.mimetype) || 
-           this.filename.match(/\.(js|ts|jsx|tsx|html|css|scss|sass|less|json|xml|yaml|yml|md|py|java|c|cpp|h|hpp|cs|php|rb|go|rs|swift|kt)$/i);
+           Boolean(this.filename.match(/\.(js|ts|jsx|tsx|html|css|scss|sass|less|json|xml|yaml|yml|md|py|java|c|cpp|h|hpp|cs|php|rb|go|rs|swift|kt)$/i));
   }
 
   // 파일 크기를 읽기 쉬운 형태로 반환
@@ -238,8 +238,8 @@ export class File {
 
   // 엔티티에서 분리
   detach(): void {
-    this.entityType = null;
-    this.entityId = null;
+    this.entityType = undefined;
+    this.entityId = undefined;
   }
 
   // 연결된 엔티티 확인

@@ -1,143 +1,78 @@
-'use client';
+'use client'
 
-import React, { useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import LoginForm from '@/components/auth/LoginForm';
-import SocialLogin from '@/components/auth/SocialLogin';
-
-interface LoginFormData {
-  email: string;
-  password: string;
-  rememberMe: boolean;
-}
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { isAuthenticated } from '@/lib/auth'
 
 export default function LoginPage() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const router = useRouter()
 
-  // URL에서 오류 메시지 확인
   useEffect(() => {
-    const errorParam = searchParams.get('error');
-    if (errorParam) {
-      switch (errorParam) {
-        case 'google_oauth_failed':
-          setError('Google 로그인에 실패했습니다. 다시 시도해주세요.');
-          break;
-        case 'invalid_credentials':
-          setError('이메일 또는 비밀번호가 올바르지 않습니다.');
-          break;
-        case 'account_disabled':
-          setError('계정이 비활성화되었습니다. 관리자에게 문의하세요.');
-          break;
-        default:
-          setError('로그인 중 오류가 발생했습니다.');
-      }
+    // 이미 로그인된 경우 메인 페이지로 리다이렉트
+    if (isAuthenticated()) {
+      router.push('/')
     }
-  }, [searchParams]);
+  }, [router])
 
-  const handleLogin = async (formData: LoginFormData): Promise<void> => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
-      
-      const response = await fetch(`${backendUrl}/api/v1/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || '로그인에 실패했습니다.');
-      }
-
-      // JWT 토큰 저장
-      if (data.accessToken) {
-        localStorage.setItem('accessToken', data.accessToken);
-      }
-      if (data.refreshToken) {
-        localStorage.setItem('refreshToken', data.refreshToken);
-      }
-
-      // 사용자 정보 저장
-      if (data.user) {
-        localStorage.setItem('user', JSON.stringify(data.user));
-      }
-
-      // 대시보드로 리다이렉트
-      router.push('/dashboard');
-      
-    } catch (error) {
-      console.error('로그인 오류:', error);
-      setError(error instanceof Error ? error.message : '로그인에 실패했습니다.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const handleGoogleLogin = () => {
+    // Google OAuth 로그인을 위해 백엔드 OAuth 엔드포인트로 리다이렉트
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000'
+    window.location.href = `${backendUrl}/auth/google`
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* 오류 메시지 */}
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <p className="text-sm font-medium text-red-800">{error}</p>
-              </div>
-              <div className="ml-auto pl-3">
-                <button
-                  type="button"
-                  onClick={() => setError(null)}
-                  className="inline-flex text-red-400 hover:text-red-600"
-                >
-                  <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                  </svg>
-                </button>
-              </div>
-            </div>
+    <div className="min-h-screen bg-background flex items-center justify-center px-4">
+      <div className="w-full max-w-sm space-y-8">
+        {/* 로고 & 브랜딩 */}
+        <div className="text-center">
+          <div className="mx-auto w-16 h-16 bg-foreground text-background rounded-2xl flex items-center justify-center text-2xl font-bold mb-6">
+            W
           </div>
-        )}
-
-        {/* 소셜 로그인 */}
-        <div className="mb-6">
-          <div className="bg-white rounded-2xl shadow-xl p-8">
-            <div className="text-center mb-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">빠른 로그인</h2>
-              <p className="text-gray-600">소셜 계정으로 간편하게 로그인하세요</p>
-            </div>
-            <SocialLogin isLoading={isLoading} showDivider={false} />
-          </div>
+          <h1 className="text-2xl font-bold text-foreground mb-2">
+            워클리에 오신 것을 환영합니다
+          </h1>
+          <p className="text-muted-foreground">
+            업무를 정리하고, 목표를 달성하며, 역량을 성장시키세요
+          </p>
         </div>
 
-        {/* 구분선 */}
-        <div className="relative mb-6">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-300" />
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-4 bg-gradient-to-br from-blue-50 via-white to-indigo-50 text-gray-500 font-medium">
-              이메일로 로그인
-            </span>
-          </div>
-        </div>
+        {/* 단일 Google 로그인 버튼 */}
+        <button 
+          onClick={handleGoogleLogin}
+          className="w-full flex items-center justify-center gap-3 bg-white border border-gray-300 rounded-xl px-4 py-3 text-gray-700 font-medium hover:bg-gray-50 transition-colors shadow-sm"
+        >
+          <svg className="w-5 h-5" viewBox="0 0 24 24">
+            <path
+              fill="currentColor"
+              d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+            />
+            <path
+              fill="currentColor"
+              d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+            />
+            <path
+              fill="currentColor"
+              d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+            />
+            <path
+              fill="currentColor"
+              d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+            />
+          </svg>
+          Google로 시작하기
+        </button>
 
-        {/* 로그인 폼 */}
-        <LoginForm onSubmit={handleLogin} isLoading={isLoading} />
+        {/* 추가 정보 */}
+        <div className="text-center">
+          <p className="text-xs text-muted-foreground">
+            계속 진행하면 
+            <a href="/terms" className="text-foreground hover:underline mx-1">서비스 약관</a>
+            및
+            <a href="/privacy" className="text-foreground hover:underline mx-1">개인정보처리방침</a>
+            에 동의하는 것으로 간주됩니다.
+          </p>
+        </div>
       </div>
     </div>
-  );
+  )
 }

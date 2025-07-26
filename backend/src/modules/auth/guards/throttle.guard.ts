@@ -7,7 +7,7 @@ export class CustomThrottlerGuard extends ThrottlerGuard {
     throw new ThrottlerException('요청이 너무 많습니다. 잠시 후 다시 시도해주세요.');
   }
 
-  protected getTracker(req: Record<string, any>): string {
+  protected async getTracker(req: Record<string, any>): Promise<string> {
     // IP 주소와 사용자 ID를 조합하여 더 정확한 추적
     const userId = req.user?.sub || 'anonymous';
     const ip = req.ip || req.connection.remoteAddress || 'unknown';

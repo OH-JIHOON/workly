@@ -31,7 +31,7 @@ import {
   ProjectQueryDto,
   AddProjectMemberDto 
 } from './dto/project.dto';
-import { ProjectStatus } from '../../shared/types/api.types';
+import { ProjectStatus } from '@workly/shared';
 
 @ApiTags('Projects')
 @Controller('projects')

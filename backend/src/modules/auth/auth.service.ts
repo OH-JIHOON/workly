@@ -14,7 +14,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { User } from '../../database/entities/user.entity';
 import { getAuthConfig } from '../../config/auth.config';
-import { JwtPayload, RefreshTokenPayload } from '../../shared/interfaces/jwt-payload.interface';
+import { JwtPayload, RefreshTokenPayload } from '@workly/shared';
 import { 
   LoginDto, 
   RegisterDto, 
@@ -31,7 +31,7 @@ import {
   LoginResponse, 
   UserRole, 
   UserStatus 
-} from '../../shared/types/api.types';
+} from '@workly/shared';
 
 @Injectable()
 export class AuthService {
@@ -64,7 +64,7 @@ export class AuthService {
       throw new UnauthorizedException('이메일 또는 비밀번호가 올바르지 않습니다.');
     }
 
-    if (user.status !== 'active') {
+    if (user.status !== UserStatus.ACTIVE) {
       throw new UnauthorizedException('계정이 활성화되지 않았습니다.');
     }
 
@@ -113,34 +113,55 @@ export class AuthService {
     const user = this.userRepository.create({
       email,
       password: hashedPassword,
+      name: `${firstName} ${lastName}`,
       firstName,
       lastName,
       emailVerificationToken,
       profile: {
-        displayName: `${firstName} ${lastName}`,
-        bio: '',
-        location: '',
-        website: '',
-        linkedinUrl: '',
-        githubUrl: '',
+        firstName,
+        lastName,
+        timezone: 'Asia/Seoul',
+        language: 'ko',
       },
       preferences: {
+        theme: 'system',
         language: 'ko',
         timezone: 'Asia/Seoul',
-        dateFormat: 'YYYY-MM-DD',
-        timeFormat: '24h',
-        weekStartDay: 1,
         notifications: {
           email: true,
           push: true,
           desktop: true,
+          taskAssigned: true,
+          taskCompleted: true,
+          taskDue: true,
+          projectUpdates: true,
           mentions: true,
-          updates: true,
-          marketing: false,
+          weeklyDigest: true,
+          dailyReminder: false,
         },
-        privacy: {
-          profileVisibility: 'team',
-          activityVisibility: 'team',
+        workingHours: {
+          enabled: true,
+          startTime: '09:00',
+          endTime: '18:00',
+          timezone: 'Asia/Seoul',
+          workingDays: [1, 2, 3, 4, 5],
+          breakTime: {
+            enabled: true,
+            startTime: '12:00',
+            endTime: '13:00',
+          },
+        },
+        dashboard: {
+          layout: 'grid',
+          widgets: {
+            myTasks: true,
+            recentProjects: true,
+            teamActivity: true,
+            notifications: true,
+            calendar: true,
+            quickStats: true,
+          },
+          defaultView: 'dashboard',
         },
       },
     });
@@ -195,7 +216,7 @@ export class AuthService {
       }
       if (emailVerified && !user.emailVerifiedAt) {
         user.emailVerifiedAt = new Date();
-        user.status = 'active';
+        user.status = UserStatus.ACTIVE;
       }
       return this.userRepository.save(user);
     }
@@ -203,39 +224,60 @@ export class AuthService {
     // 새 사용자 생성
     const newUser = this.userRepository.create({
       email,
+      name: `${firstName} ${lastName}`,
       googleId,
       firstName,
       lastName,
       avatar,
       password: '', // Google 사용자는 비밀번호 불필요
-      status: emailVerified ? 'active' : 'pending_verification',
-      emailVerifiedAt: emailVerified ? new Date() : null,
+      status: emailVerified ? UserStatus.ACTIVE : UserStatus.PENDING_VERIFICATION,
+      emailVerifiedAt: emailVerified ? new Date() : undefined,
       lastLoginAt: new Date(),
       profile: {
-        displayName: `${firstName} ${lastName}`,
-        bio: '',
-        location: '',
-        website: '',
-        linkedinUrl: '',
-        githubUrl: '',
+        firstName,
+        lastName,
+        timezone: 'Asia/Seoul',
+        language: 'ko',
       },
       preferences: {
+        theme: 'system',
         language: 'ko',
         timezone: 'Asia/Seoul',
-        dateFormat: 'YYYY-MM-DD',
-        timeFormat: '24h',
-        weekStartDay: 1,
         notifications: {
           email: true,
           push: true,
           desktop: true,
+          taskAssigned: true,
+          taskCompleted: true,
+          taskDue: true,
+          projectUpdates: true,
           mentions: true,
-          updates: true,
-          marketing: false,
+          weeklyDigest: true,
+          dailyReminder: false,
         },
-        privacy: {
-          profileVisibility: 'team',
-          activityVisibility: 'team',
+        workingHours: {
+          enabled: true,
+          startTime: '09:00',
+          endTime: '18:00',
+          timezone: 'Asia/Seoul',
+          workingDays: [1, 2, 3, 4, 5],
+          breakTime: {
+            enabled: true,
+            startTime: '12:00',
+            endTime: '13:00',
+          },
+        },
+        dashboard: {
+          layout: 'grid',
+          widgets: {
+            myTasks: true,
+            recentProjects: true,
+            teamActivity: true,
+            notifications: true,
+            calendar: true,
+            quickStats: true,
+          },
+          defaultView: 'dashboard',
         },
       },
     });
@@ -357,8 +399,8 @@ export class AuthService {
 
     await this.userRepository.update(user.id, {
       password: hashedPassword,
-      resetPasswordToken: null,
-      resetPasswordExpiresAt: null,
+      resetPasswordToken: undefined,
+      resetPasswordExpiresAt: undefined,
     });
 
     return {
@@ -384,8 +426,8 @@ export class AuthService {
 
     await this.userRepository.update(user.id, {
       emailVerifiedAt: new Date(),
-      status: 'active',
-      emailVerificationToken: null,
+      status: UserStatus.ACTIVE,
+      emailVerificationToken: undefined,
     });
 
     return {
@@ -471,7 +513,7 @@ export class AuthService {
   }
 
   // 사용자 정보 정제 (민감한 정보 제거)
-  private sanitizeUser(user: User): Omit<User, 'password' | 'resetPasswordToken' | 'emailVerificationToken'> {
+  private sanitizeUser(user: User): any {
     const { password, resetPasswordToken, emailVerificationToken, ...sanitizedUser } = user;
     return sanitizedUser;
   }

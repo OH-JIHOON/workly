@@ -37,13 +37,13 @@ interface RoomData {
   },
   namespace: '/',
 })
-export class WebSocketGateway 
+export class WorklyWebSocketGateway 
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect 
 {
   @WebSocketServer()
   server: Server;
 
-  private readonly logger = new Logger(WebSocketGateway.name);
+  private readonly logger = new Logger(WorklyWebSocketGateway.name);
   private connectedUsers = new Map<string, Set<string>>(); // userId -> socketIds
   private socketRooms = new Map<string, Set<string>>(); // socketId -> rooms
 
@@ -75,10 +75,12 @@ export class WebSocketGateway
       client.user = payload;
 
       // 사용자별 연결 추적
-      if (!this.connectedUsers.has(client.userId)) {
+      if (client.userId && !this.connectedUsers.has(client.userId)) {
         this.connectedUsers.set(client.userId, new Set());
       }
-      this.connectedUsers.get(client.userId)?.add(client.id);
+      if (client.userId) {
+        this.connectedUsers.get(client.userId)?.add(client.id);
+      }
 
       // 사용자 개인 룸에 자동 조인
       const userRoom = `user:${client.userId}`;

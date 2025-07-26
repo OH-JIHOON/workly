@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { WebSocketGateway as WSGateway } from './websocket.gateway';
+import { WorklyWebSocketGateway } from './websocket.gateway';
 import { getAuthConfig } from '../../config/auth.config';
 
 @Module({
@@ -21,7 +21,7 @@ import { getAuthConfig } from '../../config/auth.config';
     }),
     ConfigModule,
   ],
-  providers: [WSGateway],
-  exports: [WSGateway],
+  providers: [WorklyWebSocketGateway],
+  exports: [WorklyWebSocketGateway],
 })
 export class WebSocketModule {}

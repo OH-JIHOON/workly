@@ -39,7 +39,7 @@ import {
 import {
   AuthResponse,
   LoginResponse,
-} from '../../shared/types/api.types';
+} from '@workly/shared';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -55,7 +55,6 @@ export class AuthController {
   @ApiResponse({
     status: 200,
     description: '로그인 성공',
-    type: LoginResponse,
   })
   @ApiResponse({
     status: 401,
@@ -77,7 +76,6 @@ export class AuthController {
   @ApiResponse({
     status: 201,
     description: '회원가입 성공',
-    type: AuthResponse,
   })
   @ApiResponse({
     status: 409,
@@ -118,7 +116,7 @@ export class AuthController {
       // JWT 토큰 생성
       const tokens = await this.authService.generateTokensForUser(user);
       
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
       const redirectUrl = `${frontendUrl}/auth/callback?` +
         `status=success&` +
         `accessToken=${encodeURIComponent(tokens.accessToken)}&` +
@@ -126,7 +124,7 @@ export class AuthController {
       
       res.redirect(redirectUrl);
     } catch (error) {
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
       const redirectUrl = `${frontendUrl}/auth/callback?status=error&message=${encodeURIComponent('로그인 중 오류가 발생했습니다.')}`;
       
       res.redirect(redirectUrl);
@@ -140,7 +138,6 @@ export class AuthController {
   @ApiResponse({
     status: 200,
     description: 'Google 로그인 성공',
-    type: LoginResponse,
   })
   async googleLogin(@Body() googleAuthDto: GoogleAuthDto): Promise<LoginResponse> {
     return this.authService.googleLogin(googleAuthDto);
@@ -167,7 +164,6 @@ export class AuthController {
   @ApiResponse({
     status: 200,
     description: '비밀번호 변경 성공',
-    type: AuthResponse,
   })
   async changePassword(
     @CurrentUser('id') userId: string,
@@ -184,7 +180,6 @@ export class AuthController {
   @ApiResponse({
     status: 200,
     description: '비밀번호 재설정 이메일 발송',
-    type: AuthResponse,
   })
   async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto): Promise<AuthResponse> {
     return this.authService.forgotPassword(forgotPasswordDto);
@@ -197,7 +192,6 @@ export class AuthController {
   @ApiResponse({
     status: 200,
     description: '비밀번호 재설정 성공',
-    type: AuthResponse,
   })
   async resetPassword(@Body() resetPasswordDto: ResetPasswordDto): Promise<AuthResponse> {
     return this.authService.resetPassword(resetPasswordDto);
@@ -210,7 +204,6 @@ export class AuthController {
   @ApiResponse({
     status: 200,
     description: '이메일 인증 성공',
-    type: AuthResponse,
   })
   async verifyEmail(@Body() verifyEmailDto: VerifyEmailDto): Promise<AuthResponse> {
     return this.authService.verifyEmail(verifyEmailDto);
@@ -224,7 +217,6 @@ export class AuthController {
   @ApiResponse({
     status: 200,
     description: '인증 이메일 재발송 완료',
-    type: AuthResponse,
   })
   async resendVerification(@Body() resendVerificationDto: ResendVerificationDto): Promise<AuthResponse> {
     return this.authService.resendVerification(resendVerificationDto);

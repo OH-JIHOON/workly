@@ -9,7 +9,7 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
-import { UserProfile, UserPreferences } from '../../../shared/types/api.types';
+import { UserProfile, UserPreferences } from '@workly/shared';
 
 export class UpdateUserDto {
   @ApiProperty({

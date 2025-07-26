@@ -1,9 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import Header from '@/components/layout/Header'
 import FloatingActionButton from '@/components/ui/FloatingActionButton'
 import MobileTabs from '@/components/ui/MobileTabs'
+import { isAuthenticated } from '@/lib/auth'
 
 const tasks = [
   {
@@ -97,7 +99,15 @@ const tasks = [
 ]
 
 export default function HomePage() {
+  const router = useRouter()
   const [activeTab, setActiveTab] = useState('업무')
+
+  useEffect(() => {
+    // 로그인하지 않은 경우 로그인 페이지로 리다이렉트
+    if (!isAuthenticated()) {
+      router.push('/auth/login')
+    }
+  }, [router])
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab)

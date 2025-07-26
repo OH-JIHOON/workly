@@ -7,7 +7,7 @@ import {
   Index,
   Unique,
 } from 'typeorm';
-import { DependencyType } from '@shared/types/api.types';
+import { DependencyType } from '@workly/shared';
 import { Task } from './task.entity';
 
 @Entity('task_dependencies')
@@ -64,7 +64,7 @@ export class TaskDependency {
   // 중복 관계인지 확인
   isDuplicate(): boolean {
     return this.type === DependencyType.DUPLICATES || 
-           this.type === DependencyType.IS_DUPLICATED_BY;
+           this.type === DependencyType.DUPLICATED_BY;
   }
 
   // 순환 의존성 체크를 위한 메서드

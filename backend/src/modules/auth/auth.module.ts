@@ -32,6 +32,6 @@ import { getAuthConfig } from '../../config/auth.config';
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, GoogleStrategy],
-  exports: [AuthService, PassportModule],
+  exports: [AuthService, PassportModule, JwtModule],
 })
 export class AuthModule {}

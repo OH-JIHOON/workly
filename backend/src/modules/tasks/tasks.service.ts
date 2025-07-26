@@ -13,7 +13,7 @@ import { TaskLabel } from '../../database/entities/task-label.entity';
 import { TaskDependency } from '../../database/entities/task-dependency.entity';
 import { User } from '../../database/entities/user.entity';
 import { Project } from '../../database/entities/project.entity';
-import { WebSocketGateway as WSGateway } from '../websocket/websocket.gateway';
+// import { WebSocketGateway as WSGateway } from '../websocket/websocket.gateway';
 import { 
   CreateTaskDto, 
   UpdateTaskDto, 
@@ -23,10 +23,10 @@ import {
 } from './dto/task.dto';
 import { 
   TaskStatus, 
-  TaskPriority, 
+  Priority, 
   TaskType,
   PaginatedResponse 
-} from '../../shared/types/api.types';
+} from '@workly/shared';
 
 @Injectable()
 export class TasksService {
@@ -39,8 +39,8 @@ export class TasksService {
     private taskDependencyRepository: Repository<TaskDependency>,
     @InjectRepository(Project)
     private projectRepository: Repository<Project>,
-    @Inject(forwardRef(() => WSGateway))
-    private webSocketGateway: WSGateway,
+    // @Inject(forwardRef(() => WSGateway))
+    // private webSocketGateway: WSGateway,
   ) {}
 
   // 태스크 생성
@@ -126,9 +126,9 @@ export class TasksService {
       tags,
       customFields,
       labels,
-    });
+    } as any);
 
-    const savedTask = await this.taskRepository.save(task);
+    const savedTask = await this.taskRepository.save(task) as unknown as Task;
 
     // 관계 포함하여 반환
     const newTask = await this.taskRepository.findOne({
@@ -149,15 +149,15 @@ export class TasksService {
     });
 
     // 실시간 알림 전송
-    if (newTask.projectId) {
-      this.webSocketGateway.broadcastProjectUpdate(
-        newTask.projectId,
-        { type: 'task:created', task: newTask },
-        userId
-      );
+    if (newTask && newTask.projectId) {
+      // this.webSocketGateway.broadcastProjectUpdate(
+      //   newTask.projectId,
+      //   { type: 'task:created', task: newTask },
+      //   userId
+      // );
     }
 
-    return newTask;
+    return newTask!;
   }
 
   // 태스크 목록 조회 (필터링, 정렬, 페이징)
@@ -277,11 +277,19 @@ export class TasksService {
     const [items, total] = await queryBuilder.getManyAndCount();
 
     return {
+      success: true,
+      data: items,
       items,
       total,
       page,
       limit,
       totalPages: Math.ceil(total / limit),
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
     };
   }
 
@@ -349,16 +357,16 @@ export class TasksService {
     if (status !== undefined) {
       task.status = status;
       // 완료 상태 변경 시 완료 시간 설정
-      if (status === 'done' && !task.completedAt) {
+      if (status === TaskStatus.COMPLETED && !task.completedAt) {
         task.completedAt = new Date();
-      } else if (status !== 'done') {
-        task.completedAt = null;
+      } else if (status !== TaskStatus.COMPLETED) {
+        task.completedAt = undefined;
       }
     }
     if (priority !== undefined) task.priority = priority;
     if (type !== undefined) task.type = type;
-    if (dueDate !== undefined) task.dueDate = dueDate ? new Date(dueDate) : null;
-    if (startDate !== undefined) task.startDate = startDate ? new Date(startDate) : null;
+    if (dueDate !== undefined) task.dueDate = dueDate ? new Date(dueDate) : undefined;
+    if (startDate !== undefined) task.startDate = startDate ? new Date(startDate) : undefined;
     if (estimatedHours !== undefined) task.estimatedHours = estimatedHours;
     if (progress !== undefined) task.progress = Math.max(0, Math.min(100, progress));
     if (tags !== undefined) task.tags = tags;
@@ -376,20 +384,20 @@ export class TasksService {
     const finalTask = await this.findOne(updatedTask.id, userId);
 
     // 실시간 업데이트 알림
-    this.webSocketGateway.broadcastTaskUpdate(
-      finalTask.id,
-      { type: 'task:updated', task: finalTask },
-      userId
-    );
+    // this.webSocketGateway.broadcastTaskUpdate(
+    //   finalTask.id,
+    //   { type: 'task:updated', task: finalTask },
+    //   userId
+    // );
 
     // 프로젝트 룸에도 알림
-    if (finalTask.projectId) {
-      this.webSocketGateway.broadcastProjectUpdate(
-        finalTask.projectId,
-        { type: 'task:updated', task: finalTask },
-        userId
-      );
-    }
+    // if (finalTask.projectId) {
+    //   this.webSocketGateway.broadcastProjectUpdate(
+    //     finalTask.projectId,
+    //     { type: 'task:updated', task: finalTask },
+    //     userId
+    //   );
+    // }
 
     return finalTask;
   }
@@ -417,7 +425,7 @@ export class TasksService {
   }
 
   // 태스크 우선순위 변경
-  async updatePriority(id: string, priority: TaskPriority, userId: string): Promise<Task> {
+  async updatePriority(id: string, priority: Priority, userId: string): Promise<Task> {
     return this.update(id, { priority }, userId);
   }
 
@@ -537,7 +545,7 @@ export class TasksService {
       task.assigneeId === userId ||
       task.reporterId === userId ||
       task.project?.ownerId === userId ||
-      (task.project && await this.isProjectMember(task.projectId, userId))
+      (task.project && task.projectId && await this.isProjectMember(task.projectId, userId))
     );
 
     if (!hasAccess) {

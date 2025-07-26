@@ -16,6 +16,11 @@ export interface PaginationMeta {
 
 export interface PaginatedResponse<T> extends ApiResponse<T[]> {
   meta: PaginationMeta
+  items?: T[] // 백엔드 호환성을 위해 추가
+  total?: number // 백엔드 호환성을 위해 추가
+  page?: number // 백엔드 호환성을 위해 추가
+  limit?: number // 백엔드 호환성을 위해 추가
+  totalPages?: number // 백엔드 호환성을 위해 추가
 }
 
 // 공통 엔티티 필드
@@ -144,6 +149,7 @@ export interface Project extends BaseEntity {
 
 export enum ProjectStatus {
   PLANNING = 'planning',
+  ACTIVE = 'active', // 백엔드 호환성을 위해 추가
   IN_PROGRESS = 'in-progress',
   ON_HOLD = 'on-hold',
   COMPLETED = 'completed',
@@ -171,6 +177,10 @@ export enum ProjectRole {
   MEMBER = 'member',
   VIEWER = 'viewer'
 }
+
+// 프로젝트 멤버 역할 (ProjectRole과 동일)
+export type ProjectMemberRole = ProjectRole;
+export const ProjectMemberRole = ProjectRole;
 
 export enum ProjectPermission {
   VIEW_PROJECT = 'view_project',
@@ -211,6 +221,10 @@ export enum Priority {
   HIGH = 'high',
   URGENT = 'urgent'
 }
+
+// 프로젝트 우선순위 (Priority와 동일)
+export type ProjectPriority = Priority;
+export const ProjectPriority = Priority;
 
 // 업무 타입
 export interface Task extends BaseEntity {
@@ -323,6 +337,7 @@ export enum DependencyType {
   BLOCKED_BY = 'blocked_by',
   RELATES_TO = 'relates_to',
   DUPLICATES = 'duplicates',
+  DUPLICATED_BY = 'duplicated_by', // 백엔드 호환성을 위해 추가
   IS_DUPLICATED_BY = 'is_duplicated_by'
 }
 
@@ -393,12 +408,34 @@ export interface RegisterRequest {
 }
 
 export interface AuthResponse {
-  user: User
-  tokens: {
+  user?: User
+  tokens?: {
     accessToken: string
     refreshToken: string
     expiresIn: number
   }
+  message: string // 백엔드 호환성을 위해 추가
+}
+
+export interface LoginResponse {
+  user: {
+    id: string
+    email: string
+    name: string
+    firstName?: string
+    lastName?: string
+    role: UserRole
+    status: UserStatus
+    avatar?: string
+    profile: UserProfile
+    preferences: UserPreferences
+    emailVerifiedAt?: string
+    lastLoginAt?: string
+    createdAt: string
+    updatedAt: string
+  }
+  accessToken: string
+  refreshToken: string
 }
 
 export interface GoogleAuthRequest {
@@ -703,4 +740,20 @@ export interface UpdateTaskLabelRequest {
   name?: string
   color?: string
   description?: string
+}
+
+// JWT 페이로드 인터페이스 (인증 관련)
+export interface JwtPayload {
+  sub: string // 사용자 ID
+  email: string
+  role: string
+  iat?: number // 발급 시간
+  exp?: number // 만료 시간
+}
+
+export interface RefreshTokenPayload {
+  sub: string // 사용자 ID
+  tokenId: string // 토큰 고유 ID
+  iat?: number
+  exp?: number
 }

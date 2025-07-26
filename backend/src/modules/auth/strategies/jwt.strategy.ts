@@ -4,7 +4,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { AuthService } from '../auth.service';
 import { getAuthConfig } from '../../../config/auth.config';
-import { JwtPayload } from '../../../shared/interfaces/jwt-payload.interface';
+import { JwtPayload } from '@workly/shared';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {

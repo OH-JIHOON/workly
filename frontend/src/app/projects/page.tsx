@@ -214,13 +214,23 @@ export default function ProjectsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchQuery);
   const [isCreationModalOpen, setIsCreationModalOpen] = useState(false);
   const [currentFilter, setCurrentFilter] = useState('전체 프로젝트');
+
+  // 사용자가 입력을 멈췄을 때만 API 요청을 보내도록 검색어를 디바운싱합니다.
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300); // 300ms 지연
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   // 프로젝트 로드
   useEffect(() => {
     loadProjects();
-  }, [currentFilter]);
+  }, [currentFilter, debouncedSearchQuery]);
 
   const loadProjects = async () => {
     try {
@@ -230,7 +240,7 @@ export default function ProjectsPage() {
       const queryParams: ProjectQueryDto = {
         page: 1,
         limit: 50,
-        search: searchQuery || undefined,
+        search: debouncedSearchQuery || undefined,
       };
 
       // 필터에 따른 쿼리 추가
@@ -243,11 +253,13 @@ export default function ProjectsPage() {
       }
 
       const response = await apiClient.get<PaginatedResponse<Project>>('/projects', queryParams);
-      setProjects(response.items);
+      // API 응답에 items가 없는 경우를 대비해 항상 배열을 보장합니다.
+      setProjects(response.items || []);
 
     } catch (err) {
       console.error('프로젝트 로드 실패:', err);
       setError('프로젝트를 불러오는데 실패했습니다.');
+      setProjects([]); // 오류 발생 시 프로젝트 목록을 안전하게 비웁니다.
     } finally {
       setIsLoading(false);
     }
@@ -267,10 +279,10 @@ export default function ProjectsPage() {
     setCurrentFilter(filter);
   };
 
-  const filteredProjects = projects.filter(project =>
-    project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    project.description?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // const filteredProjects = projects.filter(project =>
+  //  project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  //  project.description?.toLowerCase().includes(searchQuery.toLowerCase())
+  //);
 
   return (
     <div className="min-h-screen">
@@ -333,7 +345,7 @@ export default function ProjectsPage() {
               </div>
             ))}
           </div>
-        ) : filteredProjects.length === 0 ? (
+        ) : projects.length === 0 ? (
           <div className="text-center py-12">
             <Folder className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">
@@ -356,7 +368,7 @@ export default function ProjectsPage() {
           </div>
         ) : (
           <div className="space-y-4">
-            {filteredProjects.map((project) => (
+            {projects.map((project) => (
               <ProjectCard 
                 key={project.id} 
                 project={project} 

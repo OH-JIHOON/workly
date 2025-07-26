@@ -10,7 +10,7 @@ import {
 import { 
   ProjectRole,
   ProjectPermission
-} from '@shared/types/api.types';
+} from '@workly/shared';
 import { User } from './user.entity';
 import { Project } from './project.entity';
 

@@ -31,7 +31,7 @@ export class AuditMiddleware implements NestMiddleware {
           responseTime: `${responseTime}ms`,
           ip,
           userAgent,
-          userId: user?.sub || 'anonymous',
+          userId: (user as any)?.id || 'anonymous',
           timestamp: new Date().toISOString(),
         };
 

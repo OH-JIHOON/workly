@@ -18,9 +18,9 @@ import { Type, Transform } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { 
   TaskStatus, 
-  TaskPriority, 
+  Priority, 
   TaskType 
-} from '../../../shared/types/api.types';
+} from '@workly/shared';
 
 export class CreateTaskDto {
   @ApiProperty({
@@ -69,12 +69,12 @@ export class CreateTaskDto {
 
   @ApiPropertyOptional({
     description: '태스크 우선순위',
-    enum: TaskPriority,
+    enum: Priority,
     example: 'medium',
   })
   @IsOptional()
-  @IsEnum(TaskPriority, { message: '유효한 우선순위를 선택해주세요.' })
-  priority?: TaskPriority;
+  @IsEnum(Priority, { message: '유효한 우선순위를 선택해주세요.' })
+  priority?: Priority;
 
   @ApiPropertyOptional({
     description: '태스크 타입',
@@ -171,12 +171,12 @@ export class UpdateTaskDto {
 
   @ApiPropertyOptional({
     description: '태스크 우선순위',
-    enum: TaskPriority,
+    enum: Priority,
     example: 'high',
   })
   @IsOptional()
-  @IsEnum(TaskPriority, { message: '유효한 우선순위를 선택해주세요.' })
-  priority?: TaskPriority;
+  @IsEnum(Priority, { message: '유효한 우선순위를 선택해주세요.' })
+  priority?: Priority;
 
   @ApiPropertyOptional({
     description: '태스크 타입',
@@ -290,12 +290,12 @@ export class TaskQueryDto {
 
   @ApiPropertyOptional({
     description: '우선순위 필터',
-    enum: TaskPriority,
+    enum: Priority,
     example: 'high',
   })
   @IsOptional()
-  @IsEnum(TaskPriority, { message: '유효한 우선순위를 선택해주세요.' })
-  priority?: TaskPriority;
+  @IsEnum(Priority, { message: '유효한 우선순위를 선택해주세요.' })
+  priority?: Priority;
 
   @ApiPropertyOptional({
     description: '태스크 타입 필터',

@@ -30,7 +30,7 @@ export const getAuthConfig = (configService: ConfigService): AuthConfig => {
     google: {
       clientId: configService.get('GOOGLE_CLIENT_ID', ''),
       clientSecret: configService.get('GOOGLE_CLIENT_SECRET', ''),
-      callbackUrl: configService.get('GOOGLE_CALLBACK_URL', 'http://localhost:3001/auth/google/callback'),
+      callbackUrl: configService.get('GOOGLE_CALLBACK_URL', 'http://localhost:8000/auth/google/callback'),
     },
     bcrypt: {
       saltRounds: parseInt(configService.get('BCRYPT_SALT_ROUNDS', '12')),

@@ -32,8 +32,8 @@ import {
 } from './dto/task.dto';
 import { 
   TaskStatus, 
-  TaskPriority 
-} from '../../shared/types/api.types';
+  Priority 
+} from '@workly/shared';
 
 @ApiTags('Tasks')
 @Controller('tasks')
@@ -215,7 +215,7 @@ export class TasksController {
   @ApiQuery({
     name: 'priority',
     description: '새로운 우선순위',
-    enum: TaskPriority,
+    enum: Priority,
   })
   @ApiResponse({
     status: 200,
@@ -223,7 +223,7 @@ export class TasksController {
   })
   async updatePriority(
     @Param('id', ParseUUIDPipe) id: string,
-    @Query('priority') priority: TaskPriority,
+    @Query('priority') priority: Priority,
     @CurrentUser('id') userId: string,
   ) {
     return this.tasksService.updatePriority(id, priority, userId);
@@ -243,8 +243,6 @@ export class TasksController {
     name: 'progress',
     description: '진행률 (0-100)',
     type: 'number',
-    minimum: 0,
-    maximum: 100,
   })
   @ApiResponse({
     status: 200,

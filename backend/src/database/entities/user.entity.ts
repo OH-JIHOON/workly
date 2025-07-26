@@ -18,7 +18,7 @@ import {
   NotificationPreferences,
   WorkingHours,
   DashboardPreferences 
-} from '@shared/types/api.types';
+} from '@workly/shared';
 import { Exclude } from 'class-transformer';
 
 @Entity('users')
@@ -41,6 +41,12 @@ export class User {
 
   @Column()
   name: string;
+
+  @Column({ nullable: true })
+  firstName?: string;
+
+  @Column({ nullable: true })
+  lastName?: string;
 
   @Column({ nullable: true })
   avatar?: string;
@@ -194,7 +200,7 @@ export class User {
 
   verifyEmail(): void {
     this.emailVerifiedAt = new Date();
-    this.emailVerificationToken = null;
+    this.emailVerificationToken = undefined;
     this.status = UserStatus.ACTIVE;
   }
 
@@ -208,8 +214,8 @@ export class User {
 
   resetPassword(newPassword: string): void {
     this.password = newPassword;
-    this.resetPasswordToken = null;
-    this.resetPasswordExpiresAt = null;
+    this.resetPasswordToken = undefined;
+    this.resetPasswordExpiresAt = undefined;
   }
 
   // 로그인 시간 업데이트

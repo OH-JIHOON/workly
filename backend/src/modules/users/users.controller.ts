@@ -23,6 +23,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { User } from '../../database/entities/user.entity';
+import { UserRole } from '@workly/shared';
 
 @ApiTags('Users')
 @Controller('users')
@@ -33,7 +34,7 @@ export class UsersController {
 
   @Get()
   @UseGuards(RolesGuard)
-  @Roles('admin')
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: '모든 사용자 조회 (관리자 전용)' })
   @ApiResponse({
     status: 200,
@@ -85,7 +86,7 @@ export class UsersController {
 
   @Patch(':id')
   @UseGuards(RolesGuard)
-  @Roles('admin')
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: '특정 사용자 정보 수정 (관리자 전용)' })
   @ApiParam({
     name: 'id',
@@ -103,7 +104,7 @@ export class UsersController {
 
   @Delete(':id')
   @UseGuards(RolesGuard)
-  @Roles('admin')
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: '사용자 삭제 (관리자 전용)' })
   @ApiParam({
     name: 'id',

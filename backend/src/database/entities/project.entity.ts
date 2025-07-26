@@ -14,11 +14,12 @@ import {
 } from 'typeorm';
 import { 
   ProjectStatus, 
-  Priority, 
+  ProjectPriority, 
   ProjectVisibility,
   ProjectSettings,
+  ProjectPermission,
   WorkflowStage
-} from '@shared/types/api.types';
+} from '@workly/shared';
 import { User } from './user.entity';
 import { Task } from './task.entity';
 import { ProjectMember } from './project-member.entity';
@@ -51,10 +52,10 @@ export class Project {
 
   @Column({
     type: 'enum',
-    enum: Priority,
-    default: Priority.MEDIUM,
+    enum: ProjectPriority,
+    default: ProjectPriority.MEDIUM,
   })
-  priority: Priority;
+  priority: ProjectPriority;
 
   @Column({ type: 'date', nullable: true })
   startDate?: Date;
@@ -62,7 +63,7 @@ export class Project {
   @Column({ type: 'date', nullable: true })
   endDate?: Date;
 
-  @Column({ type: 'int', default: 0, min: 0, max: 100 })
+  @Column({ type: 'int', default: 0 })
   progress: number;
 
   @Column({ type: 'decimal', precision: 12, scale: 2, nullable: true })
@@ -138,7 +139,9 @@ export class Project {
         enableTimeTracking: true,
         enableBudgetTracking: false,
         enableNotifications: true,
-        defaultTaskPriority: Priority.MEDIUM,
+        enableComments: true,
+        enableFileAttachments: true,
+        defaultTaskPriority: ProjectPriority.MEDIUM,
         workflowStages: [
           {
             id: 'todo',
@@ -176,7 +179,7 @@ export class Project {
             isDefault: false,
             isCompleted: true,
           },
-        ] as WorkflowStage[],
+        ] as any[],
       } as ProjectSettings;
     }
 
@@ -271,13 +274,13 @@ export class Project {
   canEdit(userId: string): boolean {
     if (this.isOwner(userId)) return true;
     const member = this.members?.find(m => m.userId === userId);
-    return member?.permissions?.includes('edit_project') || false;
+    return member?.permissions?.includes(ProjectPermission.EDIT_PROJECT) || false;
   }
 
   canManageMembers(userId: string): boolean {
     if (this.isOwner(userId)) return true;
     const member = this.members?.find(m => m.userId === userId);
-    return member?.permissions?.includes('manage_members') || false;
+    return member?.permissions?.includes(ProjectPermission.MANAGE_MEMBERS) || false;
   }
 
   // JSON 직렬화시 계산된 필드 포함
