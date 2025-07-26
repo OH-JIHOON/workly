@@ -54,7 +54,11 @@ export default function MobileNavigation() {
   const pathname = usePathname()
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 h-[60px] bg-card border-t border-border z-50">
+    <nav 
+      className="md:hidden fixed bottom-0 left-0 right-0 h-[60px] bg-card border-t border-border z-50"
+      role="navigation"
+      aria-label="모바일 네비게이션"
+    >
       <div className="flex justify-between items-center h-full px-6">
         {navigationItems.map((item) => {
           const isActive = pathname === item.href
@@ -69,8 +73,11 @@ export default function MobileNavigation() {
                   ? 'text-foreground' 
                   : 'text-muted-foreground hover:text-foreground'
               }`}
+              aria-label={item.name}
+              aria-current={isActive ? 'page' : undefined}
             >
               <Icon className="w-6 h-6" />
+              <span className="sr-only">{item.name}</span>
             </Link>
           )
         })}

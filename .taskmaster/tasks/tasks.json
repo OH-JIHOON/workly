@@ -76,7 +76,7 @@
             "description": "Implement the NestJS Passport Google OAuth strategy and create the backend endpoint (`POST /auth/google`) to receive the Google authorization code or ID token from the frontend, exchange it with Google for user data, and initiate the authentication process.",
             "dependencies": [],
             "details": "Configure `passport-google-oauth20`, define `GoogleStrategy`, create `POST /auth/google` endpoint to handle incoming Google tokens/codes and perform Google API calls for user info.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Unit tests for GoogleStrategy configuration and token exchange logic with mock Google responses."
           },
           {
@@ -87,7 +87,7 @@
               "2.1"
             ],
             "details": "Implement user service for `findOrCreate` based on Google profile (email, name, avatar), use `@nestjs/jwt` to sign and issue access tokens and refresh tokens. Define JWT payload structure.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Unit tests for JWT generation and validation logic, including token expiration and refresh token mechanisms. Unit tests for user creation/update logic."
           },
           {
@@ -96,7 +96,7 @@
             "description": "Integrate the Google Sign-In button into the frontend UI and implement the client-side logic to initiate the Google OAuth flow, obtaining the necessary authorization code or ID token from Google.",
             "dependencies": [],
             "details": "Integrate Google Identity Services JS SDK (or similar), display Google login button on the sign-in page, configure client-side OAuth flow to get authorization code or ID token upon user consent.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Manual testing of Google login button display and initial OAuth redirect/popup functionality. Verify successful acquisition of Google token/code."
           },
           {
@@ -109,7 +109,7 @@
               "2.3"
             ],
             "details": "Send Google token/code to `POST /auth/google` endpoint. Securely store the returned JWT (e.g., HttpOnly cookies, localStorage with appropriate security measures). Implement an Axios interceptor or similar to attach the JWT to `Authorization: Bearer <token>` header for all authenticated API calls.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Integration tests to verify successful token transmission to backend, secure storage of JWT, and correct inclusion of JWT in subsequent API requests. Test token refresh if applicable."
           },
           {
@@ -121,7 +121,7 @@
               "2.4"
             ],
             "details": "Create NestJS `AuthGuard` using `@nestjs/jwt` to validate incoming JWTs. Apply guards to routes requiring authentication, including `GET /auth/me` to return authenticated user details. Implement error handling for invalid or expired tokens.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Integration tests for successful access to protected routes using a valid JWT. Integration tests for rejection of requests with invalid, expired, or missing tokens. Unit tests for `AuthGuard` logic."
           }
         ]
@@ -136,8 +136,65 @@
         "dependencies": [
           1
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Set up PostgreSQL Database",
+            "description": "Install and configure a local PostgreSQL instance, create the necessary database, and ensure it's accessible for connection.",
+            "dependencies": [],
+            "details": "Install PostgreSQL. Create a dedicated database (e.g., `task_manager_db`). Configure user credentials and permissions.",
+            "status": "done",
+            "testStrategy": "Manually verify database accessibility using a client tool (e.g., `psql`, DBeaver) and ensure connection can be established."
+          },
+          {
+            "id": 2,
+            "title": "Configure TypeORM and Database Connection",
+            "description": "Install TypeORM and related packages, set up the `DataSource` configuration, and establish the initial connection to the PostgreSQL database from the application.",
+            "dependencies": [
+              "3.1"
+            ],
+            "details": "Install `typeorm`, `@nestjs/typeorm`, `pg`. Create `data-source.ts` or `ormconfig.ts` with connection details. Integrate `TypeOrmModule.forRoot()` in NestJS application module.",
+            "status": "done",
+            "testStrategy": "Integration test to verify successful database connection on application startup and TypeORM initialization."
+          },
+          {
+            "id": 3,
+            "title": "Define User and Project Entities with Basic Fields",
+            "description": "Create the TypeORM `User` entity (id, email, profile, xp, level, createdAt) and `Project` entity (id, title, members, workspace_id?) with their basic fields and primary keys.",
+            "dependencies": [
+              "3.2"
+            ],
+            "details": "Implement `@Entity()`, `@PrimaryGeneratedColumn()`, and `@Column()` decorators for User and Project entities. Define appropriate data types for each field.",
+            "status": "done",
+            "testStrategy": "Unit tests for User and Project entity structures, ensuring correct column mapping and primary key definition."
+          },
+          {
+            "id": 4,
+            "title": "Define Task Entity and Establish All Entity Relationships",
+            "description": "Create the TypeORM `Task` entity (id, title, description, status, project_id, assignee_id) and define all necessary relationships between User, Task, and Project entities (e.g., Task to Project, Task to User (assignee), Project to User (members)).",
+            "dependencies": [
+              "3.2",
+              "3.3"
+            ],
+            "details": "Implement `@ManyToOne()`, `@OneToMany()`, `@ManyToMany()`, `@JoinColumn()`, and `@JoinTable()` decorators to establish foreign key relationships and many-to-many associations (e.g., Project members).",
+            "status": "done",
+            "testStrategy": "Unit tests for Task entity structure and all defined relationships. Integration tests to verify relationship loading and cascading behavior (if applicable)."
+          },
+          {
+            "id": 5,
+            "title": "Generate and Apply Initial Database Migrations",
+            "description": "Generate the initial TypeORM migration script based on the defined entities and apply it to the PostgreSQL database to create the schema.",
+            "dependencies": [
+              "3.2",
+              "3.3",
+              "3.4"
+            ],
+            "details": "Use TypeORM CLI commands (`typeorm migration:generate`, `typeorm migration:run`) to create and apply the initial schema. Ensure all tables and relationships are correctly generated.",
+            "status": "done",
+            "testStrategy": "Integration tests to verify successful schema creation after migration. Perform basic CRUD operations for each entity to confirm table and column integrity."
+          }
+        ]
       },
       {
         "id": 4,
@@ -162,8 +219,63 @@
         "dependencies": [
           1
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Setup Tailwind CSS & Global Styles",
+            "description": "Configure Tailwind CSS in the Next.js project, define base styles, typography, color palette, and any global CSS resets or utility classes. Establish the initial `layout.tsx` for the root application structure.",
+            "dependencies": [],
+            "details": "Framework: Next.js 14+ (App Router). Styling: Tailwind CSS configuration (`tailwind.config.js`, `globals.css`). Initial `layout.tsx` setup.",
+            "status": "done",
+            "testStrategy": "Verify Tailwind classes are applied correctly; inspect global styles and typography in browser developer tools."
+          },
+          {
+            "id": 2,
+            "title": "Implement Mobile-First Responsive Layout Structure",
+            "description": "Design and implement the core responsive layout using CSS Grid or Flexbox, ensuring a mobile-first approach. This includes defining breakpoints and creating a flexible container system that adapts to various screen sizes.",
+            "dependencies": [
+              "5.1"
+            ],
+            "details": "Next.js layout components. Utilize Tailwind's responsive utility classes (e.g., `sm:`, `md:`, `lg:`). Focus on `min-width` breakpoints for mobile-first design.",
+            "status": "done",
+            "testStrategy": "Manual testing across various screen sizes (mobile, tablet, desktop) using browser developer tools and device emulation to ensure layout responsiveness."
+          },
+          {
+            "id": 3,
+            "title": "Develop Header & Sidebar Navigation Components",
+            "description": "Create the primary navigation components: a responsive header (top bar) and a collapsible/expandable sidebar. These components should integrate with the mobile-first layout and provide consistent navigation across the application.",
+            "dependencies": [
+              "5.2"
+            ],
+            "details": "Next.js components for Header and Sidebar. Styling with Tailwind CSS. Utilize Headless UI components (e.g., Disclosure for sidebar toggle) for accessibility and interactivity.",
+            "status": "done",
+            "testStrategy": "Manual testing of navigation links, responsiveness of header/sidebar across breakpoints, and accessibility features (keyboard navigation, ARIA attributes)."
+          },
+          {
+            "id": 4,
+            "title": "Build Core UI Elements (Buttons, Inputs, Forms)",
+            "description": "Develop a set of foundational, reusable UI components such as buttons, text inputs, text areas, and basic form structures. These components should adhere to the defined visual language and be styled consistently using Tailwind CSS.",
+            "dependencies": [
+              "5.1"
+            ],
+            "details": "Next.js components for `Button`, `Input`, `Textarea`. Styling with Tailwind CSS. Ensure consistency in states (hover, focus, active, disabled). Consider Headless UI for accessibility where applicable.",
+            "status": "done",
+            "testStrategy": "Visual inspection of components for consistency across different states. Manual testing of interactive elements for correct behavior and accessibility."
+          },
+          {
+            "id": 5,
+            "title": "Integrate & Refine Visual Language & Accessibility",
+            "description": "Integrate all developed UI components and navigation into a cohesive visual system. Conduct a thorough review to ensure consistency in visual language, adherence to mobile-first principles, and basic accessibility standards (e.g., focus states, semantic HTML).",
+            "dependencies": [
+              "5.3",
+              "5.4"
+            ],
+            "details": "Review and refine global styles, component usage, and layout structures. Focus on `layout.tsx` and `page.tsx` files. Implement any necessary accessibility improvements.",
+            "status": "done",
+            "testStrategy": "Visual regression tests for key pages (if setup). Manual testing across various screen sizes and devices to ensure responsiveness and usability. Basic accessibility audit using browser extensions (e.g., Lighthouse, Axe DevTools)."
+          }
+        ]
       },
       {
         "id": 6,
@@ -190,7 +302,7 @@
           3,
           5
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -198,7 +310,7 @@
             "description": "Define the task data model with specified fields and implement the backend API endpoints for updating (PUT), deleting (DELETE), and retrieving all tasks (GET without specific filters). This forms the foundational layer for task management.",
             "dependencies": [],
             "details": "Backend: Define task schema/model (id, title, description, status, priority, project_id, assignee_id, due_date). Implement PUT /tasks/:id for updating task details, DELETE /tasks/:id for removing tasks, and a basic GET /tasks endpoint to retrieve all tasks without specific filtering logic.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Unit tests for task service logic (update, delete, retrieve all). Integration tests for PUT /tasks/:id, DELETE /tasks/:id, and basic GET /tasks endpoints, ensuring correct data persistence and retrieval."
           },
           {
@@ -209,7 +321,7 @@
               "7.1"
             ],
             "details": "Backend: Implement the POST /tasks endpoint to encapsulate the GTD 5-step flow (Capture, Clarify, Organize, Reflect, Engage). This involves processing incoming task data, assigning initial status/priority based on GTD principles, and persisting the task.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Unit tests for the GTD processing logic within the task service. Integration tests for the POST /tasks endpoint, ensuring correct task creation and adherence to GTD principles."
           },
           {
@@ -220,7 +332,7 @@
               "7.1"
             ],
             "details": "Backend: Extend the GET /tasks endpoint to accept query parameters for filtering tasks by 'Today' (tasks due today or overdue), 'Completed' (tasks with status 'completed'), and 'All' (all tasks, default). This requires logic to interpret due_date and status fields.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Integration tests for the GET /tasks endpoint with various filter parameters, ensuring accurate retrieval of 'Today', 'Completed', and 'All' tasks."
           },
           {
@@ -231,7 +343,7 @@
               "7.2"
             ],
             "details": "Frontend: Develop a multi-step UI wizard for task creation, aligning with the GTD 5-step process. This includes input fields for title, description, and potentially guiding questions for clarification, organization, etc., culminating in a call to the POST /tasks API.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "End-to-end tests for the GTD creation flow, verifying user interaction, data submission, and successful task creation."
           },
           {
@@ -243,7 +355,7 @@
               "7.3"
             ],
             "details": "Frontend: Implement the task list display component, rendering tasks retrieved from the GET /tasks API. Develop UI elements (buttons/toggles) for 'Today', 'Completed', and 'All' filters, which trigger calls to the filtered GET /tasks endpoint and update the displayed list.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "End-to-end tests for the task list display and filter toggles, ensuring correct task rendering and accurate filtering based on user selection."
           }
         ]
@@ -259,8 +371,54 @@
           3,
           5
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "in-progress",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Develop Core Project API & Data Model",
+            "description": "Implement backend endpoints for creating, retrieving (list and single), and updating project core details (title, objectives, key results). Define the project data model.",
+            "dependencies": [],
+            "details": "Backend: POST /projects, GET /projects, GET /projects/:id, PUT /projects/:id (for core fields). Project fields: id, title, objectives[], key_results[].",
+            "status": "done",
+            "testStrategy": "Unit tests for project service logic. Integration tests for project API endpoints (CRUD for core fields)."
+          },
+          {
+            "id": 2,
+            "title": "Implement Project Listing & Creation UI",
+            "description": "Develop the frontend UI for displaying a list of projects and a form for creating new projects.",
+            "dependencies": [],
+            "details": "Frontend: UI for project list (GET /projects) and project creation form (POST /projects).",
+            "status": "done",
+            "testStrategy": "End-to-end tests for project creation flow and project list display."
+          },
+          {
+            "id": 3,
+            "title": "Implement Project Detail & Editing UI",
+            "description": "Develop the frontend UI for viewing detailed project information and editing existing project details.",
+            "dependencies": [],
+            "details": "Frontend: UI for project detail view (GET /projects/:id) and project editing form (PUT /projects/:id).",
+            "status": "done",
+            "testStrategy": "End-to-end tests for project detail viewing and editing flow."
+          },
+          {
+            "id": 4,
+            "title": "Develop Project Member Management Backend",
+            "description": "Implement backend logic and API endpoints to add, remove, and manage members associated with a project. This includes updating the members[] field.",
+            "dependencies": [],
+            "details": "Backend: Extend PUT /projects/:id or add new endpoints (e.g., POST /projects/:id/members, DELETE /projects/:id/members/:memberId) to manage the members[] array. This involves linking users (from Task 2) to projects.",
+            "status": "done",
+            "testStrategy": "Unit tests for member management logic. Integration tests for member management API endpoints."
+          },
+          {
+            "id": 5,
+            "title": "Implement Project Member Management UI",
+            "description": "Develop the frontend UI within the project detail view to invite, list, and manage project members.",
+            "dependencies": [],
+            "details": "Frontend: UI components for inviting new members, displaying current members, and removing members within the project detail view.",
+            "status": "done",
+            "testStrategy": "End-to-end tests for inviting and managing project members."
+          }
+        ]
       },
       {
         "id": 9,
@@ -320,7 +478,7 @@
     ],
     "metadata": {
       "created": "2025-07-25T13:37:36.448Z",
-      "updated": "2025-07-25T13:37:36.448Z",
+      "updated": "2025-07-26T00:23:24.317Z",
       "description": "Tasks for master context"
     }
   }

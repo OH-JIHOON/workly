@@ -62,7 +62,11 @@ export default function FloatingActionButton() {
     <div className="fixed bottom-24 md:bottom-6 right-6 z-50" ref={fabRef}>
       {/* 메뉴 아이템들 */}
       {isOpen && (
-        <div className="absolute bottom-16 right-0 space-y-3">
+        <div 
+          className="absolute bottom-16 right-0 space-y-3"
+          role="menu"
+          aria-label="추가 작업 메뉴"
+        >
           {menuItems.map((item, index) => {
             const Icon = item.icon
             return (
@@ -77,8 +81,11 @@ export default function FloatingActionButton() {
                 <button
                   onClick={() => handleMenuItemClick(item.action)}
                   className="w-12 h-12 bg-card border border-border rounded-full flex items-center justify-center shadow-lg hover:bg-accent transition-colors"
+                  aria-label={item.label}
+                  role="menuitem"
                 >
                   <Icon className="w-5 h-5 text-foreground" />
+                  <span className="sr-only">{item.label}</span>
                 </button>
               </div>
             )
@@ -92,8 +99,12 @@ export default function FloatingActionButton() {
         className={`w-14 h-14 bg-foreground text-background rounded-full flex items-center justify-center shadow-lg hover:bg-foreground/90 transition-all duration-200 ${
           isOpen ? 'rotate-45' : 'rotate-0'
         }`}
+        aria-label={isOpen ? '메뉴 닫기' : '추가 메뉴 열기'}
+        aria-expanded={isOpen}
+        aria-haspopup="true"
       >
         <PlusIcon className="w-6 h-6" />
+        <span className="sr-only">{isOpen ? '메뉴 닫기' : '추가 메뉴 열기'}</span>
       </button>
     </div>
   )

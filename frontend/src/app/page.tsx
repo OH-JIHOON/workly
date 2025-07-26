@@ -118,32 +118,49 @@ export default function HomePage() {
                          task.completed ? 'text-green-600' : 'text-muted-foreground'
     
     return (
-      <div key={task.id} className={`p-6 ${!isLast ? 'border-b border-border' : ''} ${task.completed ? 'opacity-50' : ''}`}>
+      <article 
+        className={`p-6 ${!isLast ? 'border-b border-border' : ''} ${task.completed ? 'opacity-50' : ''}`}
+        aria-labelledby={`task-${task.id}-title`}
+        aria-describedby={`task-${task.id}-description task-${task.id}-meta`}
+      >
         <div className="flex items-start gap-3">
           <input 
             type="checkbox" 
             checked={task.completed}
             readOnly
             className="mt-1 w-5 h-5 rounded border border-border"
+            aria-label={`${task.title} ${task.completed ? '완료됨' : '미완료'}`}
           />
           <div className="flex-1">
-            <h3 className={`font-medium text-foreground ${task.completed ? 'line-through' : ''}`}>
+            <h3 
+              id={`task-${task.id}-title`}
+              className={`font-medium text-foreground ${task.completed ? 'line-through' : ''}`}
+            >
               {task.title}
             </h3>
-            <p className={`text-sm text-muted-foreground mt-1 ${task.completed ? 'line-through' : ''}`}>
+            <p 
+              id={`task-${task.id}-description`}
+              className={`text-sm text-muted-foreground mt-1 ${task.completed ? 'line-through' : ''}`}
+            >
               {task.description}
             </p>
-            <div className="flex items-center gap-2 mt-3">
-              <span className="px-2 py-1 bg-accent text-accent-foreground text-xs rounded-lg">
+            <div id={`task-${task.id}-meta`} className="flex items-center gap-2 mt-3">
+              <span 
+                className="px-2 py-1 bg-accent text-accent-foreground text-xs rounded-lg"
+                aria-label={`카테고리: ${task.category}`}
+              >
                 {task.category}
               </span>
-              <span className={`text-xs ${deadlineColor}`}>
+              <span 
+                className={`text-xs ${deadlineColor}`}
+                aria-label={task.completed ? '상태: 완료됨' : `마감일: ${task.deadline}`}
+              >
                 {task.completed ? '완료됨' : `마감: ${task.deadline}`}
               </span>
             </div>
           </div>
         </div>
-      </div>
+      </article>
     )
   }
 
@@ -165,13 +182,27 @@ export default function HomePage() {
       />
       
       {/* 메인 콘텐츠 */}
-      <main className="max-w-[640px] mx-auto md:px-6 md:py-6 pb-20 md:pb-6">
+      <main className="max-w-[640px] mx-auto md:px-6 md:py-6 pb-20 md:pb-6" role="main">
         {/* 투두 앱 업무 카드들이 들어갈 영역 */}
-        <div className="bg-card md:border border-border md:rounded-lg md:shadow-sm overflow-hidden">
-          {filteredTasks.map((task, index) => 
-            renderTaskCard(task, index === filteredTasks.length - 1)
+        <section 
+          className="bg-card md:border border-border md:rounded-lg md:shadow-sm overflow-hidden"
+          aria-label={`${activeTab} 목록`}
+        >
+          <h2 className="sr-only">{activeTab} 목록</h2>
+          {filteredTasks.length > 0 ? (
+            <ul role="list">
+              {filteredTasks.map((task, index) => (
+                <li key={task.id}>
+                  {renderTaskCard(task, index === filteredTasks.length - 1)}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div className="p-6 text-center text-muted-foreground">
+              {activeTab === '완료한 업무' ? '완료한 업무가 없습니다.' : '진행 중인 업무가 없습니다.'}
+            </div>
           )}
-        </div>
+        </section>
       </main>
       
       {/* 플로팅 액션 버튼 */}

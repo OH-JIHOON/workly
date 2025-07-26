@@ -44,6 +44,8 @@
     "class-validator": "^0.14.0",
     "class-transformer": "^0.5.1",
     "socket.io": "^4.7.0",
+    "uuid": "^9.0.0",
+    "@nestjs/throttler": "^5.0.0",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.1",
     "@workly/shared": "*"
@@ -58,6 +60,7 @@
     "@types/passport-jwt": "^3.0.9",
     "@types/passport-google-oauth20": "^2.0.11",
     "@types/bcryptjs": "^2.4.2",
+    "@types/uuid": "^9.0.0",
     "@types/pg": "^8.10.0",
     "@types/supertest": "^2.0.12",
     "@typescript-eslint/eslint-plugin": "^6.0.0",

@@ -50,7 +50,10 @@ export default function Header({
   }, [])
 
   return (
-    <header className="sticky top-0 h-[60px] bg-background flex items-center px-6 z-40">
+    <header 
+      className="sticky top-0 h-[60px] bg-background flex items-center px-6 z-40"
+      role="banner"
+    >
       {/* 모바일 레이아웃 */}
       <div className="md:hidden w-full flex items-center justify-between">
         {/* 햄버거 메뉴 */}
@@ -58,24 +61,34 @@ export default function Header({
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             className="flex items-center justify-center w-8 h-8 text-muted-foreground hover:text-foreground transition-colors"
+            aria-label="메뉴"
+            aria-expanded={isMobileMenuOpen}
+            aria-haspopup="true"
           >
             <Bars3Icon className="w-5 h-5" />
+            <span className="sr-only">메뉴</span>
           </button>
           
           {isMobileMenuOpen && (
-            <div className="absolute top-full left-0 mt-2 bg-card border border-border rounded-xl shadow-lg min-w-36 py-2 z-50">
-              <div 
+            <div 
+              className="absolute top-full left-0 mt-2 bg-card border border-border rounded-xl shadow-lg min-w-36 py-2 z-50"
+              role="menu"
+              aria-label="메뉴 옵션"
+            >
+              <button 
                 onClick={handleLoginClick}
-                className="px-4 py-3 text-sm text-foreground hover:bg-accent cursor-pointer transition-colors"
+                className="w-full text-left px-4 py-3 text-sm text-foreground hover:bg-accent cursor-pointer transition-colors"
+                role="menuitem"
               >
                 로그인
-              </div>
-              <div 
+              </button>
+              <button 
                 onClick={handleSettingsClick}
-                className="px-4 py-3 text-sm text-foreground hover:bg-accent cursor-pointer transition-colors"
+                className="w-full text-left px-4 py-3 text-sm text-foreground hover:bg-accent cursor-pointer transition-colors"
+                role="menuitem"
               >
                 설정
-              </div>
+              </button>
             </div>
           )}
         </div>
@@ -89,6 +102,7 @@ export default function Header({
         <button 
           onClick={handleLoginClick}
           className="text-sm px-3 py-2 bg-foreground text-background rounded-xl font-medium transition-colors hover:opacity-90"
+          aria-label="로그인 페이지로 이동"
         >
           로그인
         </button>
@@ -105,23 +119,32 @@ export default function Header({
               <button
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                 className="flex items-center justify-center w-5 h-5 text-muted-foreground hover:text-foreground transition-colors"
+                aria-label="드롭다운 메뉴"
+                aria-expanded={isDropdownOpen}
+                aria-haspopup="true"
               >
                 <ChevronDownIcon className="w-4 h-4" />
+                <span className="sr-only">드롭다운 메뉴</span>
               </button>
               
               {isDropdownOpen && (
-                <div className="absolute top-full right-0 mt-2 bg-card border border-border rounded-xl shadow-lg min-w-36 py-2 z-50">
+                <div 
+                  className="absolute top-full right-0 mt-2 bg-card border border-border rounded-xl shadow-lg min-w-36 py-2 z-50"
+                  role="menu"
+                  aria-label="페이지 옵션"
+                >
                   {dropdownItems.map((item, index) => (
-                    <div
+                    <button
                       key={index}
                       onClick={() => {
                         onDropdownItemClick?.(item)
                         setIsDropdownOpen(false)
                       }}
-                      className="px-4 py-3 text-sm text-foreground hover:bg-accent cursor-pointer transition-colors"
+                      className="w-full text-left px-4 py-3 text-sm text-foreground hover:bg-accent cursor-pointer transition-colors"
+                      role="menuitem"
                     >
                       {item}
-                    </div>
+                    </button>
                   ))}
                 </div>
               )}
@@ -134,6 +157,7 @@ export default function Header({
           <button 
             onClick={handleLoginClick}
             className="workly-button"
+            aria-label="Google로 로그인하기"
           >
             Google로 시작하기
           </button>

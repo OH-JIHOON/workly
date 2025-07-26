@@ -83,10 +83,18 @@ export default function LeftNavigation() {
   }, [])
 
   return (
-    <nav className="hidden md:flex fixed left-0 top-0 h-screen w-[76px] bg-background border-r border-border flex-col items-center py-5 z-50">
+    <nav 
+      className="hidden md:flex fixed left-0 top-0 h-screen w-[76px] bg-background border-r border-border flex-col items-center py-5 z-50"
+      role="navigation"
+      aria-label="메인 네비게이션"
+    >
       {/* 로고 */}
       <div className="mb-10">
-        <Link href="/" className="flex items-center justify-center w-8 h-8 font-bold text-xl text-foreground">
+        <Link 
+          href="/" 
+          className="flex items-center justify-center w-8 h-8 font-bold text-xl text-foreground"
+          aria-label="워클리 홈으로 이동"
+        >
           W
         </Link>
       </div>
@@ -103,8 +111,11 @@ export default function LeftNavigation() {
               href={item.href}
               className={`nav-item ${isActive ? 'active' : ''}`}
               title={item.name}
+              aria-label={item.name}
+              aria-current={isActive ? 'page' : undefined}
             >
               <Icon className="w-6 h-6" />
+              <span className="sr-only">{item.name}</span>
             </Link>
           )
         })}
@@ -116,24 +127,34 @@ export default function LeftNavigation() {
           onClick={() => setIsMenuOpen(!isMenuOpen)}
           className="nav-item" 
           title="메뉴"
+          aria-label="메뉴"
+          aria-expanded={isMenuOpen}
+          aria-haspopup="true"
         >
           <Bars3Icon className="w-6 h-6" />
+          <span className="sr-only">메뉴</span>
         </button>
         
         {isMenuOpen && (
-          <div className="absolute left-full bottom-0 ml-2 bg-card border border-border rounded-xl shadow-lg min-w-36 py-2 z-50">
-            <div 
+          <div 
+            className="absolute left-full bottom-0 ml-2 bg-card border border-border rounded-xl shadow-lg min-w-36 py-2 z-50"
+            role="menu"
+            aria-label="메뉴 옵션"
+          >
+            <button 
               onClick={handleLoginClick}
-              className="px-4 py-3 text-sm text-foreground hover:bg-accent cursor-pointer transition-colors"
+              className="w-full text-left px-4 py-3 text-sm text-foreground hover:bg-accent cursor-pointer transition-colors"
+              role="menuitem"
             >
               로그인
-            </div>
-            <div 
+            </button>
+            <button 
               onClick={handleSettingsClick}
-              className="px-4 py-3 text-sm text-foreground hover:bg-accent cursor-pointer transition-colors"
+              className="w-full text-left px-4 py-3 text-sm text-foreground hover:bg-accent cursor-pointer transition-colors"
+              role="menuitem"
             >
               설정
-            </div>
+            </button>
           </div>
         )}
       </div>

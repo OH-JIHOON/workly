@@ -1,0 +1,263 @@
+/**
+ * Task 관련 타입 정의
+ */
+
+// Task 상태
+export enum TaskStatus {
+  TODO = 'todo',
+  IN_PROGRESS = 'in_progress',
+  IN_REVIEW = 'in_review',
+  DONE = 'done',
+  BLOCKED = 'blocked',
+  CANCELLED = 'cancelled',
+}
+
+// Task 우선순위
+export enum TaskPriority {
+  LOW = 'low',
+  MEDIUM = 'medium',
+  HIGH = 'high',
+  URGENT = 'urgent',
+}
+
+// Task 타입
+export enum TaskType {
+  TASK = 'task',
+  BUG = 'bug',
+  FEATURE = 'feature',
+  IMPROVEMENT = 'improvement',
+  EPIC = 'epic',
+  STORY = 'story',
+}
+
+// 기본 사용자 정보
+export interface TaskUser {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  avatar?: string;
+}
+
+// 프로젝트 정보
+export interface TaskProject {
+  id: string;
+  name: string;
+  description?: string;
+  ownerId: string;
+}
+
+// 태스크 레이블
+export interface TaskLabel {
+  id: string;
+  name: string;
+  color: string;
+  description?: string;
+}
+
+// 시간 기록
+export interface TimeEntry {
+  id: string;
+  duration: number; // 분 단위
+  description?: string;
+  startTime: string;
+  endTime?: string;
+  userId: string;
+  user: TaskUser;
+}
+
+// 태스크 댓글
+export interface TaskComment {
+  id: string;
+  content: string;
+  authorId: string;
+  author: TaskUser;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// 태스크 의존성
+export interface TaskDependency {
+  id: string;
+  dependentTaskId: string;
+  dependsOnTaskId: string;
+  dependentTask: Task;
+  dependsOnTask: Task;
+}
+
+// 메인 태스크 인터페이스
+export interface Task {
+  id: string;
+  title: string;
+  description?: string;
+  status: TaskStatus;
+  priority: TaskPriority;
+  type: TaskType;
+  dueDate?: string;
+  startDate?: string;
+  completedAt?: string;
+  projectId?: string;
+  assigneeId?: string;
+  reporterId: string;
+  parentTaskId?: string;
+  estimatedHours?: number;
+  actualHours: number;
+  progress: number;
+  workflowStageId?: string;
+  tags: string[];
+  customFields: { [key: string]: any };
+  createdAt: string;
+  updatedAt: string;
+
+  // Relations
+  project?: TaskProject;
+  assignee?: TaskUser;
+  reporter: TaskUser;
+  parentTask?: Task;
+  subtasks: Task[];
+  labels: TaskLabel[];
+  comments: TaskComment[];
+  dependencies: TaskDependency[];
+  dependents: TaskDependency[];
+  watchers: TaskUser[];
+  timeEntries: TimeEntry[];
+
+  // Computed properties
+  isOverdue?: boolean;
+  isDueSoon?: boolean;
+  hasSubtasks?: boolean;
+  hasDependencies?: boolean;
+  hasBlockingDependencies?: boolean;
+}
+
+// 태스크 생성 DTO
+export interface CreateTaskDto {
+  title: string;
+  description?: string;
+  projectId?: string;
+  assigneeId?: string;
+  parentTaskId?: string;
+  priority?: TaskPriority;
+  type?: TaskType;
+  dueDate?: string;
+  startDate?: string;
+  estimatedHours?: number;
+  tags?: string[];
+  labelIds?: string[];
+  customFields?: Record<string, any>;
+}
+
+// 태스크 업데이트 DTO
+export interface UpdateTaskDto {
+  title?: string;
+  description?: string;
+  status?: TaskStatus;
+  priority?: TaskPriority;
+  type?: TaskType;
+  dueDate?: string;
+  startDate?: string;
+  estimatedHours?: number;
+  progress?: number;
+  tags?: string[];
+  labelIds?: string[];
+  customFields?: Record<string, any>;
+}
+
+// 태스크 쿼리 DTO
+export interface TaskQueryDto {
+  page?: number;
+  limit?: number;
+  status?: TaskStatus;
+  priority?: TaskPriority;
+  type?: TaskType;
+  projectId?: string;
+  assigneeId?: string;
+  reporterId?: string;
+  dueDate?: string;
+  search?: string;
+  sortBy?: string;
+  sortOrder?: 'ASC' | 'DESC';
+  includeSubtasks?: boolean;
+  labelIds?: string[];
+  tags?: string[];
+}
+
+// 페이지네이션 응답
+export interface PaginatedResponse<T> {
+  items: T[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+// GTD 컨텍스트
+export type GTDContext = 'inbox' | 'next' | 'waiting' | 'someday';
+
+// 스마트 필터
+export type SmartFilter = 'today' | 'completed' | 'all';
+
+// 태스크 통계
+export interface TaskStats {
+  total: number;
+  todo: number;
+  inProgress: number;
+  done: number;
+  blocked: number;
+  overdue: number;
+}
+
+// 태스크 활동
+export interface TaskActivity {
+  id: string;
+  type: 'created' | 'updated' | 'commented' | 'status_changed' | 'assigned';
+  description: string;
+  userId: string;
+  user: TaskUser;
+  taskId: string;
+  createdAt: string;
+  metadata?: { [key: string]: any };
+}
+
+// 태스크 배치 작업
+export interface TaskBatchOperation {
+  taskIds: string[];
+  operation: 'update_status' | 'update_priority' | 'assign' | 'add_labels' | 'delete';
+  data: any;
+}
+
+// 태스크 필터 설정
+export interface TaskFilterSettings {
+  status?: TaskStatus[];
+  priority?: TaskPriority[];
+  assigneeIds?: string[];
+  projectIds?: string[];
+  labelIds?: string[];
+  tags?: string[];
+  dateRange?: {
+    start: string;
+    end: string;
+  };
+}
+
+// 태스크 보드 컬럼
+export interface TaskBoardColumn {
+  id: string;
+  title: string;
+  status: TaskStatus;
+  limit?: number;
+  tasks: Task[];
+}
+
+// 태스크 보드
+export interface TaskBoard {
+  id: string;
+  name: string;
+  description?: string;
+  projectId?: string;
+  columns: TaskBoardColumn[];
+  settings?: {
+    swimlanes?: 'none' | 'assignee' | 'priority' | 'type';
+    grouping?: 'none' | 'project' | 'assignee';
+  };
+}

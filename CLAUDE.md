@@ -18,6 +18,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - **서버 실행 금지**: 절대로 서버를 직접 실행하지 않음
 - **명령 기반**: 사용자 명령이 있을 때만 개발 진행
+- **파일 작업 순서 준수**: Write나 Edit 전에 반드시 Read 먼저 실행 (절대 예외 없음)
 
 ## 기술 스택
 
