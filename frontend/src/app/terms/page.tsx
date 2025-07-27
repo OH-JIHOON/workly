@@ -3,7 +3,7 @@ import React from 'react';
 const TermsOfServicePage = () => {
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <div className="container mx-auto px-4 py-12 max-w-4xl">
+      <div className="max-w-[720px] mx-auto px-4 py-12">
         <h1 className="text-4xl font-bold mb-8 text-center">서비스 약관</h1>
         <div className="space-y-6 bg-card p-8 rounded-lg shadow-md">
           <p className="text-muted-foreground">최종 수정일: 2025년 7월 26일</p>

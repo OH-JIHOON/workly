@@ -20,10 +20,15 @@ import {
   Shield,
   Eye,
   X,
-  UserMinus
+  UserMinus,
+  MessageCircle,
+  Hash
 } from 'lucide-react';
-import { apiClient } from '@/lib/api';
+// import { apiClient } from '@/lib/api'; // 목업 모드에서는 주석 처리
+import MainContainer from '@/components/layout/MainContainer';
 import { Project, UpdateProjectDto, ProjectStatus, ProjectPriority, ProjectMember, ProjectMemberRole, AddProjectMemberDto } from '@/types/project.types';
+import ProjectChatChannel from '@/components/projects/ProjectChatChannel';
+import ProjectObjectiveManager from '@/components/projects/ProjectObjectiveManager';
 
 // 멤버 관리 모달 컴포넌트
 function MemberManagementModal({ 
@@ -55,8 +60,9 @@ function MemberManagementModal({
   const loadMembers = async () => {
     try {
       setIsLoading(true);
-      const response = await apiClient.get<ProjectMember[]>(`/projects/${project.id}/members`);
-      setMembers(response);
+      // 목업 멤버 데이터 사용
+      await new Promise(resolve => setTimeout(resolve, 500));
+      setMembers(project.members || []);
     } catch (error) {
       console.error('멤버 목록 로드 실패:', error);
     } finally {
@@ -70,16 +76,12 @@ function MemberManagementModal({
 
     try {
       setIsInviting(true);
-      // TODO: 이메일로 사용자 검색 또는 초대 기능 구현
-      // 현재는 userId가 필요하므로 실제 구현에서는 이메일 -> userId 변환 필요
-      const addMemberDto: AddProjectMemberDto = {
-        userId: inviteEmail, // 임시로 이메일을 userId로 사용
-        role: inviteRole,
-      };
+      // 목업 멤버 초대 시뮬레이션
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      await apiClient.post(`/projects/${project.id}/members`, addMemberDto);
-      await loadMembers();
-      onMemberAdded();
+      console.log('멤버 초대:', { email: inviteEmail, role: inviteRole });
+      alert(`${inviteEmail}에게 초대장을 보냈습니다! (목업 모드)`);
+      
       setInviteEmail('');
       setInviteRole(ProjectMemberRole.MEMBER);
     } catch (error) {
@@ -93,8 +95,12 @@ function MemberManagementModal({
     if (!confirm('정말로 이 멤버를 제거하시겠습니까?')) return;
 
     try {
-      await apiClient.delete(`/projects/${project.id}/members/${memberId}`);
-      await loadMembers();
+      // 목업 멤버 제거 시뮬레이션
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      console.log('멤버 제거:', memberId);
+      alert('멤버가 제거되었습니다! (목업 모드)');
+      
       onMemberRemoved();
     } catch (error) {
       console.error('멤버 제거 실패:', error);
@@ -277,6 +283,7 @@ function ProjectDetailView({
 }) {
   const router = useRouter();
   const [isMemberModalOpen, setIsMemberModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'chat' | 'objectives' | 'details'>('chat');
 
   const getStatusColor = (status: ProjectStatus) => {
     switch (status) {
@@ -346,7 +353,7 @@ function ProjectDetailView({
     <div className="min-h-screen bg-gray-50">
       {/* 헤더 */}
       <div className="bg-white border-b border-gray-200">
-        <div className="max-w-[640px] mx-auto px-6 py-4">
+        <div className="max-w-[720px] mx-auto px-0 md:px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <button
@@ -357,7 +364,7 @@ function ProjectDetailView({
               </button>
               <div>
                 <h1 className="text-xl font-semibold text-gray-900">{project.title}</h1>
-                <p className="text-sm text-gray-500 mt-1">프로젝트 상세</p>
+                <p className="text-sm text-gray-500 mt-1">프로젝트 협업 허브</p>
               </div>
             </div>
             <button
@@ -371,170 +378,269 @@ function ProjectDetailView({
         </div>
       </div>
 
-      {/* 메인 콘텐츠 */}
-      <main className="max-w-[640px] mx-auto px-6 py-6">
-        {/* 프로젝트 헤더 카드 */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
-          <div className="flex items-start space-x-4">
-            <div 
-              className="w-16 h-16 rounded-lg flex items-center justify-center text-white font-bold text-xl"
-              style={{ backgroundColor: project.color || '#3B82F6' }}
+      {/* 탭 네비게이션 */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-[720px] mx-auto px-0 md:px-6">
+          <div className="flex space-x-8">
+            <button
+              onClick={() => setActiveTab('chat')}
+              className={`py-3 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'chat'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
             >
-              {project.icon || project.title.charAt(0).toUpperCase()}
-            </div>
-            <div className="flex-1">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">{project.title}</h2>
-              {project.description && (
-                <p className="text-gray-600 mb-4">{project.description}</p>
-              )}
-              <div className="flex items-center space-x-4">
-                <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(project.status)}`}>
-                  {getStatusText(project.status)}
-                </span>
-                <span className={`px-3 py-1 rounded-full text-sm font-medium ${getPriorityColor(project.priority)}`}>
-                  {getPriorityText(project.priority)}
-                </span>
+              <div className="flex items-center space-x-2">
+                <MessageCircle className="w-4 h-4" />
+                <span>채팅</span>
               </div>
-            </div>
+            </button>
+            <button
+              onClick={() => setActiveTab('objectives')}
+              className={`py-3 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'objectives'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <div className="flex items-center space-x-2">
+                <Target className="w-4 h-4" />
+                <span>목표 관리</span>
+              </div>
+            </button>
+            <button
+              onClick={() => setActiveTab('details')}
+              className={`py-3 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'details'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <div className="flex items-center space-x-2">
+                <Settings className="w-4 h-4" />
+                <span>프로젝트 정보</span>
+              </div>
+            </button>
           </div>
         </div>
+      </div>
 
-        {/* 진행률 카드 */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-lg font-semibold text-gray-900">프로젝트 진행률</h3>
-            <span className="text-2xl font-bold text-blue-600">{project.progress}%</span>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-3 mb-4">
-            <div 
-              className="bg-blue-600 h-3 rounded-full transition-all duration-300"
-              style={{ width: `${project.progress}%` }}
+      {/* 메인 콘텐츠 */}
+      <main className="h-screen flex flex-col">
+        {/* 탭별 콘텐츠 */}
+        {activeTab === 'chat' && (
+          <div className="flex-1 bg-white">
+            <ProjectChatChannel
+              project={project}
+              members={project.members || []}
+              onTaskCreate={(taskData) => {
+                console.log('새 업무 생성:', taskData)
+                // TODO: 실제 업무 생성 API 호출
+              }}
+              onMilestoneCreate={(milestoneData) => {
+                console.log('마일스톤 생성:', milestoneData)
+                // TODO: 실제 마일스톤 생성 API 호출
+              }}
+              onUserDelegate={(delegationData) => {
+                console.log('업무 재할당:', delegationData)
+                // TODO: 실제 업무 재할당 API 호출
+              }}
             />
-          </div>
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div className="flex items-center space-x-2">
-              <BarChart3 className="w-4 h-4 text-gray-500" />
-              <span className="text-gray-600">총 작업: </span>
-              <span className="font-medium">{project.taskCount || 0}개</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Target className="w-4 h-4 text-gray-500" />
-              <span className="text-gray-600">완료: </span>
-              <span className="font-medium">{project.completedTaskCount || 0}개</span>
-            </div>
-          </div>
-        </div>
-
-        {/* 프로젝트 정보 카드 */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">프로젝트 정보</h3>
-          <div className="space-y-4">
-            {/* 날짜 정보 */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <div className="flex items-center space-x-2 mb-1">
-                  <Calendar className="w-4 h-4 text-gray-500" />
-                  <span className="text-sm text-gray-600">시작일</span>
-                </div>
-                <p className="font-medium">
-                  {project.startDate ? new Date(project.startDate).toLocaleDateString('ko-KR') : '미설정'}
-                </p>
-              </div>
-              <div>
-                <div className="flex items-center space-x-2 mb-1">
-                  <Clock className="w-4 h-4 text-gray-500" />
-                  <span className="text-sm text-gray-600">마감일</span>
-                </div>
-                <p className="font-medium">
-                  {project.dueDate ? new Date(project.dueDate).toLocaleDateString('ko-KR') : '미설정'}
-                </p>
-              </div>
-            </div>
-
-            {/* 예산 정보 */}
-            {project.budget && (
-              <div>
-                <div className="flex items-center space-x-2 mb-1">
-                  <DollarSign className="w-4 h-4 text-gray-500" />
-                  <span className="text-sm text-gray-600">예산</span>
-                </div>
-                <p className="font-medium">
-                  {new Intl.NumberFormat('ko-KR', {
-                    style: 'currency',
-                    currency: project.currency || 'KRW'
-                  }).format(Number(project.budget))}
-                </p>
-              </div>
-            )}
-
-            {/* 팀 멤버 */}
-            <div>
-              <div className="flex items-center space-x-2 mb-1">
-                <Users className="w-4 h-4 text-gray-500" />
-                <span className="text-sm text-gray-600">팀 멤버</span>
-              </div>
-              <p className="font-medium">{project.members?.length || 0}명</p>
-            </div>
-          </div>
-        </div>
-
-        {/* 태그 카드 */}
-        {project.tags && project.tags.length > 0 && (
-          <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
-            <div className="flex items-center space-x-2 mb-3">
-              <Tag className="w-4 h-4 text-gray-500" />
-              <h3 className="text-lg font-semibold text-gray-900">태그</h3>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {project.tags.map((tag, index) => (
-                <span
-                  key={index}
-                  className="inline-block px-3 py-1 text-sm bg-blue-100 text-blue-800 rounded-full"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
           </div>
         )}
 
-        {/* 액션 버튼들 */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">액션</h3>
-          <div className="space-y-3">
-            <button 
-              onClick={() => setIsMemberModalOpen(true)}
-              className="w-full flex items-center space-x-3 p-3 text-left hover:bg-gray-50 rounded-lg"
-            >
-              <Users className="w-5 h-5 text-gray-500" />
-              <div>
-                <p className="font-medium text-gray-900">팀 멤버 관리</p>
-                <p className="text-sm text-gray-500">멤버 추가/제거 및 권한 설정</p>
-              </div>
-            </button>
-            <button className="w-full flex items-center space-x-3 p-3 text-left hover:bg-gray-50 rounded-lg">
-              <Settings className="w-5 h-5 text-gray-500" />
-              <div>
-                <p className="font-medium text-gray-900">프로젝트 설정</p>
-                <p className="text-sm text-gray-500">워크플로우 및 고급 설정</p>
-              </div>
-            </button>
-            <button className="w-full flex items-center space-x-3 p-3 text-left hover:bg-gray-50 rounded-lg">
-              <Archive className="w-5 h-5 text-gray-500" />
-              <div>
-                <p className="font-medium text-gray-900">프로젝트 보관</p>
-                <p className="text-sm text-gray-500">프로젝트를 보관함으로 이동</p>
-              </div>
-            </button>
-            <button className="w-full flex items-center space-x-3 p-3 text-left hover:bg-red-50 rounded-lg text-red-600">
-              <Trash2 className="w-5 h-5" />
-              <div>
-                <p className="font-medium">프로젝트 삭제</p>
-                <p className="text-sm text-red-400">프로젝트를 영구적으로 삭제</p>
-              </div>
-            </button>
+        {activeTab === 'objectives' && (
+          <div className="flex-1 overflow-y-auto p-6">
+            <ProjectObjectiveManager
+              project={project}
+              onObjectiveUpdate={(objectiveId, data) => {
+                console.log('목표 업데이트:', objectiveId, data)
+                // TODO: 실제 목표 업데이트 API 호출
+              }}
+              onKeyResultUpdate={(keyResultId, data) => {
+                console.log('핵심 결과 업데이트:', keyResultId, data)
+                // TODO: 실제 핵심 결과 업데이트 API 호출
+              }}
+              onObjectiveCreate={(data) => {
+                console.log('목표 생성:', data)
+                // TODO: 실제 목표 생성 API 호출
+              }}
+              onKeyResultCreate={(objectiveId, data) => {
+                console.log('핵심 결과 생성:', objectiveId, data)
+                // TODO: 실제 핵심 결과 생성 API 호출
+              }}
+            />
           </div>
-        </div>
+        )}
+
+        {activeTab === 'details' && (
+          <div className="flex-1 overflow-y-auto">
+            <div className="max-w-[720px] mx-auto px-0 md:px-6 py-6">
+              {/* 프로젝트 헤더 카드 */}
+              <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+                <div className="flex items-start space-x-4">
+                  <div 
+                    className="w-16 h-16 rounded-lg flex items-center justify-center text-white font-bold text-xl"
+                    style={{ backgroundColor: project.color || '#3B82F6' }}
+                  >
+                    {project.icon || project.title.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="flex-1">
+                    <h2 className="text-2xl font-bold text-gray-900 mb-2">{project.title}</h2>
+                    {project.description && (
+                      <p className="text-gray-600 mb-4">{project.description}</p>
+                    )}
+                    <div className="flex items-center space-x-4">
+                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(project.status)}`}>
+                        {getStatusText(project.status)}
+                      </span>
+                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${getPriorityColor(project.priority)}`}>
+                        {getPriorityText(project.priority)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 진행률 카드 */}
+              <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-lg font-semibold text-gray-900">프로젝트 진행률</h3>
+                  <span className="text-2xl font-bold text-blue-600">{project.progress}%</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-3 mb-4">
+                  <div 
+                    className="bg-blue-600 h-3 rounded-full transition-all duration-300"
+                    style={{ width: `${project.progress}%` }}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="flex items-center space-x-2">
+                    <BarChart3 className="w-4 h-4 text-gray-500" />
+                    <span className="text-gray-600">총 작업: </span>
+                    <span className="font-medium">{project.taskCount || 0}개</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Target className="w-4 h-4 text-gray-500" />
+                    <span className="text-gray-600">완료: </span>
+                    <span className="font-medium">{project.completedTaskCount || 0}개</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* 프로젝트 정보 카드 */}
+              <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">프로젝트 정보</h3>
+                <div className="space-y-4">
+                  {/* 날짜 정보 */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <div className="flex items-center space-x-2 mb-1">
+                        <Calendar className="w-4 h-4 text-gray-500" />
+                        <span className="text-sm text-gray-600">시작일</span>
+                      </div>
+                      <p className="font-medium">
+                        {project.startDate ? new Date(project.startDate).toLocaleDateString('ko-KR') : '미설정'}
+                      </p>
+                    </div>
+                    <div>
+                      <div className="flex items-center space-x-2 mb-1">
+                        <Clock className="w-4 h-4 text-gray-500" />
+                        <span className="text-sm text-gray-600">마감일</span>
+                      </div>
+                      <p className="font-medium">
+                        {project.dueDate ? new Date(project.dueDate).toLocaleDateString('ko-KR') : '미설정'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* 예산 정보 */}
+                  {project.budget && (
+                    <div>
+                      <div className="flex items-center space-x-2 mb-1">
+                        <DollarSign className="w-4 h-4 text-gray-500" />
+                        <span className="text-sm text-gray-600">예산</span>
+                      </div>
+                      <p className="font-medium">
+                        {new Intl.NumberFormat('ko-KR', {
+                          style: 'currency',
+                          currency: project.currency || 'KRW'
+                        }).format(Number(project.budget))}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* 팀 멤버 */}
+                  <div>
+                    <div className="flex items-center space-x-2 mb-1">
+                      <Users className="w-4 h-4 text-gray-500" />
+                      <span className="text-sm text-gray-600">팀 멤버</span>
+                    </div>
+                    <p className="font-medium">{project.members?.length || 0}명</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* 태그 카드 */}
+              {project.tags && project.tags.length > 0 && (
+                <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+                  <div className="flex items-center space-x-2 mb-3">
+                    <Tag className="w-4 h-4 text-gray-500" />
+                    <h3 className="text-lg font-semibold text-gray-900">태그</h3>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {project.tags.map((tag, index) => (
+                      <span
+                        key={index}
+                        className="inline-block px-3 py-1 text-sm bg-blue-100 text-blue-800 rounded-full"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 액션 버튼들 */}
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">액션</h3>
+                <div className="space-y-3">
+                  <button 
+                    onClick={() => setIsMemberModalOpen(true)}
+                    className="w-full flex items-center space-x-3 p-3 text-left hover:bg-gray-50 rounded-lg"
+                  >
+                    <Users className="w-5 h-5 text-gray-500" />
+                    <div>
+                      <p className="font-medium text-gray-900">팀 멤버 관리</p>
+                      <p className="text-sm text-gray-500">멤버 추가/제거 및 권한 설정</p>
+                    </div>
+                  </button>
+                  <button className="w-full flex items-center space-x-3 p-3 text-left hover:bg-gray-50 rounded-lg">
+                    <Settings className="w-5 h-5 text-gray-500" />
+                    <div>
+                      <p className="font-medium text-gray-900">프로젝트 설정</p>
+                      <p className="text-sm text-gray-500">워크플로우 및 고급 설정</p>
+                    </div>
+                  </button>
+                  <button className="w-full flex items-center space-x-3 p-3 text-left hover:bg-gray-50 rounded-lg">
+                    <Archive className="w-5 h-5 text-gray-500" />
+                    <div>
+                      <p className="font-medium text-gray-900">프로젝트 보관</p>
+                      <p className="text-sm text-gray-500">프로젝트를 보관함으로 이동</p>
+                    </div>
+                  </button>
+                  <button className="w-full flex items-center space-x-3 p-3 text-left hover:bg-red-50 rounded-lg text-red-600">
+                    <Trash2 className="w-5 h-5" />
+                    <div>
+                      <p className="font-medium">프로젝트 삭제</p>
+                      <p className="text-sm text-red-400">프로젝트를 영구적으로 삭제</p>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
 
       {/* 멤버 관리 모달 */}
@@ -576,7 +682,7 @@ function ProjectEditForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name?.trim()) return;
+    if (!formData.title?.trim()) return;
 
     setIsSubmitting(true);
     try {
@@ -609,7 +715,7 @@ function ProjectEditForm({
     <div className="min-h-screen bg-gray-50">
       {/* 헤더 */}
       <div className="bg-white border-b border-gray-200">
-        <div className="max-w-[640px] mx-auto px-6 py-4">
+        <div className="max-w-[720px] mx-auto px-0 md:px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <button
@@ -628,7 +734,7 @@ function ProjectEditForm({
       </div>
 
       {/* 편집 폼 */}
-      <main className="max-w-[640px] mx-auto px-6 py-6">
+      <main className="max-w-[720px] mx-auto px-0 md:px-6 py-6">
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* 기본 정보 */}
           <div className="bg-white rounded-lg border border-gray-200 p-6">
@@ -640,8 +746,8 @@ function ProjectEditForm({
                 </label>
                 <input
                   type="text"
-                  value={formData.name || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                  value={formData.title || ''}
+                  onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required
                 />
@@ -837,7 +943,7 @@ function ProjectEditForm({
             </button>
             <button
               type="submit"
-              disabled={isSubmitting || !formData.name?.trim()}
+              disabled={isSubmitting || !formData.title?.trim()}
               className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
             >
               {isSubmitting ? '저장 중...' : '저장'}
@@ -867,11 +973,191 @@ export default function ProjectDetailPage() {
       setIsLoading(true);
       setError(null);
       
-      const response = await apiClient.get<Project>(`/projects/${params.id}`);
-      setProject(response);
+      // 목업 프로젝트 데이터 - 프로젝트 목록 페이지와 동일한 데이터 사용
+      const mockProjects: { [key: string]: Project } = {
+        '1': {
+          id: '1',
+          title: '워클리 MVP 개발',
+          description: '비즈니스 성공을 위한 웹 애플리케이션 MVP 버전 개발',
+          status: ProjectStatus.ACTIVE,
+          priority: ProjectPriority.HIGH,
+          progress: 75,
+          memberCount: 4,
+          taskCount: 23,
+          createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+          updatedAt: new Date().toISOString(),
+          tags: ['React', 'TypeScript', 'NestJS', 'MVP'],
+          color: '#3B82F6',
+          icon: '🚀',
+          objectives: [
+            {
+              id: 'obj1',
+              title: '사용자 인증 시스템 구축',
+              description: 'Google OAuth 기반 로그인 시스템',
+              completed: true,
+              completedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
+            },
+            {
+              id: 'obj2', 
+              title: '프로젝트 관리 기능 완성',
+              description: '프로젝트 CRUD 및 협업 기능',
+              completed: false
+            }
+          ],
+          keyResults: [
+            {
+              id: 'kr1',
+              objectiveId: 'obj1',
+              title: '로그인 성공률',
+              description: 'Google OAuth 로그인 성공률 95% 이상',
+              targetValue: 95,
+              currentValue: 98,
+              unit: '%',
+              completed: true,
+              completedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
+            },
+            {
+              id: 'kr2',
+              objectiveId: 'obj2',
+              title: '프로젝트 생성 기능',
+              description: '사용자가 프로젝트를 생성할 수 있는 기능',
+              targetValue: 100,
+              currentValue: 80,
+              unit: '%',
+              completed: false
+            },
+            {
+              id: 'kr3',
+              objectiveId: 'obj2',
+              title: '실시간 채팅 구현',
+              description: 'Socket.io 기반 실시간 메시징',
+              targetValue: 100,
+              currentValue: 60,
+              unit: '%',
+              completed: false
+            }
+          ],
+          completedObjectiveCount: 1,
+          completedKeyResultCount: 1,
+          members: [
+            {
+              id: 'member1',
+              userId: 'user1',
+              role: ProjectMemberRole.OWNER,
+              joinedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+              user: {
+                id: 'user1',
+                name: '김워클리',
+                email: 'kim@workly.com'
+              }
+            },
+            {
+              id: 'member2',
+              userId: 'user2',
+              role: ProjectMemberRole.ADMIN,
+              joinedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+              user: {
+                id: 'user2',
+                name: '박개발자',
+                email: 'park@workly.com'
+              }
+            },
+            {
+              id: 'member3',
+              userId: 'user3',
+              role: ProjectMemberRole.MEMBER,
+              joinedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+              user: {
+                id: 'user3',
+                name: '이디자이너',
+                email: 'lee@workly.com'
+              }
+            },
+            {
+              id: 'member4',
+              userId: 'user4',
+              role: ProjectMemberRole.MEMBER,
+              joinedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+              user: {
+                id: 'user4',
+                name: '정기획자',
+                email: 'jung@workly.com'
+              }
+            }
+          ],
+          ownerId: 'user1',
+          startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+          dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          budget: 50000000,
+          currency: 'KRW'
+        },
+        '2': {
+          id: '2',
+          title: 'AI 챗봇 개발',
+          description: '고객 지원을 위한 AI 기반 챗봇 시스템 구축',
+          status: ProjectStatus.ACTIVE,
+          priority: ProjectPriority.MEDIUM,
+          progress: 45,
+          memberCount: 3,
+          taskCount: 15,
+          createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+          updatedAt: new Date().toISOString(),
+          tags: ['AI', 'Python', 'TensorFlow', '챗봇'],
+          color: '#10B981',
+          icon: '🤖',
+          objectives: [
+            {
+              id: 'obj3',
+              title: 'NLP 모델 학습',
+              description: '한국어 자연어 처리 모델 개발',
+              completed: false
+            }
+          ],
+          keyResults: [
+            {
+              id: 'kr4',
+              objectiveId: 'obj3',
+              title: '모델 정확도',
+              description: '질문 응답 정확도 90% 달성',
+              targetValue: 90,
+              currentValue: 72,
+              unit: '%',
+              completed: false
+            }
+          ],
+          completedObjectiveCount: 0,
+          completedKeyResultCount: 0,
+          members: [
+            {
+              id: 'member5',
+              userId: 'user5',
+              role: ProjectMemberRole.OWNER,
+              joinedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+              user: {
+                id: 'user5',
+                name: '최AI연구자',
+                email: 'choi@workly.com'
+              }
+            }
+          ],
+          ownerId: 'user5'
+        }
+      };
+
+      // API 호출 시뮬레이션을 위한 지연
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      const projectId = params.id as string;
+      const foundProject = mockProjects[projectId];
+      
+      if (!foundProject) {
+        throw new Error('프로젝트를 찾을 수 없습니다.');
+      }
+
+      setProject(foundProject);
     } catch (err) {
       console.error('프로젝트 로드 실패:', err);
-      setError('프로젝트를 불러오는데 실패했습니다.');
+      setError(err instanceof Error ? err.message : '프로젝트를 불러오는데 실패했습니다.');
     } finally {
       setIsLoading(false);
     }
@@ -879,8 +1165,14 @@ export default function ProjectDetailPage() {
 
   const handleSaveProject = async (updateData: UpdateProjectDto) => {
     try {
-      const response = await apiClient.put<Project>(`/projects/${params.id}`, updateData);
-      setProject(response);
+      // 목업 프로젝트 수정 시뮬레이션
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      console.log('프로젝트 수정 데이터:', updateData);
+      
+      // 목업에서는 실제로 업데이트하지 않고 성공 메시지만 표시
+      alert('프로젝트가 성공적으로 수정되었습니다! (목업 모드)');
+      
       setIsEditing(false);
     } catch (err) {
       console.error('프로젝트 수정 실패:', err);

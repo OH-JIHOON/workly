@@ -3,11 +3,12 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Header from '@/components/layout/Header'
+import MainContainer from '@/components/layout/MainContainer'
 import FloatingActionButton from '@/components/ui/FloatingActionButton'
-import HomeTaskDashboard from '@/components/home/HomeTaskDashboard'
+import TaskCard from '@/components/tasks/TaskCard'
 import TaskCreationWizard from '@/components/tasks/TaskCreationWizard'
 import { isAuthenticated } from '@/lib/auth'
-import { GTDTask, TaskStatus, TaskPriority, TaskType, CreateTaskDto } from '@/types/task.types'
+import { GTDTask, TaskStatus, TaskPriority, TaskType, CreateTaskDto, HomeDashboardFilter } from '@/types/task.types'
 
 // 임시 목업 데이터 (실제로는 API에서 가져옴)
 const mockTasks: GTDTask[] = [
@@ -204,6 +205,45 @@ export default function HomePage() {
   const [tasks, setTasks] = useState<GTDTask[]>(mockTasks)
   const [isLoading, setIsLoading] = useState(false)
   const [isWizardOpen, setIsWizardOpen] = useState(false)
+  const [activeFilter, setActiveFilter] = useState<HomeDashboardFilter>('today')
+
+  // 필터 옵션
+  const filterOptions = [
+    { key: 'today' as const, label: '오늘', count: tasks.filter(t => t.status !== TaskStatus.DONE && t.gtdContext === 'next').length },
+    { key: 'completed' as const, label: '완료됨', count: tasks.filter(t => t.status === TaskStatus.DONE).length },
+    { key: 'all' as const, label: '전체', count: tasks.length },
+    { key: 'someday' as const, label: '나중에', count: tasks.filter(t => t.gtdContext === 'someday').length },
+  ]
+
+  // 동적 헤더 타이틀
+  const getHeaderTitle = () => {
+    switch (activeFilter) {
+      case 'today': return '오늘의 업무'
+      case 'completed': return '완료된 업무' 
+      case 'someday': return '나중에 할 업무'
+      case 'all': return '전체 업무'
+      default: return '워클리'
+    }
+  }
+
+  // 필터링된 업무 목록
+  const filteredTasks = tasks.filter(task => {
+    // 상태별 필터링
+    switch (activeFilter) {
+      case 'today':
+        return task.status !== TaskStatus.DONE && 
+               task.status !== TaskStatus.CANCELLED &&
+               task.gtdContext === 'next'
+      case 'completed':
+        return task.status === TaskStatus.DONE
+      case 'someday':
+        return task.gtdContext === 'someday'
+      case 'all':
+        return true
+      default:
+        return true
+    }
+  })
 
   useEffect(() => {
     // 로그인하지 않은 경우 로그인 페이지로 리다이렉트
@@ -288,21 +328,57 @@ export default function HomePage() {
     <div className="min-h-screen bg-gray-50">
       {/* 헤더 */}
       <Header 
-        title="워클리" 
-        showDropdown={false}
+        title={getHeaderTitle()}
+        filterOptions={filterOptions}
+        activeFilter={activeFilter}
+        onFilterChange={(filter) => setActiveFilter(filter as HomeDashboardFilter)}
+        showMobileFilters={true}
       />
       
       {/* 메인 콘텐츠 */}
-      <main className="max-w-4xl mx-auto px-4 py-6" role="main">
-        {/* GTD 기반 홈 대시보드 */}
-        <HomeTaskDashboard
-          tasks={tasks}
-          onTaskToggle={handleTaskToggle}
-          onTaskEdit={handleTaskEdit}
-          onCreateTask={handleCreateTask}
-          isLoading={isLoading}
-        />
-      </main>
+      <MainContainer>
+
+        {/* 업무 목록 */}
+        <div className="bg-white border border-gray-200 overflow-hidden">
+          {isLoading ? (
+            <div className="p-8 text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+              <p className="text-gray-500 mt-2">업무를 불러오는 중...</p>
+            </div>
+          ) : filteredTasks.length === 0 ? (
+            <div className="p-8 text-center">
+              <div className="text-gray-400 mb-2">
+                {activeFilter === 'today' && '📋'}
+                {activeFilter === 'completed' && '✅'}
+                {activeFilter === 'someday' && '🔮'}
+                {activeFilter === 'all' && '📝'}
+              </div>
+              <h3 className="text-lg font-medium text-gray-600 mb-1">
+                {activeFilter === 'today' ? '오늘 할 업무가 없습니다' :
+                 activeFilter === 'completed' ? '완료된 업무가 없습니다' :
+                 activeFilter === 'someday' ? '나중에 할 업무가 없습니다' :
+                 '업무가 없습니다'}
+              </h3>
+              <p className="text-gray-500 text-sm">
+                {activeFilter === 'today' && '새로운 업무를 추가해보세요!'}
+              </p>
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-100">
+              {filteredTasks.map((task, index) => (
+                <TaskCard
+                  key={task.id}
+                  task={task}
+                  isLast={index === filteredTasks.length - 1}
+                  onToggleComplete={handleTaskToggle}
+                  onEdit={handleTaskEdit}
+                  showMomentumScore={activeFilter === 'today'}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </MainContainer>
       
       {/* 플로팅 액션 버튼 */}
       <FloatingActionButton 

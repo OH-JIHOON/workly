@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Plus, Search, Filter, SortAsc, SortDesc } from 'lucide-react';
+import MainContainer from '@/components/layout/MainContainer';
 import TaskList from '@/components/tasks/TaskList';
 import TaskFilters from '@/components/tasks/TaskFilters';
 import TaskCreationWizard from '@/components/tasks/TaskCreationWizard';
@@ -225,7 +226,7 @@ export default function TasksPage() {
 
   if (error) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <MainContainer className="px-4">
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
           <p className="text-red-600">{error}</p>
           <button
@@ -235,12 +236,12 @@ export default function TasksPage() {
             다시 시도
           </button>
         </div>
-      </div>
+      </MainContainer>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <MainContainer className="px-4">
       {/* 헤더 */}
       <div className="flex items-center justify-between mb-8">
         <div>
@@ -331,6 +332,6 @@ export default function TasksPage() {
         projects={projects}
         assignees={assignees}
       />
-    </div>
+    </MainContainer>
   );
 }
