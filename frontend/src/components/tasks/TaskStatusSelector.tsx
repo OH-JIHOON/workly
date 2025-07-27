@@ -85,7 +85,7 @@ export default function TaskStatusSelector({
           
           {/* 드롭다운 메뉴 */}
           <div className="absolute right-0 z-20 mt-2 w-40 bg-white rounded-lg shadow-lg border border-gray-200 py-1">
-            <div className="max-h-60 overflow-auto">
+            <div className="max-h-60 overflow-auto scrollbar-on-hover">
               {statusOptions.map((status) => (
                 <button
                   key={status}

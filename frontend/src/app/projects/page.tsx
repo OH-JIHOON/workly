@@ -380,7 +380,7 @@ function ProjectCreationModal({
               </button>
             </div>
             
-            <div className="max-h-96 overflow-y-auto space-y-4">
+            <div className="max-h-96 overflow-y-auto scrollbar-on-hover space-y-4">
               {objectives.map((objective, index) => (
                 <div key={index} className="border border-gray-200 rounded-lg p-4">
                   <div className="space-y-3">
@@ -417,7 +417,7 @@ function ProjectCreationModal({
           <div className="space-y-4">
             <h4 className="text-md font-medium text-gray-900 mb-4">핵심 결과 (Key Results) 설정</h4>
             
-            <div className="max-h-96 overflow-y-auto space-y-6">
+            <div className="max-h-96 overflow-y-auto scrollbar-on-hover space-y-6">
               {objectives.map((objective, objIndex) => (
                 <div key={objIndex} className="border border-gray-200 rounded-lg p-4">
                   <h5 className="font-medium text-gray-900 mb-3">목표: {objective.title}</h5>
@@ -477,7 +477,7 @@ function ProjectCreationModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
+    <div className="fixed inset-0 z-50 overflow-y-auto scrollbar-on-hover">
       <div className="flex items-center justify-center min-h-screen p-4">
         <div className="fixed inset-0 bg-black opacity-25" onClick={onClose} />
         <div className="relative bg-white shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
@@ -516,7 +516,7 @@ function ProjectCreationModal({
           </div>
           
           {/* 컨텐츠 영역 */}
-          <div className="p-6 overflow-y-auto max-h-[60vh]">
+          <div className="p-6 overflow-y-auto scrollbar-on-hover max-h-[60vh]">
             {renderStepContent()}
           </div>
           

@@ -1,9 +1,11 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react'
-import { Send, Plus, Paperclip, Smile, MoreHorizontal, User, Calendar, Hash } from 'lucide-react'
+import { Send, Plus, Paperclip, Smile, MoreHorizontal, User, Calendar, Hash, ArrowLeft, PanelRightOpen, PanelRightClose } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import { Project, ProjectMember } from '@/types/project.types'
 import SlashCommandInput from './SlashCommandInput'
+import { useScrollVisibility } from '@/hooks/useScrollVisibility'
 
 // 채팅 메시지 타입
 interface ChatMessage {
@@ -37,6 +39,9 @@ interface ChatMessage {
 interface ProjectChatChannelProps {
   project: Project
   members: ProjectMember[]
+  isSidebarOpen?: boolean
+  isMobile?: boolean
+  onToggleSidebar?: () => void
   onTaskCreate?: (taskData: any) => void
   onMilestoneCreate?: (milestoneData: any) => void
   onUserDelegate?: (delegationData: any) => void
@@ -45,16 +50,27 @@ interface ProjectChatChannelProps {
 export default function ProjectChatChannel({ 
   project, 
   members,
+  isSidebarOpen = true,
+  isMobile = false,
+  onToggleSidebar,
   onTaskCreate,
   onMilestoneCreate,
   onUserDelegate
 }: ProjectChatChannelProps) {
+  const router = useRouter()
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [newMessage, setNewMessage] = useState('')
   const [isSlashCommandMode, setIsSlashCommandMode] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  
+  // 스크롤 가시성 관리
+  const { elementRef: messageScrollRef } = useScrollVisibility({
+    hideDelay: 1500,
+    showOnHover: true
+  })
 
   // 목업 메시지 데이터
   useEffect(() => {
@@ -107,6 +123,36 @@ export default function ProjectChatChannel({
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
+
+
+  // 모바일 키보드 감지 및 viewport 처리
+  useEffect(() => {
+    if (!isMobile) return
+
+    const handleResize = () => {
+      const viewport = window.visualViewport
+      if (viewport) {
+        const keyboardHeight = window.innerHeight - viewport.height
+        setIsKeyboardVisible(keyboardHeight > 100)
+      }
+    }
+
+    const handleFocus = () => {
+      if (isMobile) {
+        setTimeout(() => {
+          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+        }, 300)
+      }
+    }
+
+    window.visualViewport?.addEventListener('resize', handleResize)
+    inputRef.current?.addEventListener('focus', handleFocus)
+
+    return () => {
+      window.visualViewport?.removeEventListener('resize', handleResize)
+      inputRef.current?.removeEventListener('focus', handleFocus)
+    }
+  }, [isMobile])
 
   // 입력 변화 감지 (슬래시 명령어 모드)
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -218,7 +264,7 @@ export default function ProjectChatChannel({
   }
 
   // 키보드 이벤트 핸들링
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       if (isSlashCommandMode) {
@@ -287,10 +333,18 @@ export default function ProjectChatChannel({
   }
 
   return (
-    <div className="flex flex-col h-full bg-white">
-      {/* 채널 헤더 */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-200">
+    <div className="fixed inset-0 bg-white flex flex-col">
+      {/* 채널 헤더 - 상단 고정 */}
+      <div className={`fixed top-0 flex-shrink-0 flex items-center justify-between p-4 border-b border-gray-200 bg-white shadow-sm transition-all duration-300 ${
+        isMobile || !isSidebarOpen ? 'left-0 right-0' : 'left-0 right-[640px]'
+      } z-50`}>
         <div className="flex items-center space-x-3">
+          <button
+            onClick={() => router.back()}
+            className="p-2 hover:bg-gray-100 rounded-lg"
+          >
+            <ArrowLeft className="w-5 h-5 text-gray-600" />
+          </button>
           <Hash className="w-5 h-5 text-gray-500" />
           <div>
             <h2 className="font-semibold text-gray-900">{project.title}</h2>
@@ -307,18 +361,44 @@ export default function ProjectChatChannel({
           <button className="p-2 hover:bg-gray-100 rounded-lg">
             <MoreHorizontal className="w-5 h-5 text-gray-500" />
           </button>
+          {onToggleSidebar && (
+            <button 
+              onClick={onToggleSidebar}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              title={isSidebarOpen ? "사이드바 닫기" : "사이드바 열기"}
+            >
+              {isSidebarOpen ? (
+                <PanelRightClose className="w-5 h-5 text-gray-500" />
+              ) : (
+                <PanelRightOpen className="w-5 h-5 text-gray-500" />
+              )}
+            </button>
+          )}
         </div>
       </div>
 
-      {/* 메시지 목록 */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      {/* 메시지 목록 - 완전 독립적인 스크롤 영역 */}
+      <div 
+        ref={messageScrollRef}
+        className={`fixed overflow-y-auto p-4 space-y-4 scroll-smooth scrollbar-on-hover bg-white transition-all duration-300 ${
+          isMobile || !isSidebarOpen ? 'left-0 right-0' : 'left-0 right-[640px]'
+        }`} 
+        style={{
+          top: '80px', // 헤더 바로 아래
+          bottom: '80px' // 입력창 바로 위
+        }}
+      >
         {messages.map(renderMessage)}
         <div ref={messagesEndRef} />
       </div>
 
-      {/* 슬래시 명령어 입력 */}
+      {/* 슬래시 명령어 입력 - 고정 위치 */}
       {isSlashCommandMode && (
-        <div className="border-t border-gray-200 bg-gray-50">
+        <div className={`fixed z-60 border-t border-gray-200 bg-gray-50 transition-all duration-200 ${
+          isMobile || !isSidebarOpen ? 'left-0 right-0' : 'left-0 right-[640px]'
+        }`} style={{
+          bottom: '80px' // 입력창 바로 위
+        }}>
           <SlashCommandInput
             input={newMessage}
             onCommandExecute={handleSlashCommand}
@@ -331,34 +411,51 @@ export default function ProjectChatChannel({
         </div>
       )}
 
-      {/* 메시지 입력 */}
-      <div className="p-4 border-t border-gray-200">
-        <div className="flex items-center space-x-3">
+      {/* 메시지 입력 - 하단 고정 */}
+      <div className={`fixed z-55 p-4 border-t border-gray-200 bg-white shadow-lg transition-all duration-200 ${
+        isMobile || !isSidebarOpen ? 'left-0 right-0' : 'left-0 right-[640px]'
+      }`} style={{
+        bottom: '0'
+      }}>
+        <div className={`flex items-end space-x-3 max-w-full ${
+          isMobile ? 'pb-safe' : ''
+        }`}>
           <div className="flex-1 relative">
             <input
               ref={inputRef}
               type="text"
               value={newMessage}
               onChange={handleInputChange}
-              onKeyPress={handleKeyPress}
+              onKeyDown={handleKeyDown}
               placeholder={isSlashCommandMode ? "슬래시 명령어를 입력하세요..." : `${project.title}에 메시지 보내기...`}
-              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none ${
                 isSlashCommandMode ? 'border-blue-300 bg-blue-50' : 'border-gray-300'
-              }`}
+              } text-base`}
               disabled={isLoading}
+              enterKeyHint="send"
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="sentences"
             />
           </div>
-          <div className="flex items-center space-x-2">
-            <button className="p-2 hover:bg-gray-100 rounded-lg">
+          <div className="flex items-center space-x-1">
+            <button 
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors touch-manipulation"
+              type="button"
+            >
               <Paperclip className="w-5 h-5 text-gray-500" />
             </button>
-            <button className="p-2 hover:bg-gray-100 rounded-lg">
+            <button 
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors touch-manipulation"
+              type="button"
+            >
               <Smile className="w-5 h-5 text-gray-500" />
             </button>
             <button
               onClick={handleSendMessage}
               disabled={!newMessage.trim() || isLoading || isSlashCommandMode}
-              className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center"
+              type="button"
             >
               <Send className="w-5 h-5" />
             </button>

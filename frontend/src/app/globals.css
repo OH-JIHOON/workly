@@ -2,6 +2,155 @@
 @tailwind components;
 @tailwind utilities;
 
+/* 모바일 viewport 및 스크롤 최적화 */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* 
+ * 글로벌 스크롤바 숨김 정책
+ * 모든 요소의 스크롤바를 기본적으로 숨기고
+ * 필요한 곳에서만 scrollbar-on-hover 클래스로 선택적 표시
+ */
+* {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+*::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+/* 
+ * 스크롤할 때만 표시되는 스크롤바
+ * 호버, 포커스, 스크롤 시에만 표시
+ * 모든 주요 브라우저 지원 (Chrome, Safari, Firefox, Edge)
+ */
+.scrollbar-on-hover {
+  scrollbar-width: thin; /* Firefox */
+  scrollbar-color: transparent transparent; /* Firefox */
+  transition: scrollbar-color 0.3s ease;
+  -ms-overflow-style: auto; /* IE/Edge 복원 */
+}
+
+.scrollbar-on-hover:hover,
+.scrollbar-on-hover:focus-within,
+.scrollbar-on-hover.scrolling {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+}
+
+.scrollbar-on-hover::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+  display: block;
+}
+
+.scrollbar-on-hover::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-on-hover::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 3px;
+  transition: background 0.3s ease;
+}
+
+.scrollbar-on-hover:hover::-webkit-scrollbar-thumb,
+.scrollbar-on-hover:focus-within::-webkit-scrollbar-thumb,
+.scrollbar-on-hover.scrolling::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.5);
+}
+
+.scrollbar-on-hover:hover::-webkit-scrollbar-thumb:hover,
+.scrollbar-on-hover:focus-within::-webkit-scrollbar-thumb:hover,
+.scrollbar-on-hover.scrolling::-webkit-scrollbar-thumb:hover {
+  background: rgba(107, 114, 128, 0.7);
+}
+
+/* 레거시 커스텀 스크롤바 (호환성용) */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.5);
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(107, 114, 128, 0.7);
+}
+
+/* 모바일 터치 최적화 */
+.touch-manipulation {
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* iOS Safari viewport 이슈 해결 */
+@supports (-webkit-appearance: none) {
+  .h-screen-mobile {
+    height: 100vh;
+    height: -webkit-fill-available;
+  }
+}
+
+/* 스크롤 상태 유틸리티 클래스 */
+.scroll-container {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scroll-container::-webkit-scrollbar {
+  display: none;
+}
+
+/* 스크롤 인디케이터 (필요시 사용) */
+.scroll-indicator {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 50%;
+  background: rgba(156, 163, 175, 0.3);
+  border-radius: 2px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.scroll-container.scrolling .scroll-indicator {
+  opacity: 1;
+}
+
+/* 커스텀 z-index 클래스 */
+.z-45 {
+  z-index: 45;
+}
+
+.z-55 {
+  z-index: 55;
+}
+
+.z-60 {
+  z-index: 60;
+}
+
 @layer base {
   :root {
     --background: 250 250 250; /* #FAFAFA */

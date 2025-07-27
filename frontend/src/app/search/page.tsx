@@ -4,9 +4,9 @@ import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { MagnifyingGlassIcon, ArrowLeftIcon, ClockIcon } from '@heroicons/react/24/outline'
 import { 
-  TaskIcon, 
-  ProjectIcon, 
-  PostIcon,
+  CheckCircleIcon as TaskIcon, 
+  FolderIcon as ProjectIcon, 
+  DocumentTextIcon as PostIcon,
   UserIcon
 } from '@heroicons/react/24/solid'
 
