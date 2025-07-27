@@ -3,7 +3,7 @@
  * JWT 토큰을 자동으로 포함하여 백엔드와 통신
  */
 
-interface ApiOptions extends RequestInit {
+interface ApiOptions extends Omit<RequestInit, 'priority'> {
   requireAuth?: boolean;
 }
 
@@ -31,10 +31,14 @@ class ApiClient {
     const url = `${this.baseUrl}${endpoint}`;
     
     // 기본 헤더 설정
-    const headers: HeadersInit = {
+    const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...requestOptions.headers,
     };
+    
+    // 추가 헤더가 있는 경우 병합
+    if (requestOptions.headers) {
+      Object.assign(headers, requestOptions.headers);
+    }
 
     // 인증이 필요한 경우 토큰 추가
     if (requireAuth) {
@@ -114,8 +118,25 @@ class ApiClient {
   /**
    * GET 요청
    */
-  async get<T>(endpoint: string, options?: ApiOptions): Promise<T> {
-    return this.request<T>(endpoint, { ...options, method: 'GET' });
+  async get<T>(endpoint: string, params?: Record<string, any>, options?: ApiOptions): Promise<T> {
+    let url = endpoint;
+    
+    // 쿼리 파라미터가 있는 경우 URL에 추가
+    if (params && Object.keys(params).length > 0) {
+      const searchParams = new URLSearchParams();
+      
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          searchParams.append(key, String(value));
+        }
+      });
+      
+      if (searchParams.toString()) {
+        url += `?${searchParams.toString()}`;
+      }
+    }
+    
+    return this.request<T>(url, { ...options, method: 'GET' });
   }
 
   /**
@@ -226,7 +247,7 @@ export const apiClient = new ApiClient();
 
 // 편의를 위한 직접 내보내기
 export const api = {
-  get: <T>(endpoint: string, options?: ApiOptions) => apiClient.get<T>(endpoint, options),
+  get: <T>(endpoint: string, params?: Record<string, any>, options?: ApiOptions) => apiClient.get<T>(endpoint, params, options),
   post: <T>(endpoint: string, data?: any, options?: ApiOptions) => apiClient.post<T>(endpoint, data, options),
   put: <T>(endpoint: string, data?: any, options?: ApiOptions) => apiClient.put<T>(endpoint, data, options),
   delete: <T>(endpoint: string, options?: ApiOptions) => apiClient.delete<T>(endpoint, options),

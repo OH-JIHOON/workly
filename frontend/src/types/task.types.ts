@@ -261,3 +261,42 @@ export interface TaskBoard {
     grouping?: 'none' | 'project' | 'assignee';
   };
 }
+
+// 모멘텀 점수 (RICE 모델)
+export interface MomentumScore {
+  reach: number;      // 프로젝트 중요도 (0-10)
+  impact: number;     // 긴급성/중요성 (0-10)
+  confidence: number; // 명확성 (0-10)
+  effort: number;     // 예상 소요 시간 역가중치 (0-10)
+  total: number;      // 계산된 총점
+}
+
+// GTD 기반 업무 확장
+export interface GTDTask extends Task {
+  momentumScore: MomentumScore;
+  gtdContext: GTDContext;
+  isActionable: boolean;
+  canComplete2Minutes: boolean;
+  nextAction?: string;
+  clarified: boolean;
+}
+
+// 업무 생성 위자드 단계
+export type TaskWizardStep = 'collect' | 'clarify' | 'organize' | 'execute';
+
+// 업무 생성 위자드 데이터
+export interface TaskWizardData {
+  step: TaskWizardStep;
+  title: string;
+  isActionable?: boolean;
+  canComplete2Minutes?: boolean;
+  belongsToProject?: boolean;
+  projectId?: string;
+  priority?: TaskPriority;
+  dueDate?: string;
+  estimatedHours?: number;
+  assigneeId?: string;
+}
+
+// 홈 대시보드 필터
+export type HomeDashboardFilter = 'today' | 'completed' | 'all' | 'someday';

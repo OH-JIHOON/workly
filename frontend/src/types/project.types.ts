@@ -105,7 +105,7 @@ export interface ProjectSettings {
 // 메인 프로젝트 인터페이스
 export interface Project {
   id: string;
-  name: string;
+  title: string;
   description?: string;
   status: ProjectStatus;
   priority: ProjectPriority;
@@ -145,7 +145,7 @@ export interface Project {
 
 // 프로젝트 생성 DTO
 export interface CreateProjectDto {
-  name: string;
+  title: string;
   description?: string;
   priority?: ProjectPriority;
   startDate?: string;
@@ -161,7 +161,7 @@ export interface CreateProjectDto {
 
 // 프로젝트 업데이트 DTO
 export interface UpdateProjectDto {
-  name?: string;
+  title?: string;
   description?: string;
   status?: ProjectStatus;
   priority?: ProjectPriority;
@@ -252,7 +252,7 @@ export interface ProjectDashboard {
 // 프로젝트 템플릿
 export interface ProjectTemplate {
   id: string;
-  name: string;
+  title: string;
   description?: string;
   category: string;
   tags: string[];

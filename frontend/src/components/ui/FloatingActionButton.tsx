@@ -22,7 +22,17 @@ const fabMenuItems = {
   ]
 }
 
-export default function FloatingActionButton() {
+interface FloatingActionButtonProps {
+  onAddTask?: () => void
+  onAddProject?: () => void
+  onAddPost?: () => void
+}
+
+export default function FloatingActionButton({
+  onAddTask,
+  onAddProject,
+  onAddPost
+}: FloatingActionButtonProps) {
   const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(false)
   const fabRef = useRef<HTMLDivElement>(null)
@@ -51,9 +61,21 @@ export default function FloatingActionButton() {
   }, [pathname])
 
   const handleMenuItemClick = (action: string) => {
-    console.log(`Action: ${action}`)
     setIsOpen(false)
-    // TODO: 실제 액션 구현
+    
+    switch (action) {
+      case 'add-task':
+        onAddTask?.()
+        break
+      case 'add-project':
+        onAddProject?.()
+        break
+      case 'add-post':
+        onAddPost?.()
+        break
+      default:
+        console.log(`Action: ${action}`)
+    }
   }
 
   if (!shouldShowFab) return null

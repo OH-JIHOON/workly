@@ -28,10 +28,10 @@ function ProjectCard({ project, onClick }: { project: Project; onClick: () => vo
             className="w-12 h-12 rounded-lg flex items-center justify-center text-white font-semibold"
             style={{ backgroundColor: project.color || '#3B82F6' }}
           >
-            {project.icon || project.name.charAt(0).toUpperCase()}
+            {project.icon || project.title.charAt(0).toUpperCase()}
           </div>
           <div>
-            <h3 className="font-semibold text-gray-900">{project.name}</h3>
+            <h3 className="font-semibold text-gray-900">{project.title}</h3>
             <p className="text-sm text-gray-500 line-clamp-2">{project.description}</p>
           </div>
         </div>
@@ -108,7 +108,7 @@ function ProjectCreationModal({
   onSubmit: (data: CreateProjectDto) => Promise<void>; 
 }) {
   const [formData, setFormData] = useState<CreateProjectDto>({
-    name: '',
+    title: '',
     description: '',
     priority: ProjectPriority.MEDIUM,
   });
@@ -116,12 +116,12 @@ function ProjectCreationModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name.trim()) return;
+    if (!formData.title.trim()) return;
 
     setIsSubmitting(true);
     try {
       await onSubmit(formData);
-      setFormData({ name: '', description: '', priority: ProjectPriority.MEDIUM });
+      setFormData({ title: '', description: '', priority: ProjectPriority.MEDIUM });
       onClose();
     } catch (error) {
       console.error('프로젝트 생성 실패:', error);
@@ -147,8 +147,8 @@ function ProjectCreationModal({
                 </label>
                 <input
                   type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                  value={formData.title}
+                  onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="프로젝트 이름을 입력하세요"
                   required
@@ -195,7 +195,7 @@ function ProjectCreationModal({
               </button>
               <button
                 type="submit"
-                disabled={isSubmitting || !formData.name.trim()}
+                disabled={isSubmitting || !formData.title.trim()}
                 className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
               >
                 {isSubmitting ? '생성 중...' : '프로젝트 만들기'}
@@ -237,20 +237,16 @@ export default function ProjectsPage() {
       setIsLoading(true);
       setError(null);
 
-      const queryParams: ProjectQueryDto = {
+      // apiClient.get()이 기대하는 타입과 호환되도록 queryParams 객체를 동적으로 생성합니다.
+      // 명시적 타입 선언을 제거하여 TypeScript가 구조적으로 타입을 추론하게 합니다.
+      const queryParams = {
         page: 1,
         limit: 50,
         search: debouncedSearchQuery || undefined,
+        // 필터 값에 따라 status 속성을 조건부로 추가합니다.
+        ...(currentFilter === '진행 중' && { status: ProjectStatus.ACTIVE }),
+        ...(currentFilter === '완료됨' && { status: ProjectStatus.COMPLETED }),
       };
-
-      // 필터에 따른 쿼리 추가
-      if (currentFilter === '내 프로젝트') {
-        // API에서 내 프로젝트만 필터링하는 로직 필요
-      } else if (currentFilter === '진행 중') {
-        queryParams.status = ProjectStatus.ACTIVE;
-      } else if (currentFilter === '완료됨') {
-        queryParams.status = ProjectStatus.COMPLETED;
-      }
 
       const response = await apiClient.get<PaginatedResponse<Project>>('/projects', queryParams);
       // API 응답에 items가 없는 경우를 대비해 항상 배열을 보장합니다.
@@ -291,7 +287,7 @@ export default function ProjectsPage() {
         title="프로젝트" 
         showDropdown={true}
         dropdownItems={['전체 프로젝트', '내 프로젝트', '진행 중', '완료됨']}
-        onDropdownChange={handleFilterChange}
+        onDropdownItemClick={handleFilterChange}
       />
       
       {/* 메인 콘텐츠 */}
@@ -380,11 +376,7 @@ export default function ProjectsPage() {
       </main>
       
       {/* 플로팅 액션 버튼 */}
-      <FloatingActionButton 
-        onClick={() => setIsCreationModalOpen(true)}
-        icon={<Plus className="w-6 h-6" />}
-        label="새 프로젝트"
-      />
+      <FloatingActionButton />
 
       {/* 프로젝트 생성 모달 */}
       <ProjectCreationModal

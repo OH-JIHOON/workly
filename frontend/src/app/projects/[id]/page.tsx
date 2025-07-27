@@ -139,7 +139,7 @@ function MemberManagementModal({
           <div className="flex items-center justify-between p-6 border-b border-gray-200">
             <div>
               <h3 className="text-lg font-semibold text-gray-900">팀 멤버 관리</h3>
-              <p className="text-sm text-gray-500 mt-1">{project.name}</p>
+              <p className="text-sm text-gray-500 mt-1">{project.title}</p>
             </div>
             <button
               onClick={onClose}
@@ -380,10 +380,10 @@ function ProjectDetailView({
               className="w-16 h-16 rounded-lg flex items-center justify-center text-white font-bold text-xl"
               style={{ backgroundColor: project.color || '#3B82F6' }}
             >
-              {project.icon || project.name.charAt(0).toUpperCase()}
+              {project.icon || project.title.charAt(0).toUpperCase()}
             </div>
             <div className="flex-1">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">{project.name}</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">{project.title}</h2>
               {project.description && (
                 <p className="text-gray-600 mb-4">{project.description}</p>
               )}
@@ -560,7 +560,7 @@ function ProjectEditForm({
   onCancel: () => void; 
 }) {
   const [formData, setFormData] = useState<UpdateProjectDto>({
-    name: project.name,
+    title: project.title,
     description: project.description || '',
     status: project.status,
     priority: project.priority,
@@ -620,7 +620,7 @@ function ProjectEditForm({
               </button>
               <div>
                 <h1 className="text-xl font-semibold text-gray-900">프로젝트 편집</h1>
-                <p className="text-sm text-gray-500 mt-1">{project.name}</p>
+                <p className="text-sm text-gray-500 mt-1">{project.title}</p>
               </div>
             </div>
           </div>
