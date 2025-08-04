@@ -1,0 +1,8 @@
+{
+  "framework": "nextjs",
+  "name": "workly",
+  "buildCommand": "npm run build:frontend",
+  "devCommand": "npm run dev:frontend",
+  "installCommand": "npm install",
+  "outputDirectory": "frontend/.next"
+}

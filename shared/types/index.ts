@@ -12,6 +12,9 @@ export * from './goal.types';
 export * from './inbox.types';
 export * from './navigation.types';
 
+// 어드민 패널 타입들
+export * from './admin.types';
+
 // 워클리 방법론 핵심 상수
 export const WORKLY_METHODOLOGY = {
   name: 'Workly Unique Methodology',

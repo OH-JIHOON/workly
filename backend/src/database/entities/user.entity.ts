@@ -17,7 +17,8 @@ import {
   UserPreferences,
   NotificationPreferences,
   WorkingHours,
-  DashboardPreferences 
+  DashboardPreferences,
+  AdminRole 
 } from '@workly/shared';
 import { Exclude } from 'class-transformer';
 
@@ -70,6 +71,25 @@ export class User {
 
   @Column('jsonb')
   preferences: UserPreferences;
+
+  @Column({
+    type: 'enum',
+    enum: AdminRole,
+    nullable: true,
+  })
+  adminRole?: AdminRole;
+
+  @Column('simple-array', { nullable: true })
+  adminPermissions?: string[];
+
+  @Column({ nullable: true })
+  lastAdminLogin?: Date;
+
+  @Column({ default: false })
+  twoFactorEnabled: boolean;
+
+  @Column('simple-array', { nullable: true })
+  allowedIPs?: string[];
 
   @Column({ nullable: true })
   lastLoginAt?: Date;
@@ -247,6 +267,32 @@ export class User {
 
   isMember(): boolean {
     return this.role === UserRole.MEMBER || this.isManager();
+  }
+
+  // 어드민 패널 관련 메서드
+  isAdminUser(): boolean {
+    return this.adminRole !== null && this.adminRole !== undefined;
+  }
+
+  isSuperAdmin(): boolean {
+    return this.adminRole === AdminRole.SUPER_ADMIN;
+  }
+
+  hasAdminPermission(permission: string): boolean {
+    if (this.isSuperAdmin()) return true;
+    return this.adminPermissions?.includes(permission) || false;
+  }
+
+  hasAnyAdminPermission(permissions: string[]): boolean {
+    return permissions.some(permission => this.hasAdminPermission(permission));
+  }
+
+  hasAllAdminPermissions(permissions: string[]): boolean {
+    return permissions.every(permission => this.hasAdminPermission(permission));
+  }
+
+  updateLastAdminLogin(): void {
+    this.lastAdminLogin = new Date();
   }
 
   isActive(): boolean {
