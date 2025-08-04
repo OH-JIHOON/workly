@@ -13,6 +13,8 @@ async function bootstrap() {
     origin: [
       'http://localhost:3000', // 프론트엔드 개발 서버
       configService.get('FRONTEND_URL', 'http://localhost:3000'),
+      /\.vercel\.app$/, // Vercel 프리뷰 URL들
+      'https://workly.vercel.app', // Vercel 프로덕션 URL (예시)
     ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],

@@ -36,11 +36,11 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* 중앙에 위치한 로그인 버튼 */}
-        <div className="space-y-4">
+        {/* 헤더 바로 아래 위치한 로그인 버튼 */}
+        <div className="space-y-4 mt-2">
           <button 
             onClick={handleGoogleLogin}
-            className="w-full flex items-center justify-center gap-3 bg-white border border-gray-300 rounded-xl px-6 py-4 text-gray-700 font-semibold hover:bg-gray-50 transition-colors shadow-lg text-lg"
+            className="w-full flex items-center justify-center gap-3 bg-white border border-gray-300 rounded-xl px-6 py-4 text-gray-700 font-semibold hover:bg-gray-50 transition-colors shadow-lg text-lg ml-4"
           >
             <svg className="w-6 h-6" viewBox="0 0 24 24">
               <path

@@ -14,11 +14,8 @@ export default function ConditionalLayout({ children }: ConditionalLayoutProps) 
   // 인증 관련 페이지에서는 네비게이션을 숨김
   const isAuthPage = pathname?.startsWith('/auth')
   
-  // 프로젝트 상세 페이지에서는 모바일 네비게이션을 숨김
+  // 프로젝트 상세 페이지에서는 네비게이션을 숨김
   const isProjectDetailPage = pathname?.match(/^\/projects\/[^\/]+$/)
-  
-  // 프로젝트 상세 페이지에서는 좌측 네비게이션을 숨김
-  const shouldHideLeftNav = isProjectDetailPage
   
   if (isAuthPage) {
     return (
@@ -30,15 +27,15 @@ export default function ConditionalLayout({ children }: ConditionalLayoutProps) 
   
   return (
     <div className="min-h-screen bg-background">
-      {/* 좌측 네비게이션 (데스크톱) - 프로젝트 상세 페이지에서는 숨김 */}
-      {!shouldHideLeftNav && <LeftNavigation />}
+      {/* 데스크톱 좌측 네비게이션 */}
+      {!isProjectDetailPage && <LeftNavigation />}
       
       {/* 메인 콘텐츠 */}
-      <div className={shouldHideLeftNav ? "" : "md:ml-[76px]"}>
+      <div className="md:ml-[76px]">
         {children}
       </div>
       
-      {/* 하단 네비게이션 (모바일) - 프로젝트 상세 페이지에서는 숨김 */}
+      {/* 모바일 하단 네비게이션 */}
       {!isProjectDetailPage && <MobileNavigation />}
     </div>
   )

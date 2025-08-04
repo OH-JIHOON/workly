@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { ChevronDownIcon, Bars3Icon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
 import { isAuthenticated, logout, getCurrentUser } from '@/lib/auth'
-import MobileFilterTabs from '@/components/ui/MobileFilterTabs'
 
 interface FilterOption {
   key: string
@@ -22,6 +21,9 @@ interface HeaderProps {
   activeFilter?: string
   onFilterChange?: (filter: string) => void
   showMobileFilters?: boolean
+  // 검색 기능 props
+  searchQuery?: string
+  onSearchChange?: (query: string) => void
 }
 
 export default function Header({ 
@@ -32,7 +34,9 @@ export default function Header({
   filterOptions = [],
   activeFilter = '',
   onFilterChange,
-  showMobileFilters = false
+  showMobileFilters = false,
+  searchQuery = '',
+  onSearchChange
 }: HeaderProps) {
   const router = useRouter()
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
@@ -67,6 +71,15 @@ export default function Header({
 
   const handleSettingsClick = () => {
     router.push('/settings')
+    setIsMobileMenuOpen(false)
+  }
+
+  const handleBoardClick = (section?: string) => {
+    if (section) {
+      router.push(`/board?section=${encodeURIComponent(section)}`)
+    } else {
+      router.push('/board')
+    }
     setIsMobileMenuOpen(false)
   }
 
@@ -125,10 +138,57 @@ export default function Header({
             
             {isMobileMenuOpen && (
               <div 
-                className="absolute top-full left-0 mt-2 bg-card border border-border rounded-xl shadow-lg min-w-36 py-2 z-50"
+                className="absolute top-full left-0 mt-2 bg-card border border-border rounded-xl shadow-lg min-w-48 py-2 z-50"
                 role="menu"
                 aria-label="메뉴 옵션"
               >
+                {/* 게시판 섹션 */}
+                <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider border-b border-border">
+                  게시판
+                </div>
+                <button 
+                  onClick={() => handleBoardClick()}
+                  className="w-full text-left px-4 py-3 text-sm text-foreground hover:bg-accent cursor-pointer transition-colors"
+                  role="menuitem"
+                >
+                  전체 게시판
+                </button>
+                <button 
+                  onClick={() => handleBoardClick('임무 게시판')}
+                  className="w-full text-left px-4 py-3 text-sm text-foreground hover:bg-accent cursor-pointer transition-colors"
+                  role="menuitem"
+                >
+                  임무 게시판
+                </button>
+                <button 
+                  onClick={() => handleBoardClick('지식 위키')}
+                  className="w-full text-left px-4 py-3 text-sm text-foreground hover:bg-accent cursor-pointer transition-colors"
+                  role="menuitem"
+                >
+                  지식 위키
+                </button>
+                <button 
+                  onClick={() => handleBoardClick('프로젝트 쇼케이스')}
+                  className="w-full text-left px-4 py-3 text-sm text-foreground hover:bg-accent cursor-pointer transition-colors"
+                  role="menuitem"
+                >
+                  프로젝트 쇼케이스
+                </button>
+                
+                {/* 구분선 */}
+                <div className="border-t border-border my-2"></div>
+                
+                {/* 계정 섹션 */}
+                <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  계정
+                </div>
+                <button 
+                  onClick={handleSettingsClick}
+                  className="w-full text-left px-4 py-3 text-sm text-foreground hover:bg-accent cursor-pointer transition-colors"
+                  role="menuitem"
+                >
+                  설정
+                </button>
                 {isLoggedIn ? (
                   <button 
                     onClick={handleLogoutClick}
@@ -140,19 +200,15 @@ export default function Header({
                 ) : (
                   <button 
                     onClick={handleLoginClick}
-                    className="w-full text-left px-4 py-3 text-sm text-foreground hover:bg-accent cursor-pointer transition-colors"
+                    className="w-full text-left px-4 py-3 text-sm font-semibold text-blue-600 hover:bg-blue-50 cursor-pointer transition-colors relative"
                     role="menuitem"
                   >
-                    로그인
+                    <span className="flex items-center">
+                      로그인
+                      <span className="ml-2 w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
+                    </span>
                   </button>
                 )}
-                <button 
-                  onClick={handleSettingsClick}
-                  className="w-full text-left px-4 py-3 text-sm text-foreground hover:bg-accent cursor-pointer transition-colors"
-                  role="menuitem"
-                >
-                  설정
-                </button>
               </div>
             )}
           </div>
@@ -201,6 +257,8 @@ export default function Header({
                     <input
                       type="text"
                       placeholder="업무, 프로젝트, 게시글 통합검색..."
+                      value={searchQuery}
+                      onChange={(e) => onSearchChange?.(e.target.value)}
                       className="w-full pl-10 pr-4 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       autoFocus
                     />
@@ -222,121 +280,17 @@ export default function Header({
             )}
           </div>
 
-          {/* 중앙: 타이틀 + 필터 */}
+          {/* 중앙: 타이틀 */}
           <div className="flex-1 flex items-center justify-center">
-            <div className="flex items-center gap-2 relative" ref={dropdownRef}>
-              <h1 className="text-base font-bold text-foreground">{title}</h1>
-              
-              {/* 필터 드롭다운 */}
-              {filterOptions.length > 0 ? (
-                <>
-                  <button
-                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                    className="flex items-center justify-center w-5 h-5 text-muted-foreground hover:text-foreground transition-colors"
-                    aria-label="필터 메뉴"
-                    aria-expanded={isDropdownOpen}
-                    aria-haspopup="true"
-                  >
-                    <ChevronDownIcon className="w-4 h-4" />
-                    <span className="sr-only">필터 메뉴</span>
-                  </button>
-                  
-                  {isDropdownOpen && (
-                    <div 
-                      className="absolute top-full left-0 mt-2 bg-card border border-border rounded-xl shadow-lg min-w-40 py-2 z-50"
-                      role="menu"
-                      aria-label="필터 옵션"
-                    >
-                      {filterOptions.map((option) => (
-                        <button
-                          key={option.key}
-                          onClick={() => {
-                            onFilterChange?.(option.key)
-                            setIsDropdownOpen(false)
-                          }}
-                          className={`w-full text-left px-4 py-3 text-sm transition-colors flex items-center justify-between ${
-                            activeFilter === option.key
-                              ? 'bg-accent text-foreground font-medium'
-                              : 'text-muted-foreground hover:bg-accent hover:text-foreground'
-                          }`}
-                          role="menuitem"
-                        >
-                          <span>{option.label}</span>
-                          {option.count !== undefined && (
-                            <span className="text-xs bg-muted text-muted-foreground px-2 py-1 rounded-full min-w-[24px] text-center">
-                              {option.count}
-                            </span>
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </>
-              ) : showDropdown && (
-                <>
-                  <button
-                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                    className="flex items-center justify-center w-5 h-5 text-muted-foreground hover:text-foreground transition-colors"
-                    aria-label="드롭다운 메뉴"
-                    aria-expanded={isDropdownOpen}
-                    aria-haspopup="true"
-                  >
-                    <ChevronDownIcon className="w-4 h-4" />
-                    <span className="sr-only">드롭다운 메뉴</span>
-                  </button>
-                  
-                  {isDropdownOpen && (
-                    <div 
-                      className="absolute top-full left-0 mt-2 bg-card border border-border rounded-xl shadow-lg min-w-36 py-2 z-50"
-                      role="menu"
-                      aria-label="페이지 옵션"
-                    >
-                      {dropdownItems.map((item, index) => (
-                        <button
-                          key={index}
-                          onClick={() => {
-                            onDropdownItemClick?.(item)
-                            setIsDropdownOpen(false)
-                          }}
-                          className="w-full text-left px-4 py-3 text-sm text-foreground hover:bg-accent cursor-pointer transition-colors"
-                          role="menuitem"
-                        >
-                          {item}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
+            <h1 className="workly-page-title">{title}</h1>
           </div>
 
-          {/* 오른쪽: 로그인 버튼 (로그인 전) 또는 빈 공간 (로그인 후) */}
+          {/* 오른쪽: 빈 공간 */}
           <div className="flex items-center">
-            {!isLoggedIn && (
-              <button 
-                onClick={handleLoginClick}
-                className="workly-button"
-                aria-label="Google로 로그인하기"
-              >
-                Google로 시작하기
-              </button>
-            )}
+            {/* 로그인 버튼은 헤더 바깥(각 페이지)에 배치 */}
           </div>
         </div>
       </div>
-      
-      {/* 모바일 필터 탭 */}
-      {showMobileFilters && filterOptions.length > 0 && (
-        <div className="md:hidden">
-          <MobileFilterTabs
-            options={filterOptions}
-            activeFilter={activeFilter}
-            onFilterChange={onFilterChange || (() => {})}
-            variant="chips"
-          />
-        </div>
-      )}
     </header>
   )
 }

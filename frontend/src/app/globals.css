@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+/* MDXEditor CSS */
+@import '@mdxeditor/editor/style.css';
+
+/* PRD 명세: Pretendard 폰트 시스템 적용 */
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css');
+
 /* 모바일 viewport 및 스크롤 최적화 */
 @supports (padding-bottom: env(safe-area-inset-bottom)) {
   .pb-safe {
@@ -153,23 +159,33 @@
 
 @layer base {
   :root {
-    --background: 250 250 250; /* #FAFAFA */
-    --foreground: 0 0 0; /* #000000 */
+    /* PRD 명세: 워클리 전역 색상 시스템 */
+    --primary: 37 99 235; /* #2563eb (blue-600) - Primary */
+    --primary-hover: 29 78 216; /* #1d4ed8 (blue-700) - Primary Hover */
+    --primary-light: 219 234 254; /* #dbeafe (blue-100) - Primary Light */
+    --text-main: 17 24 39; /* #111827 (gray-900) - Text Main */
+    --text-secondary: 107 114 128; /* #6b7280 (gray-500) - Text Secondary */
+    --background: 249 250 251; /* #f9fafb (gray-50) - Background */
+    --border: 229 231 235; /* #e5e7eb (gray-200) - Border */
+    --success: 5 150 105; /* #059669 (green-600) - Success */
+    --warning: 217 119 6; /* #d97706 (amber-600) - Warning */
+    --error: 220 38 38; /* #dc2626 (red-600) - Error */
+    
+    /* 기존 shadcn/ui 호환성 유지 */
+    --foreground: var(--text-main);
     --card: 255 255 255; /* #FFFFFF */
-    --card-foreground: 0 0 0; /* #000000 */
-    --primary: 0 0 0; /* #000000 */
+    --card-foreground: var(--text-main);
     --primary-foreground: 255 255 255; /* #FFFFFF */
-    --secondary: 245 245 245; /* #F5F5F5 */
-    --secondary-foreground: 0 0 0; /* #000000 */
-    --muted: 245 245 245; /* #F5F5F5 */
-    --muted-foreground: 153 153 153; /* #999999 */
-    --accent: 245 245 245; /* #F5F5F5 */
-    --accent-foreground: 0 0 0; /* #000000 */
-    --destructive: 239 68 68; /* #EF4444 */
+    --secondary: var(--primary-light);
+    --secondary-foreground: var(--primary);
+    --muted: var(--background);
+    --muted-foreground: var(--text-secondary);
+    --accent: var(--primary-light);
+    --accent-foreground: var(--primary);
+    --destructive: var(--error);
     --destructive-foreground: 255 255 255; /* #FFFFFF */
-    --border: 213 213 213; /* #D5D5D5 */
-    --input: 213 213 213; /* #D5D5D5 */
-    --ring: 0 0 0; /* #000000 */
+    --input: var(--border);
+    --ring: var(--primary);
   }
 }
 
@@ -179,6 +195,8 @@
   }
   body {
     @apply bg-background text-foreground;
+    /* PRD 명세: Pretendard 폰트 적용 */
+    font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   }
   
   /* 접근성을 위한 스크린 리더 전용 텍스트 */
@@ -220,32 +238,235 @@
   }
 }
 
-/* 워클리 커스텀 스타일 */
+/* PRD 명세: 워클리 전역 UI/UX 시스템 */
 @layer components {
   .nav-item {
     @apply flex items-center justify-center rounded-xl cursor-pointer transition-colors;
-    @apply hover:bg-black/5 text-muted-foreground hover:text-foreground;
+    @apply hover:bg-blue-50 text-gray-500 hover:text-blue-600;
     width: 60px;
     height: 60px;
   }
   
   .nav-item.active {
-    @apply bg-black/5 text-foreground;
+    @apply bg-blue-100 text-blue-600;
   }
   
+  /* PRD 명세: Card 컴포넌트 - 미니멀 디자인 */
   .workly-card {
-    @apply bg-card border border-border rounded-lg p-6 shadow-sm;
+    @apply rounded-lg bg-white border border-gray-100 p-4;
   }
   
+  /* PRD 수정: List Card - 목록 아이템들을 위한 컨테이너 카드 - 미니멀 디자인 */
+  .workly-list-card {
+    @apply rounded-lg bg-white border border-gray-100;
+  }
+  
+  /* PRD 명세: Button 컴포넌트 */
   .workly-button {
-    @apply inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium;
-    @apply bg-primary text-primary-foreground hover:bg-primary/90;
-    @apply transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring;
+    @apply rounded-md font-semibold px-4 py-2;
+    @apply bg-blue-600 text-white hover:bg-blue-700;
+    @apply transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500;
   }
   
   .workly-button-outline {
-    @apply inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium;
-    @apply border border-input bg-background hover:bg-accent hover:text-accent-foreground;
-    @apply transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring;
+    @apply rounded-md font-semibold px-4 py-2;
+    @apply border border-gray-200 bg-white hover:bg-gray-50 text-gray-900;
+    @apply transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500;
   }
+  
+  /* PRD 명세: Filter Chip 컴포넌트 */
+  .workly-filter-chip {
+    @apply rounded-full bg-gray-100 text-gray-700 px-3 py-1 text-sm;
+    @apply transition-colors cursor-pointer hover:bg-gray-200;
+  }
+  
+  .workly-filter-chip.active {
+    @apply bg-blue-100 text-blue-700;
+  }
+  
+  /* PRD 명세: 타이포그래피 시스템 */
+  .workly-page-title {
+    @apply text-2xl font-bold text-gray-900; /* 24px, Bold (700) */
+  }
+  
+  .workly-card-title {
+    @apply text-lg font-semibold text-gray-900; /* 18px, SemiBold (600) */
+  }
+  
+  .workly-body {
+    @apply text-base font-normal text-gray-900; /* 16px, Regular (400) */
+  }
+  
+  .workly-caption {
+    @apply text-sm font-normal text-gray-500; /* 14px, Regular (400) */
+  }
+  
+  /* 텍스트 클램핑 유틸리티 */
+  .line-clamp-1 {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
+
+/* 마크다운 에디터 워클리 스타일 커스터마이징 */
+.w-md-editor {
+  background-color: transparent !important;
+}
+
+.w-md-editor-text-container,
+.w-md-editor-text-input,
+.w-md-editor-text-area {
+  font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+}
+
+.w-md-editor-toolbar {
+  background-color: #f9fafb !important;
+  border-bottom: 1px solid #e5e7eb !important;
+}
+
+.w-md-editor-toolbar button {
+  color: #6b7280 !important;
+}
+
+.w-md-editor-toolbar button:hover {
+  background-color: #e5e7eb !important;
+  color: #2563eb !important;
+}
+
+.w-md-editor-text {
+  background-color: white !important;
+  border: none !important;
+}
+
+.w-md-editor-text-container .w-md-editor-text-input,
+.w-md-editor-text-container .w-md-editor-text-area {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.w-md-editor-text-container .w-md-editor-text-area:focus {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* MDXEditor 워클리 스타일 커스터마이징 */
+.mdxeditor {
+  background-color: white !important;
+  font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+}
+
+.mdxeditor-toolbar {
+  background-color: #f9fafb !important;
+  border-bottom: 1px solid #e5e7eb !important;
+  padding: 8px 12px !important;
+}
+
+.mdxeditor-toolbar button {
+  color: #6b7280 !important;
+  border-radius: 6px !important;
+  padding: 6px 8px !important;
+}
+
+.mdxeditor-toolbar button:hover {
+  background-color: #e5e7eb !important;
+  color: #2563eb !important;
+}
+
+.mdxeditor-toolbar button[data-state="on"] {
+  background-color: #dbeafe !important;
+  color: #2563eb !important;
+}
+
+.mdxeditor-rich-text-editor {
+  font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+  font-size: 14px !important;
+  line-height: 1.6 !important;
+}
+
+.mdxeditor-rich-text-editor h1 {
+  font-size: 1.875rem !important;
+  font-weight: 700 !important;
+  margin-top: 1.5rem !important;
+  margin-bottom: 1rem !important;
+}
+
+.mdxeditor-rich-text-editor h2 {
+  font-size: 1.5rem !important;
+  font-weight: 600 !important;
+  margin-top: 1.25rem !important;
+  margin-bottom: 0.75rem !important;
+}
+
+.mdxeditor-rich-text-editor h3 {
+  font-size: 1.25rem !important;
+  font-weight: 600 !important;
+  margin-top: 1rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.mdxeditor-rich-text-editor p {
+  margin-bottom: 1rem !important;
+}
+
+.mdxeditor-rich-text-editor ul,
+.mdxeditor-rich-text-editor ol {
+  margin-bottom: 1rem !important;
+  padding-left: 1.5rem !important;
+}
+
+.mdxeditor-rich-text-editor li {
+  margin-bottom: 0.25rem !important;
+}
+
+.mdxeditor-rich-text-editor blockquote {
+  border-left: 4px solid #2563eb !important;
+  background-color: #f8fafc !important;
+  padding: 1rem !important;
+  margin: 1rem 0 !important;
+  font-style: italic !important;
+}
+
+.mdxeditor-rich-text-editor code {
+  background-color: #f1f5f9 !important;
+  padding: 0.125rem 0.25rem !important;
+  border-radius: 0.25rem !important;
+  font-size: 0.875rem !important;
+}
+
+.mdxeditor-rich-text-editor pre {
+  background-color: #1e293b !important;
+  color: #e2e8f0 !important;
+  padding: 1rem !important;
+  border-radius: 0.5rem !important;
+  overflow-x: auto !important;
+  margin: 1rem 0 !important;
+}
+
+.mdxeditor-rich-text-editor a {
+  color: #2563eb !important;
+  text-decoration: underline !important;
+}
+
+.mdxeditor-rich-text-editor a:hover {
+  color: #1d4ed8 !important;
 }

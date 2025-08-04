@@ -12,38 +12,38 @@ interface TaskStatusBadgeProps {
 const statusConfig = {
   todo: {
     label: '할 일',
-    bgColor: 'bg-gray-100',
-    textColor: 'text-gray-800',
+    bgColor: 'bg-gray-50',
+    textColor: 'text-gray-700',
     icon: '📋',
   },
   in_progress: {
     label: '진행 중',
     bgColor: 'bg-blue-100',
-    textColor: 'text-blue-800',
+    textColor: 'text-blue-600',
     icon: '🔄',
   },
   in_review: {
     label: '검토',
-    bgColor: 'bg-yellow-100',
-    textColor: 'text-yellow-800',
+    bgColor: 'bg-gray-100',
+    textColor: 'text-gray-600',
     icon: '👀',
   },
   done: {
     label: '완료',
     bgColor: 'bg-green-100',
-    textColor: 'text-green-800',
+    textColor: 'text-green-600',
     icon: '✅',
   },
   blocked: {
     label: '차단됨',
-    bgColor: 'bg-red-100',
-    textColor: 'text-red-800',
+    bgColor: 'bg-gray-100',
+    textColor: 'text-gray-500',
     icon: '🚫',
   },
   cancelled: {
     label: '취소됨',
-    bgColor: 'bg-gray-100',
-    textColor: 'text-gray-600',
+    bgColor: 'bg-gray-50',
+    textColor: 'text-gray-500',
     icon: '❌',
   },
 };

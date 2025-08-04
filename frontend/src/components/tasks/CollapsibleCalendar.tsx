@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
+import { useCalendarFilterStore } from '@/lib/stores/calendarFilterStore'
 
 interface CollapsibleCalendarProps {
   isExpanded: boolean
@@ -26,9 +27,10 @@ export default function CollapsibleCalendar({
 }: CollapsibleCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [animatingDate, setAnimatingDate] = useState<string | null>(null)
-  const [showNoDue, setShowNoDue] = useState(false)
-  const [showOverdue, setShowOverdue] = useState(false)
   const calendarRef = useRef<HTMLDivElement>(null)
+  
+  // 전역 캘린더 필터 상태
+  const { showNoDue, showOverdue, setShowNoDue, setShowOverdue } = useCalendarFilterStore()
 
   // 달력 바깥 클릭 감지
   useEffect(() => {
@@ -222,7 +224,7 @@ export default function CollapsibleCalendar({
                       onClick={() => setShowNoDue(!showNoDue)}
                       className={`px-3 py-1.5 text-xs font-medium rounded-full transition-colors ${
                         showNoDue 
-                          ? 'bg-orange-500 text-white' 
+                          ? 'bg-blue-500 text-white' 
                           : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                       }`}
                     >
@@ -315,38 +317,10 @@ export default function CollapsibleCalendar({
               })}
             </div>
 
-            {/* 필터된 업무 표시 영역 */}
-            {(showNoDue || showOverdue) && (
-              <div className="mt-4 border-t border-gray-200 pt-4">
-                {showNoDue && (
-                  <div className="mb-3">
-                    <h4 className="text-sm font-medium text-orange-600 mb-2 flex items-center gap-1">
-                      <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                      마감일 미지정 업무
-                    </h4>
-                    <div className="text-xs text-gray-500 bg-orange-50 rounded-lg p-2">
-                      마감일이 설정되지 않은 업무들입니다. 드래그해서 날짜를 지정해보세요.
-                    </div>
-                  </div>
-                )}
-                
-                {showOverdue && (
-                  <div className="mb-3">
-                    <h4 className="text-sm font-medium text-red-600 mb-2 flex items-center gap-1">
-                      <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                      마감일 지난 업무
-                    </h4>
-                    <div className="text-xs text-gray-500 bg-red-50 rounded-lg p-2">
-                      마감일이 지난 업무들입니다. 새로운 날짜로 조정해보세요.
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
 
             {/* 하단 안내 텍스트 */}
             <div className="mt-4 text-center text-sm text-gray-500">
-              날짜를 선택하여 업무의 마감일을 설정하세요
+              업무를 드래그해서 날짜를 지정해보세요.
             </div>
           </div>
         </div>

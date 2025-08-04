@@ -1,5 +1,7 @@
 'use client';
 
+export const dynamic = 'force-dynamic'
+
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { 
@@ -26,7 +28,7 @@ import {
 } from 'lucide-react';
 // import { apiClient } from '@/lib/api'; // 목업 모드에서는 주석 처리
 import MainContainer from '@/components/layout/MainContainer';
-import { Project, UpdateProjectDto, ProjectStatus, ProjectPriority, ProjectMember, ProjectMemberRole, AddProjectMemberDto } from '@/types/project.types';
+import { Project, UpdateProjectDto, ProjectStatus, ProjectPriority, ProjectVisibility, ProjectMember, ProjectMemberRole, AddProjectMemberDto } from '@/types/project.types';
 import ProjectChatChannel from '@/components/projects/ProjectChatChannel';
 import ProjectObjectiveManager from '@/components/projects/ProjectObjectiveManager';
 
@@ -1228,11 +1230,28 @@ export default function ProjectDetailPage() {
           progress: 75,
           memberCount: 4,
           taskCount: 23,
+          completedTaskCount: 17,
+          visibility: ProjectVisibility.TEAM,
+          isArchived: false,
+          isTemplate: false,
+          settings: {
+            allowGuestAccess: false,
+            requireApprovalForTasks: false,
+            enableTimeTracking: true,
+            enableBudgetTracking: false,
+            enableNotifications: true
+          },
+          ownerId: 'user1',
           createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
           updatedAt: new Date().toISOString(),
           tags: ['React', 'TypeScript', 'NestJS', 'MVP'],
           color: '#3B82F6',
           icon: '🚀',
+          owner: {
+            id: 'user1',
+            name: '김워클리',
+            email: 'kim@workly.com'
+          },
           objectives: [
             {
               id: 'obj1',
@@ -1286,8 +1305,10 @@ export default function ProjectDetailPage() {
           members: [
             {
               id: 'member1',
+              projectId: '1',
               userId: 'user1',
               role: ProjectMemberRole.OWNER,
+              permissions: ['read', 'write', 'admin'],
               joinedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
               user: {
                 id: 'user1',
@@ -1297,8 +1318,10 @@ export default function ProjectDetailPage() {
             },
             {
               id: 'member2',
+              projectId: '1',
               userId: 'user2',
               role: ProjectMemberRole.ADMIN,
+              permissions: ['read', 'write'],
               joinedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
               user: {
                 id: 'user2',
@@ -1308,8 +1331,10 @@ export default function ProjectDetailPage() {
             },
             {
               id: 'member3',
+              projectId: '1',
               userId: 'user3',
               role: ProjectMemberRole.MEMBER,
+              permissions: ['read'],
               joinedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
               user: {
                 id: 'user3',
@@ -1319,8 +1344,10 @@ export default function ProjectDetailPage() {
             },
             {
               id: 'member4',
+              projectId: '1',
               userId: 'user4',
               role: ProjectMemberRole.MEMBER,
+              permissions: ['read'],
               joinedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
               user: {
                 id: 'user4',
@@ -1329,7 +1356,6 @@ export default function ProjectDetailPage() {
               }
             }
           ],
-          ownerId: 'user1',
           startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
           dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
           budget: 50000000,
@@ -1342,13 +1368,30 @@ export default function ProjectDetailPage() {
           status: ProjectStatus.ACTIVE,
           priority: ProjectPriority.MEDIUM,
           progress: 45,
-          memberCount: 3,
+          memberCount: 1,
           taskCount: 15,
+          completedTaskCount: 7,
+          visibility: ProjectVisibility.TEAM,
+          isArchived: false,
+          isTemplate: false,
+          settings: {
+            allowGuestAccess: false,
+            requireApprovalForTasks: true,
+            enableTimeTracking: true,
+            enableBudgetTracking: true,
+            enableNotifications: true
+          },
+          ownerId: 'user5',
           createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
           updatedAt: new Date().toISOString(),
           tags: ['AI', 'Python', 'TensorFlow', '챗봇'],
           color: '#10B981',
           icon: '🤖',
+          owner: {
+            id: 'user5',
+            name: '최AI연구자',
+            email: 'choi@workly.com'
+          },
           objectives: [
             {
               id: 'obj3',
@@ -1374,8 +1417,10 @@ export default function ProjectDetailPage() {
           members: [
             {
               id: 'member5',
+              projectId: '2',
               userId: 'user5',
               role: ProjectMemberRole.OWNER,
+              permissions: ['read', 'write', 'admin'],
               joinedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
               user: {
                 id: 'user5',
@@ -1383,8 +1428,7 @@ export default function ProjectDetailPage() {
                 email: 'choi@workly.com'
               }
             }
-          ],
-          ownerId: 'user5'
+          ]
         }
       };
 

@@ -9,6 +9,7 @@ export enum TaskStatus {
   IN_REVIEW = 'in_review',
   DONE = 'done',
   BLOCKED = 'blocked',
+  DEFERRED = 'deferred',
   CANCELLED = 'cancelled',
 }
 
@@ -298,5 +299,52 @@ export interface TaskWizardData {
   assigneeId?: string;
 }
 
-// 홈 대시보드 필터
-export type HomeDashboardFilter = 'today' | 'completed' | 'all' | 'someday';
+// 홈 대시보드 필터 (GTD 방법론 기반)
+export type HomeDashboardFilter = 'today' | 'inbox' | 'someday' | 'completed' | 'all';
+
+// 체크리스트 아이템
+export interface ChecklistItem {
+  id: string;
+  text: string;
+  completed: boolean;
+  order: number;
+}
+
+// 업무 관계 타입
+export type TaskRelationshipType = 'blocks' | 'blocked_by' | 'related' | 'parent' | 'child';
+
+// 업무 관계
+export interface TaskRelationship {
+  id: string;
+  targetTaskId: string;
+  type: TaskRelationshipType;
+  targetTask?: Task;
+}
+
+// 위키 레퍼런스
+export interface WikiReference {
+  id: string;
+  title: string;
+  url: string;
+  description?: string;
+}
+
+// 확장된 업무 상세 정보
+export interface TaskDetail extends Task {
+  descriptionMarkdown?: string;
+  checklist: ChecklistItem[];
+  relationships: TaskRelationship[];
+  wikiReferences: WikiReference[];
+  estimatedTimeMinutes?: number;
+  loggedTimeMinutes?: number;
+}
+
+// 업무 상세 업데이트 DTO
+export interface UpdateTaskDetailDto extends UpdateTaskDto {
+  descriptionMarkdown?: string;
+  checklist?: ChecklistItem[];
+  relationships?: TaskRelationship[];
+  wikiReferences?: WikiReference[];
+  estimatedTimeMinutes?: number;
+  loggedTimeMinutes?: number;
+}

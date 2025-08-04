@@ -19,7 +19,8 @@ import {
   UpdateTaskDto, 
   TaskQueryDto,
   CreateTaskLabelDto,
-  UpdateTaskLabelDto
+  UpdateTaskLabelDto,
+  UpdateTaskDetailDto
 } from './dto/task.dto';
 import { 
   TaskStatus, 
@@ -398,6 +399,95 @@ export class TasksService {
     //     userId
     //   );
     // }
+
+    return finalTask;
+  }
+
+  // 태스크 상세 정보 업데이트 (마크다운, 체크리스트, 관계, 위키 레퍼런스, 시간 관리)
+  async updateTaskDetail(id: string, updateTaskDetailDto: UpdateTaskDetailDto, userId: string): Promise<Task> {
+    const task = await this.findOne(id, userId);
+
+    // 수정 권한 확인
+    if (task.assigneeId !== userId && task.reporterId !== userId && 
+        task.project?.ownerId !== userId) {
+      throw new ForbiddenException('태스크를 수정할 권한이 없습니다.');
+    }
+
+    const {
+      descriptionMarkdown,
+      checklist,
+      relationships,
+      wikiReferences,
+      estimatedTimeMinutes,
+      loggedTimeMinutes,
+      ...basicFields
+    } = updateTaskDetailDto;
+
+    // 기본 필드 업데이트 (기존 update 메서드 로직 재사용)
+    Object.assign(task, basicFields);
+
+    // 새로운 상세 필드들 업데이트
+    if (descriptionMarkdown !== undefined) {
+      task.descriptionMarkdown = descriptionMarkdown;
+    }
+
+    if (checklist !== undefined) {
+      // 체크리스트 아이템들의 ID가 없으면 생성
+      task.checklist = checklist.map((item, index) => ({
+        id: item.id || `checklist-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        text: item.text,
+        completed: item.completed,
+        order: item.order !== undefined ? item.order : index
+      }));
+    }
+
+    if (relationships !== undefined) {
+      // 관계들의 ID가 없으면 생성
+      task.relationships = relationships.map(rel => ({
+        id: rel.id || `rel-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        targetTaskId: rel.targetTaskId,
+        type: rel.type
+      }));
+    }
+
+    if (wikiReferences !== undefined) {
+      // 위키 레퍼런스들의 ID가 없으면 생성
+      task.wikiReferences = wikiReferences.map(wiki => ({
+        id: wiki.id || `wiki-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        title: wiki.title,
+        url: wiki.url,
+        description: wiki.description
+      }));
+    }
+
+    if (estimatedTimeMinutes !== undefined) {
+      task.estimatedTimeMinutes = estimatedTimeMinutes;
+    }
+
+    if (loggedTimeMinutes !== undefined) {
+      task.loggedTimeMinutes = loggedTimeMinutes;
+    }
+
+    // 상태 관련 로직 (기존과 동일)
+    if (updateTaskDetailDto.status !== undefined) {
+      task.status = updateTaskDetailDto.status;
+      if (updateTaskDetailDto.status === TaskStatus.COMPLETED && !task.completedAt) {
+        task.completedAt = new Date();
+      } else if (updateTaskDetailDto.status !== TaskStatus.COMPLETED) {
+        task.completedAt = undefined;
+      }
+    }
+
+    // 레이블 업데이트 (기존과 동일)
+    if (updateTaskDetailDto.labelIds !== undefined) {
+      const labels = await this.taskLabelRepository.findBy({
+        id: In(updateTaskDetailDto.labelIds),
+      });
+      task.labels = labels;
+    }
+
+    const updatedTask = await this.taskRepository.save(task);
+    const finalTask = await this.findOne(updatedTask.id, userId);
 
     return finalTask;
   }

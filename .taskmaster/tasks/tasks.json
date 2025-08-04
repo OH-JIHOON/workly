@@ -474,11 +474,114 @@
         ],
         "status": "pending",
         "subtasks": []
+      },
+      {
+        "id": 13,
+        "title": "Implement Notion-Style Task Detail Modal with Markdown Editor",
+        "description": "Develop a comprehensive task detail view within a Notion-style modal, featuring a markdown editor for descriptions, checklists, task relationships, wiki references, and time management functionalities.",
+        "details": "Frontend:\n- Create a reusable modal component for displaying and editing task details, adhering to a Notion-style aesthetic.\n- Integrate a markdown editor (evaluate MDXEditor or @uiw/react-md-editor for features, performance, and ease of use) for the task description field.\n- Implement dedicated UI components for:\n  - Checklists: Allow adding, editing, deleting, and marking checklist items as complete.\n  - Task Relationships: Enable linking tasks (e.g., parent/child, blocking/blocked by, related) with a task search/picker.\n  - Wiki References: Provide fields for adding and displaying links to external wiki pages or internal documentation.\n  - Time Management: Include functionalities for estimated time, logged time, and potentially a simple time tracking mechanism (start/stop).\n- Ensure data binding and debounced saving for all editable fields to provide a smooth user experience.\n- Focus on responsive design and accessibility for the modal and its contents.\n\nBackend (API Extensions):\n- Extend the existing Task data model to accommodate new fields:\n  - `description_markdown`: String for markdown content.\n  - `checklist`: Array of objects (e.g., `{id: string, text: string, completed: boolean}`).\n  - `relationships`: Array of objects (e.g., `{target_task_id: number, type: 'parent' | 'subtask' | 'blocks' | 'related'}`).\n  - `wiki_references`: Array of objects (e.g., `{title: string, url: string}`).\n  - `estimated_time_minutes`: Number.\n  - `logged_time_minutes`: Number.\n- Enhance `GET /tasks/:id` to return all new detailed fields.\n- Implement/extend `PUT /tasks/:id` to allow updating all new detailed fields, ensuring proper validation and data integrity.",
+        "testStrategy": "Unit Tests:\n- Test the markdown editor component's rendering, input handling, and content parsing.\n- Verify the logic for adding, removing, and toggling checklist items.\n- Test the task relationship component's ability to add/remove links and handle invalid task IDs.\n- Test time management component's input validation and calculation logic.\n\nIntegration Tests:\n- Verify that `GET /tasks/:id` successfully retrieves tasks with all new detailed fields (markdown, checklist, relationships, time data).\n- Confirm that `PUT /tasks/:id` correctly updates all new detailed fields in the database and that changes persist.\n- Test the interaction between the frontend components and the backend API for saving and loading data.\n\nEnd-to-End Tests (using Playwright/Cypress):\n- Open the task detail modal for an existing task and verify its Notion-style appearance.\n- Edit the markdown description, add/remove checklist items, establish task relationships, and log time.\n- Save the changes and verify they are correctly displayed upon re-opening the modal or refreshing the page.\n- Test various scenarios: empty fields, large markdown content, multiple checklist items, and complex relationship structures.\n- Verify the modal's opening/closing animations and overall user experience.",
+        "status": "done",
+        "dependencies": [
+          8
+        ],
+        "priority": "medium",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement Notion-Style Task Detail Modal UI",
+            "description": "Create the foundational reusable modal component for displaying task details, adhering to a Notion-style aesthetic, focusing on responsive design and accessibility. [Updated: 8/2/2025]",
+            "dependencies": [],
+            "details": "Create a reusable modal component for displaying and editing task details, adhering to a Notion-style aesthetic. Ensure responsive design and accessibility for the modal and its contents.\n<info added on 2025-08-01T15:20:44.829Z>\nTypeScript type definitions have been completed. Implementation of the modal component has started, focusing on the basic layout and a full-screen toggle feature.\n</info added on 2025-08-01T15:20:44.829Z>",
+            "status": "done",
+            "testStrategy": "Unit tests for modal rendering, opening/closing behavior, and responsiveness."
+          },
+          {
+            "id": 2,
+            "title": "Integrate Markdown Editor for Task Description",
+            "description": "Integrate a chosen markdown editor into the task description field within the Notion-style modal.",
+            "dependencies": [
+              "13.1"
+            ],
+            "details": "Integrate a markdown editor (evaluate MDXEditor or @uiw/react-md-editor for features, performance, and ease of use) for the task description field.",
+            "status": "done",
+            "testStrategy": "Unit tests for the markdown editor component's rendering, input handling, and content parsing."
+          },
+          {
+            "id": 3,
+            "title": "Implement Checklist Functionality",
+            "description": "Develop dedicated UI components and logic for adding, editing, deleting, and marking checklist items as complete within the task detail modal.",
+            "dependencies": [
+              "13.1"
+            ],
+            "details": "Implement dedicated UI components for Checklists: Allow adding, editing, deleting, and marking checklist items as complete.",
+            "status": "done",
+            "testStrategy": "Unit tests for the logic for adding, removing, and toggling checklist items."
+          },
+          {
+            "id": 4,
+            "title": "Implement Task Relationship Management",
+            "description": "Develop UI components and logic to enable linking tasks (e.g., parent/child, blocking/blocked by, related) with a task search/picker within the modal.",
+            "dependencies": [
+              "13.1"
+            ],
+            "details": "Implement dedicated UI components for Task Relationships: Enable linking tasks (e.g., parent/child, blocking/blocked by, related) with a task search/picker.",
+            "status": "done",
+            "testStrategy": "Unit tests for the task relationship component's ability to add/remove links and handle invalid task IDs."
+          },
+          {
+            "id": 5,
+            "title": "Implement Time Management Features",
+            "description": "Develop UI components for estimated time, logged time, and potentially a simple time tracking mechanism within the task detail modal.",
+            "dependencies": [
+              "13.1"
+            ],
+            "details": "Implement dedicated UI components for Time Management: Include functionalities for estimated time, logged time, and potentially a simple time tracking mechanism (start/stop).",
+            "status": "done",
+            "testStrategy": "Unit tests for time management component's input validation and display logic."
+          },
+          {
+            "id": 6,
+            "title": "Implement Wiki References Management",
+            "description": "Develop UI components for adding and displaying links to external wiki pages or internal documentation within the task detail modal.",
+            "dependencies": [
+              "13.1"
+            ],
+            "details": "Implement dedicated UI components for Wiki References: Provide fields for adding and displaying links to external wiki pages or internal documentation.",
+            "status": "done",
+            "testStrategy": "Unit tests for wiki reference component's input handling and link display."
+          },
+          {
+            "id": 7,
+            "title": "Extend Task Data Model and API",
+            "description": "Extend the backend Task data model to accommodate new fields for description, checklists, relationships, wiki references, and time management, and update the API endpoints for retrieval and update.",
+            "dependencies": [],
+            "details": "Extend the existing Task data model to accommodate new fields: `description_markdown`, `checklist`, `relationships`, `wiki_references`, `estimated_time_minutes`, `logged_time_minutes`. Enhance `GET /tasks/:id` to return all new detailed fields. Implement/extend `PUT /tasks/:id` to allow updating all new detailed fields, ensuring proper validation and data integrity.",
+            "status": "done",
+            "testStrategy": "Unit tests for data model validation and API endpoint logic. Integration tests for data persistence and retrieval."
+          },
+          {
+            "id": 8,
+            "title": "Integrate Frontend with Backend and Conduct Comprehensive Testing",
+            "description": "Connect all implemented frontend UI components with the extended backend API, ensuring data binding, debounced saving, and conducting comprehensive integration and end-to-end tests.",
+            "dependencies": [
+              "13.2",
+              "13.3",
+              "13.4",
+              "13.5",
+              "13.6",
+              "13.7"
+            ],
+            "details": "Ensure data binding and debounced saving for all editable fields to provide a smooth user experience. Conduct comprehensive integration tests to ensure all implemented features work correctly with the backend API for data persistence and retrieval.",
+            "status": "done",
+            "testStrategy": "End-to-end tests for the entire task detail modal flow, including data creation, update, and retrieval. Verify debounced saving and data integrity across sessions."
+          }
+        ]
       }
     ],
     "metadata": {
       "created": "2025-07-25T13:37:36.448Z",
-      "updated": "2025-07-26T00:23:24.317Z",
+      "updated": "2025-08-02T07:23:05.526Z",
       "description": "Tasks for master context"
     }
   }

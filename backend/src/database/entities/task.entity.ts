@@ -47,6 +47,9 @@ export class Task {
   @Column('text', { nullable: true })
   description?: string;
 
+  @Column('text', { nullable: true })
+  descriptionMarkdown?: string;
+
   @Column({
     type: 'enum',
     enum: TaskStatus,
@@ -106,6 +109,35 @@ export class Task {
 
   @Column('jsonb', { default: {} })
   customFields: { [key: string]: any };
+
+  @Column('jsonb', { default: [] })
+  checklist: Array<{
+    id: string;
+    text: string;
+    completed: boolean;
+    order: number;
+  }>;
+
+  @Column('jsonb', { default: [] })
+  relationships: Array<{
+    id: string;
+    targetTaskId: string;
+    type: 'blocks' | 'blocked_by' | 'related' | 'parent' | 'child';
+  }>;
+
+  @Column('jsonb', { default: [] })
+  wikiReferences: Array<{
+    id: string;
+    title: string;
+    url: string;
+    description?: string;
+  }>;
+
+  @Column({ type: 'int', nullable: true })
+  estimatedTimeMinutes?: number;
+
+  @Column({ type: 'int', default: 0 })
+  loggedTimeMinutes: number;
 
   @CreateDateColumn()
   createdAt: Date;
@@ -170,8 +202,20 @@ export class Task {
     if (!this.customFields) {
       this.customFields = {};
     }
+    if (!this.checklist) {
+      this.checklist = [];
+    }
+    if (!this.relationships) {
+      this.relationships = [];
+    }
+    if (!this.wikiReferences) {
+      this.wikiReferences = [];
+    }
     if (this.actualHours === undefined) {
       this.actualHours = 0;
+    }
+    if (this.loggedTimeMinutes === undefined) {
+      this.loggedTimeMinutes = 0;
     }
   }
 
@@ -383,8 +427,92 @@ export class Task {
     return this.actualHours / this.estimatedHours;
   }
 
+  // 체크리스트 관련 메서드
+  addChecklistItem(text: string): void {
+    const newItem = {
+      id: `checklist-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      text: text.trim(),
+      completed: false,
+      order: this.checklist.length
+    };
+    this.checklist.push(newItem);
+  }
+
+  updateChecklistItem(itemId: string, updates: Partial<{ text: string; completed: boolean; order: number }>): void {
+    const itemIndex = this.checklist.findIndex(item => item.id === itemId);
+    if (itemIndex !== -1) {
+      this.checklist[itemIndex] = { ...this.checklist[itemIndex], ...updates };
+    }
+  }
+
+  removeChecklistItem(itemId: string): void {
+    this.checklist = this.checklist.filter(item => item.id !== itemId);
+  }
+
+  getChecklistProgress(): { completed: number; total: number; percentage: number } {
+    const total = this.checklist.length;
+    const completed = this.checklist.filter(item => item.completed).length;
+    const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+    return { completed, total, percentage };
+  }
+
+  // 관계 관련 메서드
+  addRelationship(targetTaskId: string, type: 'blocks' | 'blocked_by' | 'related' | 'parent' | 'child'): void {
+    const relationship = {
+      id: `rel-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      targetTaskId,
+      type
+    };
+    this.relationships.push(relationship);
+  }
+
+  removeRelationship(relationshipId: string): void {
+    this.relationships = this.relationships.filter(rel => rel.id !== relationshipId);
+  }
+
+  hasRelationshipWith(taskId: string): boolean {
+    return this.relationships.some(rel => rel.targetTaskId === taskId);
+  }
+
+  // 위키 레퍼런스 관련 메서드
+  addWikiReference(title: string, url: string, description?: string): void {
+    const wikiRef = {
+      id: `wiki-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      title: title.trim(),
+      url: url.trim(),
+      description: description?.trim()
+    };
+    this.wikiReferences.push(wikiRef);
+  }
+
+  updateWikiReference(wikiId: string, updates: Partial<{ title: string; url: string; description: string }>): void {
+    const wikiIndex = this.wikiReferences.findIndex(wiki => wiki.id === wikiId);
+    if (wikiIndex !== -1) {
+      this.wikiReferences[wikiIndex] = { ...this.wikiReferences[wikiIndex], ...updates };
+    }
+  }
+
+  removeWikiReference(wikiId: string): void {
+    this.wikiReferences = this.wikiReferences.filter(wiki => wiki.id !== wikiId);
+  }
+
+  // 시간 관리 메서드
+  updateEstimatedTimeMinutes(minutes: number): void {
+    this.estimatedTimeMinutes = Math.max(0, minutes);
+  }
+
+  addLoggedTime(minutes: number): void {
+    this.loggedTimeMinutes += Math.max(0, minutes);
+  }
+
+  getTimeEfficiency(): number | null {
+    if (!this.estimatedTimeMinutes || this.loggedTimeMinutes === 0) return null;
+    return this.loggedTimeMinutes / this.estimatedTimeMinutes;
+  }
+
   // JSON 직렬화
   toJSON() {
+    const checklistProgress = this.getChecklistProgress();
     return {
       ...this,
       isOverdue: this.isOverdue(),
@@ -392,6 +520,8 @@ export class Task {
       hasSubtasks: this.hasSubtasks(),
       hasDependencies: this.hasDependencies(),
       hasBlockingDependencies: this.hasBlockingDependencies(),
+      checklistProgress,
+      timeEfficiency: this.getTimeEfficiency(),
     };
   }
 }

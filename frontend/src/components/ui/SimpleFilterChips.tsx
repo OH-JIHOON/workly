@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { XMarkIcon, AdjustmentsHorizontalIcon } from '@heroicons/react/24/outline'
+import { XMarkIcon, AdjustmentsHorizontalIcon, FunnelIcon } from '@heroicons/react/24/outline'
 
 interface FilterOption {
   key: string
@@ -27,6 +27,8 @@ interface SimpleFilterChipsProps {
     title: string
     settings: FilterSetting[]
   }
+  onAdvancedFilterClick?: () => void
+  hasAdvancedFilters?: boolean
 }
 
 /**
@@ -40,7 +42,9 @@ export default function SimpleFilterChips({
   activeFilters,
   onFilterChange,
   className = '',
-  settings
+  settings,
+  onAdvancedFilterClick,
+  hasAdvancedFilters = false
 }: SimpleFilterChipsProps) {
   
   const [showSettings, setShowSettings] = useState(false)
@@ -108,6 +112,19 @@ export default function SimpleFilterChips({
           </div>
         )}
       </div>
+      
+      {/* 상세 필터 버튼 */}
+      {onAdvancedFilterClick && (
+        <button
+          onClick={onAdvancedFilterClick}
+          className={`flex-shrink-0 w-10 h-10 flex items-center justify-center bg-white border border-gray-200 rounded-full hover:border-gray-300 hover:bg-gray-50 transition-colors ${
+            hasAdvancedFilters ? 'text-blue-600 border-blue-200 bg-blue-50' : 'text-gray-600'
+          }`}
+          aria-label="상세 필터"
+        >
+          <FunnelIcon className="w-5 h-5" />
+        </button>
+      )}
       
       {/* 필터 설정 버튼 */}
       {settings && (

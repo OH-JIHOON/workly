@@ -7,7 +7,6 @@ module.exports = {
   },
   extends: [
     'eslint:recommended',
-    '@typescript-eslint/recommended',
   ],
   ignorePatterns: [
     'dist',
@@ -15,18 +14,11 @@ module.exports = {
     'node_modules',
     '**/*.d.ts',
   ],
-  parser: '@typescript-eslint/parser',
   parserOptions: {
     ecmaVersion: 'latest',
     sourceType: 'module',
   },
-  plugins: ['@typescript-eslint'],
   rules: {
-    '@typescript-eslint/no-explicit-any': 'warn',
-    '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
-    '@typescript-eslint/explicit-function-return-type': 'off',
-    '@typescript-eslint/explicit-module-boundary-types': 'off',
-    '@typescript-eslint/no-empty-function': 'warn',
     'prefer-const': 'error',
     'no-var': 'error',
     'no-console': 'warn',
@@ -39,7 +31,6 @@ module.exports = {
         jest: true,
       },
       rules: {
-        '@typescript-eslint/no-explicit-any': 'off',
         'no-console': 'off',
       },
     },

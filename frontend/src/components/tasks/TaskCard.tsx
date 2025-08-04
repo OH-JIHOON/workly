@@ -26,7 +26,7 @@ export default function TaskCard({
       case TaskPriority.URGENT:
         return 'text-red-500 bg-red-50'
       case TaskPriority.HIGH:
-        return 'text-orange-500 bg-orange-50'
+        return 'text-blue-500 bg-blue-50'
       case TaskPriority.MEDIUM:
         return 'text-yellow-500 bg-yellow-50'
       case TaskPriority.LOW:
@@ -54,9 +54,9 @@ export default function TaskCard({
     if (daysDiff < 0) {
       return { text: `${Math.abs(daysDiff)}일 지남`, color: 'text-red-500' }
     } else if (daysDiff === 0) {
-      return { text: '오늘 마감', color: 'text-orange-500' }
+      return { text: '오늘 마감', color: 'text-blue-600' }
     } else if (daysDiff === 1) {
-      return { text: '내일 마감', color: 'text-orange-400' }
+      return { text: '내일 마감', color: 'text-blue-500' }
     } else if (daysDiff <= 7) {
       return { text: `${daysDiff}일 남음`, color: 'text-yellow-500' }
     } else {
@@ -80,7 +80,7 @@ export default function TaskCard({
     const score = task.momentumScore.total
     const getScoreColor = (score: number) => {
       if (score >= 8) return 'bg-red-500'
-      if (score >= 6) return 'bg-orange-500'
+      if (score >= 6) return 'bg-blue-500'
       if (score >= 4) return 'bg-yellow-500'
       return 'bg-gray-400'
     }
@@ -92,7 +92,7 @@ export default function TaskCard({
           title={`모멘텀 점수: ${score.toFixed(1)}`}
         />
         {score >= 7 && (
-          <span className="text-xs text-orange-600 font-medium">우선</span>
+          <span className="text-xs text-blue-600 font-medium">우선</span>
         )}
       </div>
     )

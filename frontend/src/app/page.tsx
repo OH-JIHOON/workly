@@ -20,8 +20,11 @@ import LoginBanner from '@/components/ui/LoginBanner'
 import QuickAddInput from '@/components/ui/QuickAddInput'
 import ResponsiveTaskCard from '@/components/tasks/ResponsiveTaskCard'
 import CollapsibleCalendar from '@/components/tasks/CollapsibleCalendar'
-import { TaskStatus, TaskPriority, TaskType } from '@/types/task.types'
+import { TaskStatus, TaskPriority, TaskType, TaskDetail } from '@/types/task.types'
 import { isAuthenticated } from '@/lib/auth'
+import { useCalendarFilterStore } from '@/lib/stores/calendarFilterStore'
+import AdvancedFilterPanel, { AdvancedFilters } from '@/components/ui/AdvancedFilterPanel'
+import TaskDetailModal from '@/components/tasks/TaskDetailModal'
 
 // 워클리 업무 인터페이스 (레거시 GTDTask 대체)
 interface WorklyTask {
@@ -203,6 +206,36 @@ export default function TasksPage() {
 
   // 필터 설정 상태 (간소화됨)
   const [taskSortOrder, setTaskSortOrder] = useState('priority')
+  
+  // 캘린더 필터 상태 구독
+  const { showNoDue, showOverdue } = useCalendarFilterStore()
+  
+  // 상세 필터 상태 관리
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
+  const [advancedFilters, setAdvancedFilters] = useState<AdvancedFilters>({})
+  
+  // 업무 상세 모달 상태 관리
+  const [selectedTask, setSelectedTask] = useState<TaskDetail | null>(null)
+  const [isTaskDetailOpen, setIsTaskDetailOpen] = useState(false)
+  
+  // 목업 프로젝트와 목표 데이터
+  const availableProjects = [
+    { id: 'proj-1', name: '워클리 네비게이션 시스템' },
+    { id: 'proj-2', name: '데이터베이스 최적화' }
+  ]
+  
+  const availableGoals = [
+    { id: 'goal-1', name: 'Q4 사용자 경험 개선' },
+    { id: 'goal-2', name: '차세대 기능 개발' }
+  ]
+  
+  // 상세 필터가 활성화되었는지 확인
+  const hasAdvancedFilters = Boolean(
+    advancedFilters.dueDate || 
+    advancedFilters.status?.length || 
+    advancedFilters.projectIds?.length || 
+    advancedFilters.goalIds?.length
+  )
 
   // 간소화된 필터 옵션들 (실시간 업데이트)
   const filterOptions = [
@@ -233,27 +266,98 @@ export default function TasksPage() {
     }
   ]
 
-  // 간소화된 필터링 로직
+  // 통합 필터링 로직 (기본 + 캘린더 + 상세 필터)
   const filteredTasks = tasks.filter(task => {
-    if (!activeFilters.length) return true
+    // 1. 기본 필터 적용
+    let includeTask = !activeFilters.length
     
-    return activeFilters.some(filter => {
-      switch (filter) {
-        case 'today':
-          return task.isToday && task.status !== TaskStatus.DONE
-        case 'in-progress':
-          return task.status === TaskStatus.IN_PROGRESS
-        case 'completed':
-          return task.status === TaskStatus.DONE
-        case 'high-priority':
-          return (task.priority === TaskPriority.HIGH || task.priority === TaskPriority.URGENT) && 
-                 task.status !== TaskStatus.DONE
-        case 'all':
-          return true
-        default:
-          return true
+    if (activeFilters.length > 0) {
+      includeTask = activeFilters.some(filter => {
+        switch (filter) {
+          case 'today':
+            return task.isToday && task.status !== TaskStatus.DONE
+          case 'in-progress':
+            return task.status === TaskStatus.IN_PROGRESS
+          case 'completed':
+            return task.status === TaskStatus.DONE
+          case 'high-priority':
+            return (task.priority === TaskPriority.HIGH || task.priority === TaskPriority.URGENT) && 
+                   task.status !== TaskStatus.DONE
+          case 'all':
+            return true
+          default:
+            return true
+        }
+      })
+    }
+
+    // 2. 캘린더 필터 적용
+    if (showNoDue || showOverdue) {
+      const today = new Date()
+      const taskDueDate = task.dueDate ? new Date(task.dueDate) : null
+      
+      let calendarMatch = false
+      
+      if (showNoDue && !taskDueDate) {
+        calendarMatch = true
       }
-    })
+      
+      if (showOverdue && taskDueDate && taskDueDate < today && task.status !== TaskStatus.DONE) {
+        calendarMatch = true  
+      }
+      
+      includeTask = includeTask && calendarMatch
+    }
+
+    // 3. 상세 필터 적용
+    if (hasAdvancedFilters) {
+      let advancedMatch = true
+      
+      // 마감일 필터
+      if (advancedFilters.dueDate) {
+        const today = new Date()
+        const taskDueDate = task.dueDate ? new Date(task.dueDate) : null
+        
+        switch (advancedFilters.dueDate) {
+          case 'overdue':
+            advancedMatch = advancedMatch && taskDueDate && taskDueDate < today && task.status !== TaskStatus.DONE
+            break
+          case 'today':
+            advancedMatch = advancedMatch && taskDueDate && taskDueDate.toDateString() === today.toDateString()
+            break
+          case 'this-week':
+            if (taskDueDate) {
+              const weekFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000)
+              advancedMatch = advancedMatch && taskDueDate >= today && taskDueDate <= weekFromNow
+            } else {
+              advancedMatch = false
+            }
+            break
+          case 'no-due':
+            advancedMatch = advancedMatch && !taskDueDate
+            break
+        }
+      }
+      
+      // 상태 필터
+      if (advancedFilters.status?.length) {
+        advancedMatch = advancedMatch && advancedFilters.status.includes(task.status)
+      }
+      
+      // 프로젝트 필터
+      if (advancedFilters.projectIds?.length) {
+        advancedMatch = advancedMatch && task.projectId && advancedFilters.projectIds.includes(task.projectId)
+      }
+      
+      // 목표 필터
+      if (advancedFilters.goalIds?.length) {
+        advancedMatch = advancedMatch && task.goalId && advancedFilters.goalIds.includes(task.goalId)
+      }
+      
+      includeTask = includeTask && advancedMatch
+    }
+    
+    return includeTask
   })
 
   // 로그인 상태 초기화
@@ -261,9 +365,84 @@ export default function TasksPage() {
     setIsLoggedIn(isAuthenticated())
   }, [])
 
+  // URL 쿼리 파라미터에서 필터 상태 초기화
+  useEffect(() => {
+    const filters = searchParams.get('filters')
+    const advanced = searchParams.get('advanced')
+    
+    if (filters) {
+      try {
+        const parsedFilters = JSON.parse(decodeURIComponent(filters))
+        if (Array.isArray(parsedFilters)) {
+          setActiveFilters(parsedFilters)
+        }
+      } catch (e) {
+        console.warn('Invalid filters in URL:', e)
+      }
+    }
+    
+    if (advanced) {
+      try {
+        const parsedAdvanced = JSON.parse(decodeURIComponent(advanced))
+        setAdvancedFilters(parsedAdvanced)
+      } catch (e) {
+        console.warn('Invalid advanced filters in URL:', e)
+      }
+    }
+  }, [searchParams])
+
+  // 필터 상태가 변경될 때 URL 업데이트
+  useEffect(() => {
+    const params = new URLSearchParams()
+    
+    if (activeFilters.length > 0) {
+      params.set('filters', encodeURIComponent(JSON.stringify(activeFilters)))
+    }
+    
+    if (hasAdvancedFilters) {
+      params.set('advanced', encodeURIComponent(JSON.stringify(advancedFilters)))
+    }
+    
+    const newUrl = params.toString() ? `?${params.toString()}` : window.location.pathname
+    window.history.replaceState({}, '', newUrl)
+  }, [activeFilters, advancedFilters, hasAdvancedFilters])
+
 
   const handleTaskClick = (task: WorklyTask) => {
-    router.push(`/tasks/${task.id}`)
+    // WorklyTask를 TaskDetail로 변환
+    const taskDetail: TaskDetail = {
+      ...task,
+      descriptionMarkdown: task.description,
+      checklist: [
+        { id: 'check-1', text: '기본 요구사항 검토', completed: false, order: 0 },
+        { id: 'check-2', text: '설계 문서 작성', completed: true, order: 1 },
+        { id: 'check-3', text: '코드 구현', completed: false, order: 2 }
+      ],
+      relationships: [],
+      wikiReferences: [
+        { id: 'wiki-1', title: '워클리 디자인 가이드', url: '/wiki/design-guide', description: '워클리 UI/UX 디자인 표준' },
+        { id: 'wiki-2', title: 'CPER 워크플로우', url: '/wiki/cper', description: 'Capture-Plan-Execute-Review 방법론' }
+      ],
+      estimatedTimeMinutes: task.id === '1' ? 120 : undefined,
+      loggedTimeMinutes: task.id === '1' ? 80 : undefined
+    }
+    
+    setSelectedTask(taskDetail)
+    setIsTaskDetailOpen(true)
+  }
+  
+  // 업무 상세 저장 핸들러
+  const handleTaskDetailSave = (taskDetail: TaskDetail) => {
+    // 실제로는 API 호출하여 저장
+    console.log('업무 상세 저장:', taskDetail)
+    
+    // 로컬 상태 업데이트 (기본 정보만)
+    handleTaskUpdate(taskDetail.id, {
+      title: taskDetail.title,
+      description: taskDetail.description,
+      dueDate: taskDetail.dueDate,
+      estimatedHours: taskDetail.estimatedTimeMinutes ? taskDetail.estimatedTimeMinutes / 60 : undefined
+    })
   }
 
   // PRD 명세: 빠른 추가 - Enter 입력 시 새 업무가 리스트 최상단에 생성
@@ -405,6 +584,8 @@ export default function TasksPage() {
               options={filterOptions}
               activeFilters={activeFilters}
               onFilterChange={setActiveFilters}
+              onAdvancedFilterClick={() => setShowAdvancedFilters(true)}
+              hasAdvancedFilters={hasAdvancedFilters}
               settings={{
                 title: "업무 필터 설정",
                 settings: [
@@ -492,6 +673,27 @@ export default function TasksPage() {
           onToggle={handleCalendarToggle}
         />
       </div>
+      
+      {/* 상세 필터 패널 */}
+      <AdvancedFilterPanel
+        isOpen={showAdvancedFilters}
+        onClose={() => setShowAdvancedFilters(false)}
+        filters={advancedFilters}
+        onFiltersChange={setAdvancedFilters}
+        availableProjects={availableProjects}
+        availableGoals={availableGoals}
+      />
+      
+      {/* 업무 상세 모달 */}
+      <TaskDetailModal
+        task={selectedTask}
+        isOpen={isTaskDetailOpen}
+        onClose={() => {
+          setIsTaskDetailOpen(false)
+          setSelectedTask(null)
+        }}
+        onSave={handleTaskDetailSave}
+      />
     </div>
   )
 }

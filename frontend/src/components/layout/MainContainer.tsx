@@ -19,6 +19,7 @@ export default function MainContainer({ children, className = '' }: MainContaine
         w-full 
         max-w-[720px] 
         mx-auto 
+        px-0 md:px-0
         ${className}
       `}
       role="main"

@@ -28,7 +28,8 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { 
   CreateTaskDto, 
   UpdateTaskDto, 
-  TaskQueryDto 
+  TaskQueryDto,
+  UpdateTaskDetailDto
 } from './dto/task.dto';
 import { 
   TaskStatus, 
@@ -173,6 +174,35 @@ export class TasksController {
     @CurrentUser('id') userId: string,
   ) {
     return this.tasksService.update(id, updateTaskDto, userId);
+  }
+
+  // 태스크 상세 정보 수정 (마크다운, 체크리스트, 관계, 위키 레퍼런스, 시간 관리)
+  @Patch(':id/detail')
+  @ApiOperation({ summary: '태스크 상세 정보 수정 (Notion 스타일 모달용)' })
+  @ApiParam({
+    name: 'id',
+    description: '태스크 ID',
+    type: 'string',
+    format: 'uuid',
+  })
+  @ApiResponse({
+    status: 200,
+    description: '태스크 상세 정보가 성공적으로 수정되었습니다.',
+  })
+  @ApiResponse({
+    status: 404,
+    description: '태스크를 찾을 수 없습니다.',
+  })
+  @ApiResponse({
+    status: 403,
+    description: '태스크를 수정할 권한이 없습니다.',
+  })
+  async updateTaskDetail(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() updateTaskDetailDto: UpdateTaskDetailDto,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.tasksService.updateTaskDetail(id, updateTaskDetailDto, userId);
   }
 
   // 태스크 상태 변경

@@ -1,5 +1,7 @@
 'use client'
 
+export const dynamic = 'force-dynamic'
+
 import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { MagnifyingGlassIcon, ArrowLeftIcon, ClockIcon } from '@heroicons/react/24/outline'
@@ -98,7 +100,7 @@ function SearchResultItem({ result }: { result: SearchResult }) {
       case 'post':
         return <PostIcon className="w-5 h-5 text-purple-600" />
       case 'user':
-        return <UserIcon className="w-5 h-5 text-orange-600" />
+        return <UserIcon className="w-5 h-5 text-blue-600" />
       default:
         return <MagnifyingGlassIcon className="w-5 h-5 text-gray-400" />
     }

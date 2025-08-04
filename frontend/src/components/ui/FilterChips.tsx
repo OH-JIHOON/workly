@@ -100,8 +100,8 @@ export default function FilterChips({
         inactive: 'text-purple-600 hover:bg-purple-50 border-purple-200 hover:border-purple-300'
       },
       orange: {
-        active: 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/25',
-        inactive: 'text-orange-600 hover:bg-orange-50 border-orange-200 hover:border-orange-300'
+        active: 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25',
+        inactive: 'text-blue-600 hover:bg-blue-50 border-blue-200 hover:border-blue-300'
       },
       red: {
         active: 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/25',

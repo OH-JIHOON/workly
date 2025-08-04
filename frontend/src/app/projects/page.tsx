@@ -1,12 +1,16 @@
 'use client';
 
+export const dynamic = 'force-dynamic'
+
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Plus, Search, Filter, Grid3X3, List, Calendar, Folder, Users, BarChart3, MessageCircle, Target, TrendingUp, UserPlus, Star, CheckCircle2 } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import MainContainer from '@/components/layout/MainContainer';
-import MobileFilterTabs from '@/components/ui/MobileFilterTabs';
-import FloatingActionButton from '@/components/ui/FloatingActionButton';
+import SimpleFilterChips from '@/components/ui/SimpleFilterChips';
+import WorklyFloatingActionButton from '@/components/ui/WorklyFloatingActionButton';
+import LoginBanner from '@/components/ui/LoginBanner';
+import { isAuthenticated } from '@/lib/auth';
 // import { apiClient } from '@/lib/api'; // 목업 모드에서는 주석 처리
 import { 
   Project, 
@@ -14,7 +18,8 @@ import {
   ProjectQueryDto, 
   PaginatedResponse,
   ProjectStatus,
-  ProjectPriority
+  ProjectPriority,
+  ProjectVisibility
 } from '@/types/project.types';
 
 // 향상된 프로젝트 카드 컴포넌트 (섹션 3 - 채팅 우선 협업 허브)
@@ -220,375 +225,28 @@ function ProjectCard({ project, onClick }: { project: Project; onClick: () => vo
   );
 }
 
-// 향상된 프로젝트 생성 모달 (섹션 3 - OKR 목표 설정 포함)
-function ProjectCreationModal({ 
-  isOpen, 
-  onClose, 
-  onSubmit 
-}: { 
-  isOpen: boolean; 
-  onClose: () => void; 
-  onSubmit: (data: CreateProjectDto) => Promise<void>; 
-}) {
-  const [currentStep, setCurrentStep] = useState(1);
-  const [formData, setFormData] = useState<CreateProjectDto>({
-    title: '',
-    description: '',
-    priority: ProjectPriority.MEDIUM,
-  });
-  const [objectives, setObjectives] = useState<Array<{
-    title: string;
-    description: string;
-    keyResults: Array<{
-      title: string;
-      targetValue: number;
-      unit: string;
-    }>;
-  }>>([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const handleNext = () => {
-    if (currentStep < 3) {
-      setCurrentStep(currentStep + 1);
-    }
-  };
-
-  const handleBack = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
-    }
-  };
-
-  const addObjective = () => {
-    setObjectives([...objectives, {
-      title: '',
-      description: '',
-      keyResults: [{ title: '', targetValue: 0, unit: '' }]
-    }]);
-  };
-
-  const updateObjective = (index: number, field: string, value: any) => {
-    const updated = [...objectives];
-    updated[index] = { ...updated[index], [field]: value };
-    setObjectives(updated);
-  };
-
-  const addKeyResult = (objectiveIndex: number) => {
-    const updated = [...objectives];
-    updated[objectiveIndex].keyResults.push({ title: '', targetValue: 0, unit: '' });
-    setObjectives(updated);
-  };
-
-  const updateKeyResult = (objectiveIndex: number, keyResultIndex: number, field: string, value: any) => {
-    const updated = [...objectives];
-    updated[objectiveIndex].keyResults[keyResultIndex] = {
-      ...updated[objectiveIndex].keyResults[keyResultIndex],
-      [field]: value
-    };
-    setObjectives(updated);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.title.trim()) return;
-
-    setIsSubmitting(true);
-    try {
-      const projectDataWithObjectives = {
-        ...formData,
-        objectives,
-      };
-      await onSubmit(projectDataWithObjectives);
-      
-      // 리셋
-      setFormData({ title: '', description: '', priority: ProjectPriority.MEDIUM });
-      setObjectives([]);
-      setCurrentStep(1);
-      onClose();
-    } catch (error) {
-      console.error('프로젝트 생성 실패:', error);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  if (!isOpen) return null;
-
-  // 단계별 컨텐츠 렌더링
-  const renderStepContent = () => {
-    switch (currentStep) {
-      case 1:
-        return (
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                프로젝트 이름 *
-              </label>
-              <input
-                type="text"
-                value={formData.title}
-                onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="프로젝트 이름을 입력하세요"
-                required
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                설명
-              </label>
-              <textarea
-                value={formData.description}
-                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="프로젝트에 대한 간단한 설명"
-                rows={3}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                우선순위
-              </label>
-              <select
-                value={formData.priority}
-                onChange={(e) => setFormData(prev => ({ ...prev, priority: e.target.value as ProjectPriority }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value={ProjectPriority.LOW}>낮음</option>
-                <option value={ProjectPriority.MEDIUM}>보통</option>
-                <option value={ProjectPriority.HIGH}>높음</option>
-                <option value={ProjectPriority.URGENT}>긴급</option>
-              </select>
-            </div>
-          </div>
-        );
-      
-      case 2:
-        return (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between mb-4">
-              <h4 className="text-md font-medium text-gray-900">목표 (Objectives) 설정</h4>
-              <button
-                type="button"
-                onClick={addObjective}
-                className="flex items-center space-x-1 px-3 py-1 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-              >
-                <Plus className="w-4 h-4" />
-                <span>목표 추가</span>
-              </button>
-            </div>
-            
-            <div className="max-h-96 overflow-y-auto scrollbar-on-hover space-y-4">
-              {objectives.map((objective, index) => (
-                <div key={index} className="border border-gray-200 rounded-lg p-4">
-                  <div className="space-y-3">
-                    <input
-                      type="text"
-                      value={objective.title}
-                      onChange={(e) => updateObjective(index, 'title', e.target.value)}
-                      placeholder="목표 제목 (예: 새로운 마케팅 웹사이트 런칭)"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    />
-                    <textarea
-                      value={objective.description}
-                      onChange={(e) => updateObjective(index, 'description', e.target.value)}
-                      placeholder="목표 설명 (선택사항)"
-                      rows={2}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                </div>
-              ))}
-              
-              {objectives.length === 0 && (
-                <div className="text-center py-8 text-gray-500">
-                  <Target className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                  <p>첫 번째 목표를 추가해보세요</p>
-                </div>
-              )}
-            </div>
-          </div>
-        );
-      
-      case 3:
-        return (
-          <div className="space-y-4">
-            <h4 className="text-md font-medium text-gray-900 mb-4">핵심 결과 (Key Results) 설정</h4>
-            
-            <div className="max-h-96 overflow-y-auto scrollbar-on-hover space-y-6">
-              {objectives.map((objective, objIndex) => (
-                <div key={objIndex} className="border border-gray-200 rounded-lg p-4">
-                  <h5 className="font-medium text-gray-900 mb-3">목표: {objective.title}</h5>
-                  
-                  <div className="space-y-3">
-                    {objective.keyResults.map((kr, krIndex) => (
-                      <div key={krIndex} className="grid grid-cols-3 gap-2">
-                        <input
-                          type="text"
-                          value={kr.title}
-                          onChange={(e) => updateKeyResult(objIndex, krIndex, 'title', e.target.value)}
-                          placeholder="핵심 결과 제목"
-                          className="col-span-2 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                        />
-                        <div className="flex space-x-1">
-                          <input
-                            type="number"
-                            value={kr.targetValue}
-                            onChange={(e) => updateKeyResult(objIndex, krIndex, 'targetValue', Number(e.target.value))}
-                            placeholder="목표값"
-                            className="flex-1 px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                          />
-                          <input
-                            type="text"
-                            value={kr.unit}
-                            onChange={(e) => updateKeyResult(objIndex, krIndex, 'unit', e.target.value)}
-                            placeholder="단위"
-                            className="w-16 px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                          />
-                        </div>
-                      </div>
-                    ))}
-                    
-                    <button
-                      type="button"
-                      onClick={() => addKeyResult(objIndex)}
-                      className="w-full py-2 border-2 border-dashed border-green-300 text-green-600 rounded-lg hover:border-green-400 hover:bg-green-50"
-                    >
-                      + 핵심 결과 추가
-                    </button>
-                  </div>
-                </div>
-              ))}
-              
-              {objectives.length === 0 && (
-                <div className="text-center py-8 text-gray-500">
-                  <p>먼저 목표를 설정해주세요</p>
-                </div>
-              )}
-            </div>
-          </div>
-        );
-      
-      default:
-        return null;
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 overflow-y-auto scrollbar-on-hover">
-      <div className="flex items-center justify-center min-h-screen p-4">
-        <div className="fixed inset-0 bg-black opacity-25" onClick={onClose} />
-        <div className="relative bg-white shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
-          {/* 헤더 & 단계 표시 */}
-          <div className="p-6 border-b border-gray-200">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">새 프로젝트 만들기</h3>
-              <span className="text-sm text-gray-500">{currentStep}/3 단계</span>
-            </div>
-            
-            {/* 단계 인디케이터 */}
-            <div className="flex items-center space-x-4">
-              {[1, 2, 3].map((step) => (
-                <div key={step} className="flex items-center">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                    step === currentStep ? 'bg-blue-600 text-white' :
-                    step < currentStep ? 'bg-green-600 text-white' :
-                    'bg-gray-200 text-gray-600'
-                  }`}>
-                    {step < currentStep ? <CheckCircle2 className="w-4 h-4" /> : step}
-                  </div>
-                  {step < 3 && (
-                    <div className={`w-16 h-1 mx-2 ${
-                      step < currentStep ? 'bg-green-600' : 'bg-gray-200'
-                    }`} />
-                  )}
-                </div>
-              ))}
-            </div>
-            
-            <div className="mt-2 text-sm text-gray-600">
-              {currentStep === 1 && '기본 정보를 입력해주세요'}
-              {currentStep === 2 && '프로젝트의 목표를 설정해주세요'}
-              {currentStep === 3 && '목표에 대한 핵심 결과를 설정해주세요'}
-            </div>
-          </div>
-          
-          {/* 컨텐츠 영역 */}
-          <div className="p-6 overflow-y-auto scrollbar-on-hover max-h-[60vh]">
-            {renderStepContent()}
-          </div>
-          
-          {/* 버튼 영역 */}
-          <div className="p-6 border-t border-gray-200">
-            <div className="flex space-x-3">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-              >
-                취소
-              </button>
-              
-              {currentStep > 1 && (
-                <button
-                  type="button"
-                  onClick={handleBack}
-                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-                >
-                  이전
-                </button>
-              )}
-              
-              {currentStep < 3 ? (
-                <button
-                  type="button"
-                  onClick={handleNext}
-                  disabled={currentStep === 1 && !formData.title.trim()}
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-                >
-                  다음
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={handleSubmit}
-                  disabled={isSubmitting || !formData.title.trim()}
-                  className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
-                >
-                  {isSubmitting ? '생성 중...' : '프로젝트 만들기'}
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export default function ProjectsPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchQuery);
-  const [isCreationModalOpen, setIsCreationModalOpen] = useState(false);
-  const [currentFilter, setCurrentFilter] = useState('전체 프로젝트');
+  const [currentFilter, setCurrentFilter] = useState('all');
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  
+  // 필터 설정 상태
+  const [showOnlyMyProjects, setShowOnlyMyProjects] = useState(false)
+  const [projectSortOrder, setProjectSortOrder] = useState('recent')
+  const [showCompletedProjects, setShowCompletedProjects] = useState(true)
 
-  // 필터 옵션 - 보기 모드와 상태 필터 통합
-  const filterOptions = [
-    { key: '전체 프로젝트', label: '전체 프로젝트', count: projects.length },
-    { key: '멤버 모집 중', label: '멤버 모집 중', count: projects.filter(p => {
-      const memberCount = p.memberCount || (parseInt(p.id) % 6) + 2;
-      return memberCount < 6;
-    }).length },
-    { key: '내 프로젝트', label: '내 프로젝트', count: Math.floor(projects.length * 0.6) },
-    { key: '진행 중', label: '진행 중', count: projects.filter(p => p.status === ProjectStatus.ACTIVE).length },
-    { key: '완료됨', label: '완료됨', count: projects.filter(p => p.status === ProjectStatus.COMPLETED).length },
-  ]
+  // 로그인 상태 초기화
+  useEffect(() => {
+    setIsLoggedIn(isAuthenticated())
+  }, [])
+
 
   // 동적 헤더 타이틀
   const getHeaderTitle = () => {
@@ -603,6 +261,7 @@ export default function ProjectsPage() {
 
     return () => clearTimeout(timer);
   }, [searchQuery]);
+
 
   // 프로젝트 로드
   useEffect(() => {
@@ -625,11 +284,29 @@ export default function ProjectsPage() {
           progress: 75,
           memberCount: 4,
           taskCount: 23,
-          createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), // 7일 전
+          completedTaskCount: 17,
+          visibility: ProjectVisibility.TEAM,
+          isArchived: false,
+          isTemplate: false,
+          settings: {
+            allowGuestAccess: false,
+            requireApprovalForTasks: false,
+            enableTimeTracking: true,
+            enableBudgetTracking: false,
+            enableNotifications: true
+          },
+          ownerId: 'user1',
+          createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
           updatedAt: new Date().toISOString(),
           tags: ['React', 'TypeScript', 'NestJS', 'MVP'],
           color: '#3B82F6',
           icon: '🚀',
+          owner: {
+            id: 'user1',
+            name: '김워클리',
+            email: 'kim@workly.com'
+          },
+          members: [],
           objectives: [
             {
               id: 'obj1',
@@ -690,11 +367,29 @@ export default function ProjectsPage() {
           progress: 45,
           memberCount: 3,
           taskCount: 15,
+          completedTaskCount: 6,
+          visibility: ProjectVisibility.TEAM,
+          isArchived: false,
+          isTemplate: false,
+          settings: {
+            allowGuestAccess: false,
+            requireApprovalForTasks: true,
+            enableTimeTracking: true,
+            enableBudgetTracking: true,
+            enableNotifications: true
+          },
+          ownerId: 'user2',
           createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
           updatedAt: new Date().toISOString(),
           tags: ['AI', 'Python', 'TensorFlow', '챗봇'],
           color: '#10B981',
           icon: '🤖',
+          owner: {
+            id: 'user2',
+            name: '이개발',
+            email: 'lee@workly.com'
+          },
+          members: [],
           objectives: [
             {
               id: 'obj3',
@@ -727,11 +422,29 @@ export default function ProjectsPage() {
           progress: 15,
           memberCount: 2,
           taskCount: 8,
+          completedTaskCount: 1,
+          visibility: ProjectVisibility.PRIVATE,
+          isArchived: false,
+          isTemplate: false,
+          settings: {
+            allowGuestAccess: false,
+            requireApprovalForTasks: false,
+            enableTimeTracking: false,
+            enableBudgetTracking: false,
+            enableNotifications: true
+          },
+          ownerId: 'user3',
           createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
           updatedAt: new Date().toISOString(),
           tags: ['React Native', 'UI/UX', '모바일'],
           color: '#8B5CF6',
           icon: '📱',
+          owner: {
+            id: 'user3',
+            name: '박디자인',
+            email: 'park@workly.com'
+          },
+          members: [],
           objectives: [
             {
               id: 'obj4',
@@ -764,10 +477,28 @@ export default function ProjectsPage() {
           progress: 88,
           memberCount: 6,
           taskCount: 42,
+          completedTaskCount: 37,
+          visibility: ProjectVisibility.TEAM,
+          isArchived: false,
+          isTemplate: false,
+          settings: {
+            allowGuestAccess: false,
+            requireApprovalForTasks: true,
+            enableTimeTracking: true,
+            enableBudgetTracking: true,
+            enableNotifications: true
+          },
+          ownerId: 'user4',
           createdAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
           updatedAt: new Date().toISOString(),
           tags: ['Next.js', 'Stripe', '결제', '쇼핑몰'],
           color: '#F59E0B',
+          owner: {
+            id: 'user4',
+            name: '최커머스',
+            email: 'choi@workly.com'
+          },
+          members: [],
           icon: '🛒',
           objectives: [
             {
@@ -820,21 +551,26 @@ export default function ProjectsPage() {
       if (debouncedSearchQuery) {
         filteredProjects = filteredProjects.filter(project =>
           project.title.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-          project.description.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+          project.description?.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
           project.tags.some(tag => tag.toLowerCase().includes(debouncedSearchQuery.toLowerCase()))
         );
       }
 
-      // 필터링 로직 통합
-      if (currentFilter === '멤버 모집 중') {
-        filteredProjects = filteredProjects.filter(project => {
-          const memberCount = project.memberCount || (parseInt(project.id) % 6) + 2;
-          return memberCount < 6;
-        });
-      } else if (currentFilter === '진행 중') {
-        filteredProjects = filteredProjects.filter(project => project.status === ProjectStatus.ACTIVE);
-      } else if (currentFilter === '완료됨') {
-        filteredProjects = filteredProjects.filter(project => project.status === ProjectStatus.COMPLETED);
+      // SimpleFilterChips 필터링 로직
+      switch (currentFilter) {
+        case 'active':
+          filteredProjects = filteredProjects.filter(project => project.status === ProjectStatus.ACTIVE);
+          break;
+        case 'recruiting':
+          filteredProjects = filteredProjects.filter(project => project.isRecruiting);
+          break;
+        case 'completed':
+          filteredProjects = filteredProjects.filter(project => project.status === ProjectStatus.COMPLETED);
+          break;
+        case 'all':
+        default:
+          // 전체 프로젝트는 추가 필터링 없음
+          break;
       }
 
       // 실제 API 호출 시뮬레이션을 위한 지연
@@ -851,24 +587,6 @@ export default function ProjectsPage() {
     }
   };
 
-  const handleCreateProject = async (projectData: CreateProjectDto) => {
-    try {
-      // 목업 프로젝트 생성 시뮬레이션
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      console.log('새 프로젝트 생성:', projectData);
-      
-      // 실제로는 목업이므로 프로젝트 목록을 다시 로드하지 않음
-      // 실제 API 연동 시에는 아래 코드를 활성화:
-      // await apiClient.post<Project>('/projects', projectData);
-      // await loadProjects();
-      
-      alert(`"${projectData.title}" 프로젝트가 성공적으로 생성되었습니다! (목업 모드)`);
-    } catch (err) {
-      console.error('프로젝트 생성 실패:', err);
-      throw err;
-    }
-  };
 
   const handleFilterChange = (filter: string) => {
     setCurrentFilter(filter);
@@ -884,24 +602,64 @@ export default function ProjectsPage() {
       {/* 헤더 */}
       <Header 
         title={getHeaderTitle()}
-        filterOptions={filterOptions}
-        activeFilter={currentFilter}
-        onFilterChange={handleFilterChange}
-        showMobileFilters={false}
       />
       
-      {/* 프로젝트 페이지 전용 카드형 모바일 필터 */}
-      <div className="md:hidden">
-        <MobileFilterTabs
-          options={filterOptions}
-          activeFilter={currentFilter}
-          onFilterChange={handleFilterChange}
-          variant="cards"
-        />
-      </div>
+      {/* 로그인 배너 (헤더 바깥) */}
+      <LoginBanner />
       
       {/* 메인 콘텐츠 */}
       <MainContainer>
+        {/* 동적 필터 칩 관리자 - 로그인된 사용자만 표시 */}
+        {isLoggedIn && (
+          <div className="mb-0">
+            <SimpleFilterChips
+              options={[
+                { 
+                  key: 'all',
+                  label: '전체 프로젝트',
+                  count: projects.length
+                },
+                { 
+                  key: 'active',
+                  label: '진행 중',
+                  count: projects.filter(p => p.status === ProjectStatus.ACTIVE).length
+                },
+                { 
+                  key: 'recruiting',
+                  label: '모집 중',
+                  count: projects.filter(p => p.isRecruiting).length
+                },
+                { 
+                  key: 'completed',
+                  label: '완료됨',
+                  count: projects.filter(p => p.status === ProjectStatus.COMPLETED).length
+                }
+              ]}
+              activeFilters={[currentFilter]}
+              onFilterChange={(filters) => setCurrentFilter(filters[0] || 'all')}
+              settings={{
+                title: "프로젝트 필터 설정",
+                settings: [
+                  {
+                    key: 'myOnly',
+                    label: '내가 참여한 프로젝트만',
+                    type: 'toggle',
+                    value: showOnlyMyProjects,
+                    onChange: setShowOnlyMyProjects
+                  },
+                  {
+                    key: 'sort',
+                    label: '정렬 기준',
+                    type: 'select',
+                    value: projectSortOrder,
+                    options: ['recent', 'progress', 'deadline', 'members'],
+                    onChange: setProjectSortOrder
+                  }
+                ]
+              }}
+            />
+          </div>
+        )}
           
 
         {/* 오류 표시 */}
@@ -948,17 +706,8 @@ export default function ProjectsPage() {
             <p className="text-gray-500 mb-4">
               {searchQuery 
                 ? '검색 조건에 맞는 프로젝트가 없습니다.' 
-                : '첫 번째 프로젝트를 만들어보세요!'}
+                : '우측 하단의 수집함 버튼(+)을 눌러 프로젝트를 추가해보세요!'}
             </p>
-            {!searchQuery && (
-              <button
-                onClick={() => setIsCreationModalOpen(true)}
-                className="inline-flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-              >
-                <Plus className="w-4 h-4" />
-                <span>프로젝트 만들기</span>
-              </button>
-            )}
           </div>
         ) : (
           <div className="bg-white border border-gray-200 overflow-hidden">
@@ -1004,13 +753,15 @@ export default function ProjectsPage() {
       </MainContainer>
       
       {/* 플로팅 액션 버튼 */}
-      <FloatingActionButton />
-
-      {/* 프로젝트 생성 모달 */}
-      <ProjectCreationModal
-        isOpen={isCreationModalOpen}
-        onClose={() => setIsCreationModalOpen(false)}
-        onSubmit={handleCreateProject}
+      <WorklyFloatingActionButton 
+        onTaskCreated={(task) => {
+          console.log('CPER 업무 생성:', task)
+          // TODO: 프로젝트 관련 업무 생성 로직 구현
+        }}
+        onInboxItemCreated={(inboxItem) => {
+          console.log('빠른 수집:', inboxItem)
+          // TODO: 프로젝트 관련 아이디어 수집 로직 구현
+        }}
       />
     </div>
   );

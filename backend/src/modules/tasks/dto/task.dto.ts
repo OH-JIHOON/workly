@@ -463,3 +463,157 @@ export class UpdateTaskLabelDto {
   @MaxLength(200, { message: '레이블 설명은 200자를 초과할 수 없습니다.' })
   description?: string;
 }
+
+// 체크리스트 아이템 DTO
+export class ChecklistItemDto {
+  @ApiProperty({
+    description: '체크리스트 아이템 ID',
+    example: 'checklist-1706123456789-abc123def',
+  })
+  @IsString()
+  id: string;
+
+  @ApiProperty({
+    description: '체크리스트 아이템 텍스트',
+    example: '기본 요구사항 검토',
+  })
+  @IsString()
+  @MaxLength(500, { message: '체크리스트 아이템은 500자를 초과할 수 없습니다.' })
+  text: string;
+
+  @ApiProperty({
+    description: '완료 여부',
+    example: false,
+  })
+  @IsBoolean()
+  completed: boolean;
+
+  @ApiProperty({
+    description: '정렬 순서',
+    example: 0,
+  })
+  @IsInt()
+  @Min(0)
+  order: number;
+}
+
+// 업무 관계 DTO
+export class TaskRelationshipDto {
+  @ApiProperty({
+    description: '관계 ID',
+    example: 'rel-1706123456789-abc123def',
+  })
+  @IsString()
+  id: string;
+
+  @ApiProperty({
+    description: '대상 업무 ID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @IsUUID(4, { message: '유효한 업무 ID를 입력해주세요.' })
+  targetTaskId: string;
+
+  @ApiProperty({
+    description: '관계 타입',
+    enum: ['blocks', 'blocked_by', 'related', 'parent', 'child'],
+    example: 'blocks',
+  })
+  @IsEnum(['blocks', 'blocked_by', 'related', 'parent', 'child'], {
+    message: '유효한 관계 타입을 선택해주세요.'
+  })
+  type: 'blocks' | 'blocked_by' | 'related' | 'parent' | 'child';
+}
+
+// 위키 레퍼런스 DTO
+export class WikiReferenceDto {
+  @ApiProperty({
+    description: '위키 레퍼런스 ID',
+    example: 'wiki-1706123456789-abc123def',
+  })
+  @IsString()
+  id: string;
+
+  @ApiProperty({
+    description: '위키 문서 제목',
+    example: '워클리 디자인 가이드',
+  })
+  @IsString()
+  @MaxLength(200, { message: '위키 제목은 200자를 초과할 수 없습니다.' })
+  title: string;
+
+  @ApiProperty({
+    description: '위키 문서 URL',
+    example: 'https://wiki.example.com/design-guide',
+  })
+  @IsString()
+  @MaxLength(2000, { message: 'URL은 2000자를 초과할 수 없습니다.' })
+  url: string;
+
+  @ApiPropertyOptional({
+    description: '위키 문서 설명',
+    example: '워클리 UI/UX 디자인 표준',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500, { message: '위키 설명은 500자를 초과할 수 없습니다.' })
+  description?: string;
+}
+
+// 업무 상세 업데이트 DTO
+export class UpdateTaskDetailDto extends UpdateTaskDto {
+  @ApiPropertyOptional({
+    description: '마크다운 형식의 상세 설명',
+    example: '# 로그인 기능 구현\n\n## 요구사항\n- JWT 토큰 사용\n- 소셜 로그인 지원',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(10000, { message: '마크다운 설명은 10000자를 초과할 수 없습니다.' })
+  descriptionMarkdown?: string;
+
+  @ApiPropertyOptional({
+    description: '체크리스트 아이템 목록',
+    type: [ChecklistItemDto],
+  })
+  @IsOptional()
+  @IsArray()
+  @Type(() => ChecklistItemDto)
+  checklist?: ChecklistItemDto[];
+
+  @ApiPropertyOptional({
+    description: '업무 관계 목록',
+    type: [TaskRelationshipDto],
+  })
+  @IsOptional()
+  @IsArray()
+  @Type(() => TaskRelationshipDto)
+  relationships?: TaskRelationshipDto[];
+
+  @ApiPropertyOptional({
+    description: '위키 레퍼런스 목록',
+    type: [WikiReferenceDto],
+  })
+  @IsOptional()
+  @IsArray()
+  @Type(() => WikiReferenceDto)
+  wikiReferences?: WikiReferenceDto[];
+
+  @ApiPropertyOptional({
+    description: '예상 소요 시간 (분 단위)',
+    example: 480,
+    minimum: 0,
+  })
+  @IsOptional()
+  @IsInt({ message: '예상 시간은 정수여야 합니다.' })
+  @Min(0, { message: '예상 시간은 0 이상이어야 합니다.' })
+  estimatedTimeMinutes?: number;
+
+  @ApiPropertyOptional({
+    description: '기록된 소요 시간 (분 단위)',
+    example: 320,
+    minimum: 0,
+  })
+  @IsOptional()
+  @IsInt({ message: '기록된 시간은 정수여야 합니다.' })
+  @Min(0, { message: '기록된 시간은 0 이상이어야 합니다.' })
+  loggedTimeMinutes?: number;
+}

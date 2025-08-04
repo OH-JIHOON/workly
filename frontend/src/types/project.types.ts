@@ -102,15 +102,21 @@ export interface ProjectSettings {
   workflowStages?: WorkflowStage[];
 }
 
-// 메인 프로젝트 인터페이스
+// 메인 프로젝트 인터페이스 (워클리 고유 방법론 적용)
 export interface Project {
   id: string;
   title: string;
   description?: string;
   status: ProjectStatus;
   priority: ProjectPriority;
-  objectives: ProjectObjective[];
-  keyResults: ProjectKeyResult[];
+  
+  // 워클리 방법론: 목표 연결 (선택적)
+  goalId?: string; // 상위 목표와의 연결 (Optional)
+  
+  // 기존 OKR 구조 (하위 호환성 유지)
+  objectives?: ProjectObjective[]; // 선택적으로 변경
+  keyResults?: ProjectKeyResult[]; // 선택적으로 변경
+  
   startDate?: string;
   dueDate?: string;
   progress: number;
@@ -132,22 +138,24 @@ export interface Project {
   owner: ProjectUser;
   members: ProjectMember[];
   tasks?: any[]; // Task 타입 순환 참조 방지
+  goal?: any; // Goal 타입 (순환 참조 방지)
 
   // Computed properties
   memberCount: number;
   taskCount: number;
   completedTaskCount: number;
-  completedObjectiveCount: number;
-  completedKeyResultCount: number;
+  completedObjectiveCount?: number; // 선택적으로 변경
+  completedKeyResultCount?: number; // 선택적으로 변경
   isOverdue?: boolean;
   isDueSoon?: boolean;
 }
 
-// 프로젝트 생성 DTO
+// 프로젝트 생성 DTO (워클리 방법론 적용)
 export interface CreateProjectDto {
   title: string;
   description?: string;
   priority?: ProjectPriority;
+  goalId?: string; // 상위 목표 연결 (선택적)
   startDate?: string;
   dueDate?: string;
   budget?: number;
@@ -157,14 +165,19 @@ export interface CreateProjectDto {
   icon?: string;
   visibility?: ProjectVisibility;
   settings?: Partial<ProjectSettings>;
+  
+  // 기존 OKR 구조 지원 (하위 호환성)
+  objectives?: Omit<ProjectObjective, 'id'>[];
+  keyResults?: Omit<ProjectKeyResult, 'id' | 'objectiveId'>[];
 }
 
-// 프로젝트 업데이트 DTO
+// 프로젝트 업데이트 DTO (워클리 방법론 적용)
 export interface UpdateProjectDto {
   title?: string;
   description?: string;
   status?: ProjectStatus;
   priority?: ProjectPriority;
+  goalId?: string; // 상위 목표 연결 변경 가능
   startDate?: string;
   dueDate?: string;
   budget?: number;

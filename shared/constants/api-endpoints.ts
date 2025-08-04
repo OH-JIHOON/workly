@@ -84,11 +84,54 @@ export const DASHBOARD_ENDPOINTS = {
   ACTIVITIES: `${API_PREFIX}/dashboard/activities`,
 } as const
 
+// 목표 관련 엔드포인트 (워클리 방법론)
+export const GOAL_ENDPOINTS = {
+  BASE: `${API_PREFIX}/goals`,
+  BY_ID: (id: string) => `${API_PREFIX}/goals/${id}`,
+  PROJECTS: (id: string) => `${API_PREFIX}/goals/${id}/projects`,
+  METRICS: (id: string) => `${API_PREFIX}/goals/${id}/metrics`,
+  UPDATE_PROGRESS: (id: string) => `${API_PREFIX}/goals/${id}/progress`,
+  ACTIVITIES: (id: string) => `${API_PREFIX}/goals/${id}/activities`,
+  DASHBOARD: (id: string) => `${API_PREFIX}/goals/${id}/dashboard`,
+} as const
+
+// 수집함 관련 엔드포인트 (워클리 방법론)
+export const INBOX_ENDPOINTS = {
+  BASE: `${API_PREFIX}/inbox`,
+  BY_ID: (id: string) => `${API_PREFIX}/inbox/${id}`,
+  QUICK_CAPTURE: `${API_PREFIX}/inbox/quick-capture`,
+  BATCH_PROCESS: `${API_PREFIX}/inbox/batch-process`,
+  STATS: `${API_PREFIX}/inbox/stats`,
+  DASHBOARD: `${API_PREFIX}/inbox/dashboard`,
+  ACTIVITIES: `${API_PREFIX}/inbox/activities`,
+  ORGANIZE: (id: string) => `${API_PREFIX}/inbox/${id}/organize`,
+  CLARIFY: (id: string) => `${API_PREFIX}/inbox/${id}/clarify`,
+} as const
+
+// CPER 워크플로우 관련 엔드포인트
+export const WORKFLOW_ENDPOINTS = {
+  CAPTURE: `${API_PREFIX}/workflow/capture`,
+  PLAN: `${API_PREFIX}/workflow/plan`,
+  EXECUTE: `${API_PREFIX}/workflow/execute`,
+  REVIEW: `${API_PREFIX}/workflow/review`,
+  STATUS: `${API_PREFIX}/workflow/status`,
+  INSIGHTS: `${API_PREFIX}/workflow/insights`,
+} as const
+
+// 네비게이션 관련 엔드포인트
+export const NAVIGATION_ENDPOINTS = {
+  STATS: `${API_PREFIX}/navigation/stats`,
+  QUICK_STATS: `${API_PREFIX}/navigation/quick-stats`,
+  PREFERENCES: `${API_PREFIX}/navigation/preferences`,
+} as const
+
 // 검색 관련 엔드포인트
 export const SEARCH_ENDPOINTS = {
   GLOBAL: `${API_PREFIX}/search`,
   USERS: `${API_PREFIX}/search/users`,
   PROJECTS: `${API_PREFIX}/search/projects`,
   TASKS: `${API_PREFIX}/search/tasks`,
+  GOALS: `${API_PREFIX}/search/goals`,
+  INBOX: `${API_PREFIX}/search/inbox`,
   POSTS: `${API_PREFIX}/search/posts`,
 } as const

@@ -4,29 +4,32 @@ FROM node:20-alpine AS base
 # Install dependencies only when needed
 FROM base AS deps
 RUN apk add --no-cache libc6-compat
-WORKDIR /app
+WORKDIR /root
 
-# Copy package files
+# Copy all package files
 COPY package*.json ./
-COPY ../shared/package*.json ../shared/
-COPY ../package*.json ../
+COPY shared/package*.json ./shared/
+COPY backend/package*.json ./backend/
 
-# Install dependencies
+# Install all dependencies
 RUN npm ci
 
 # Build shared module
 FROM base AS shared-builder
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
-COPY ../shared ../shared
-RUN cd ../shared && npm run build
+WORKDIR /root
+COPY --from=deps /root/node_modules ./node_modules
+COPY shared ./shared
+WORKDIR /root/shared
+RUN npm run build
 
 # Build backend
 FROM base AS builder
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=shared-builder /app/../shared/dist ../shared/dist
-COPY . .
+WORKDIR /root/backend
+COPY --from=deps /root/node_modules ../node_modules
+COPY --from=deps /root/package-lock.json ../package-lock.json
+COPY --from=shared-builder /root/shared/dist ../shared/dist
+COPY --from=shared-builder /root/shared/package.json ../shared/package.json
+COPY backend ./
 
 # Build application
 RUN npm run build
@@ -42,9 +45,9 @@ RUN addgroup --system --gid 1001 nestjs
 RUN adduser --system --uid 1001 nestjs
 
 # Copy built application
-COPY --from=builder --chown=nestjs:nestjs /app/dist ./dist
-COPY --from=builder --chown=nestjs:nestjs /app/node_modules ./node_modules
-COPY --from=builder --chown=nestjs:nestjs /app/package*.json ./
+COPY --from=builder --chown=nestjs:nestjs /root/backend/dist ./dist
+COPY --from=builder --chown=nestjs:nestjs /root/backend/node_modules ./node_modules
+COPY --from=builder --chown=nestjs:nestjs /root/backend/package*.json ./
 
 USER nestjs
 
