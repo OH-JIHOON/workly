@@ -42,16 +42,37 @@ export default function UsersManagement() {
     status: '',
   });
 
-  // 임시 데이터
   useEffect(() => {
     const fetchUsers = async () => {  
       try {
-        // 실제로는 API 호출
-        // const response = await fetch('/api/admin/users');
-        // const data = await response.json();
-        
-        // 임시 데이터
-        const mockUsers: User[] = [
+        // 실제 API 호출
+        const token = localStorage.getItem('token') || 'dev-admin-token';
+        const queryParams = new URLSearchParams({
+          page: currentPage.toString(),
+          limit: '20',
+          ...(filters.search && { search: filters.search }),
+          ...(filters.role && { role: filters.role }),
+        });
+
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/api/admin/users?${queryParams}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const usersData = data.success ? data.data : data;
+          
+          setUsers(usersData.data || usersData);
+          setTotalPages(usersData.totalPages || 1);
+          
+          console.log('🚀 실제 백엔드에서 사용자 데이터를 가져왔습니다.', usersData);
+        } else {
+          // API 호출 실패 시 임시 데이터 사용
+          console.warn('백엔드 API 연결 실패, 임시 데이터 사용');
+          const mockUsers: User[] = [
           {
             id: '1',
             email: 'admin@workly.co',
@@ -92,19 +113,24 @@ export default function UsersManagement() {
             status: 'PENDING_VERIFICATION',
             createdAt: '2024-01-12T00:00:00Z',
           },
-        ];
-        
-        setUsers(mockUsers);
-        setFilteredUsers(mockUsers);
+          ];
+          
+          setUsers(mockUsers);
+          setTotalPages(1);
+        }
       } catch (error) {
         console.error('사용자 데이터 로드 오류:', error);
+        
+        // 에러 발생 시 빈 배열로 설정
+        setUsers([]);
+        setTotalPages(1);
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchUsers();
-  }, []);
+  }, [currentPage, filters.search, filters.role]);
 
   // 필터링 효과
   useEffect(() => {

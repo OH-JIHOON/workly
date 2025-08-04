@@ -18,12 +18,18 @@ export class PermissionsGuard implements CanActivate {
 
     const request = context.switchToHttp().getRequest();
     const user = request.user;
+    const authHeader = request.headers.authorization;
 
     if (!user) {
       throw new ForbiddenException('인증이 필요합니다');
     }
 
-    const hasPermission = user.hasAllAdminPermissions(requiredPermissions);
+    // 개발 환경에서 dev-admin-token은 모든 권한 허용
+    if (process.env.NODE_ENV === 'development' && authHeader === 'Bearer dev-admin-token') {
+      return true;
+    }
+
+    const hasPermission = user.hasAllAdminPermissions && user.hasAllAdminPermissions(requiredPermissions);
 
     if (!hasPermission) {
       throw new ForbiddenException(

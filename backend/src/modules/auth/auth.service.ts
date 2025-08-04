@@ -289,6 +289,14 @@ export class AuthService {
   async validateUserById(userId: string): Promise<User | null> {
     return this.userRepository.findOne({
       where: { id: userId },
+      select: [
+        'id', 'email', 'name', 'firstName', 'lastName', 'avatar',
+        'role', 'status', 'profile', 'preferences',
+        'adminRole', 'adminPermissions', 'lastAdminLogin', 
+        'twoFactorEnabled', 'allowedIPs',
+        'lastLoginAt', 'emailVerifiedAt', 'googleId',
+        'createdAt', 'updatedAt'
+      ]
     });
   }
 

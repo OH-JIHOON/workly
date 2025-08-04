@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { User } from '../../../database/entities/user.entity';
 import { Project } from '../../../database/entities/project.entity';
 import { Task } from '../../../database/entities/task.entity';
-import { AdminRole } from '../../../../shared/types/admin.types';
+import { AdminRole, TaskStatus } from '../../../types/admin.types';
 
 @Injectable()
 export class AdminService {
@@ -31,11 +31,11 @@ export class AdminService {
       this.taskRepository.count(),
       this.userRepository.count({
         where: {
-          lastActiveAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) as any, // 7일 이내
+          lastLoginAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) as any, // 7일 이내
         },
       }),
       this.taskRepository.count({
-        where: { status: 'COMPLETED' },
+        where: { status: TaskStatus.COMPLETED },
       }),
     ]);
 

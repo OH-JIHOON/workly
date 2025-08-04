@@ -18,11 +18,39 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
       secretOrKey: authConfig.jwt.secret,
+      passReqToCallback: true, // request 객체를 validate 메서드에 전달
     });
   }
 
-  async validate(payload: JwtPayload) {
-    // JWT 페이로드에서 사용자 ID 추출
+  async validate(request: any, payload?: JwtPayload) {
+    // 개발 환경에서 dev-admin-token 처리
+    if (process.env.NODE_ENV === 'development') {
+      const authHeader = request.headers.authorization;
+      if (authHeader === 'Bearer dev-admin-token') {
+        // 개발용 관리자 사용자 객체 반환
+        return {
+          id: 'dev-admin-1',
+          name: '워클리 개발 관리자',
+          email: 'dev-admin@workly.com',
+          adminRole: 'super_admin',
+          adminPermissions: ['*'],
+          status: 'active',
+          isAdminUser: () => true,
+          isSuperAdmin: () => true,
+          hasAllAdminPermissions: () => true,
+          updateLastAdminLogin: () => {},
+          lastAdminLogin: new Date(),
+          twoFactorEnabled: false,
+          allowedIPs: ['*']
+        };
+      }
+    }
+
+    // 일반 JWT 토큰 처리
+    if (!payload) {
+      throw new UnauthorizedException('Invalid token');
+    }
+
     const user = await this.authService.validateUserById(payload.sub);
     
     if (!user) {

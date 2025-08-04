@@ -450,9 +450,9 @@ export interface AuditLog {
   errorMessage?: string;
 }
 
-// ==================== API 응답 타입 ====================
+// ==================== 어드민 전용 API 응답 타입 ====================
 
-export interface PaginatedResponse<T> {
+export interface AdminPaginatedResponse<T> {
   data: T[];
   pagination: {
     page: number;
@@ -464,7 +464,7 @@ export interface PaginatedResponse<T> {
   };
 }
 
-export interface ApiResponse<T = any> {
+export interface AdminApiResponse<T = any> {
   success: boolean;
   data?: T;
   message?: string;

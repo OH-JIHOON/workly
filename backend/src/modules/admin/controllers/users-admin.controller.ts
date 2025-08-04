@@ -17,7 +17,7 @@ import { RequirePermissions } from '../decorators/permissions.decorator';
 import { AuditLog } from '../decorators/audit-log.decorator';
 import { AuditLogInterceptor } from '../interceptors/audit-log.interceptor';
 import { AdminService } from '../services/admin.service';
-import { AdminRole } from '../../../../shared/types/admin.types';
+import { AdminRole } from '../../../types/admin.types';
 
 class UpdateUserRoleDto {
   role: AdminRole;

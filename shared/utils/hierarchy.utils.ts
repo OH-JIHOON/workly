@@ -12,8 +12,8 @@ import {
   TodayTasksOptimized,
   CPERStage
 } from '../types/workly-core.types'
-import { Project } from '../types/goal.types'
 import { Goal } from '../types/goal.types'
+import { Project } from '../types/api.types'
 
 export class HierarchyManager {
   
@@ -159,7 +159,7 @@ export class HierarchyManager {
   private static calculateProjectContribution(task: WorklyTask, project: Project): number {
     // 간단한 계산: 프로젝트 내 업무 수 대비 이 업무의 가중치
     // 실제로는 업무의 우선순위, 소요시간, 복잡도 등을 고려해야 함
-    const baseContribution = 100 / (project.taskCount || 1)
+    const baseContribution = 100 / (project.tasksCount || 1)
     
     // 우선순위에 따른 가중치
     const priorityWeight = this.getPriorityWeight(task.priority)

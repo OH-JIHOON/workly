@@ -310,7 +310,6 @@ export const TypeGuards = {
 }
 
 // 기존 타입들 import (순환 참조 방지)
-import { TaskStatus, Priority as TaskPriority, TaskType } from './api.types'
-import { SimpleProject as Project } from './goal.types'
+import { TaskStatus, Priority as TaskPriority, TaskType, Project } from './api.types'
 import { Goal } from './goal.types'
 import { CreateInboxItemDto } from './inbox.types'

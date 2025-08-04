@@ -33,29 +33,63 @@ export default function AdminDashboard() {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        // 실제로는 API 호출
-        // const response = await fetch('/api/admin/dashboard');
-        // const data = await response.json();
+        // 실제 API 호출
+        const token = localStorage.getItem('token') || 'dev-admin-token';
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/api/admin/dashboard`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const dashboardData = data.success ? data.data : data;
+          
+          setStats(dashboardData.stats);
+          setAdminInfo(dashboardData.adminInfo);
+          
+          console.log('🚀 실제 백엔드에서 대시보드 데이터를 가져왔습니다.', dashboardData);
+        } else {
+          // API 호출 실패 시 임시 데이터 사용
+          console.warn('백엔드 API 연결 실패, 임시 데이터 사용');
+          setStats({
+            totalUsers: 0,
+            totalProjects: 0,
+            totalTasks: 0,
+            activeUsersCount: 0,
+            completedTasksCount: 0,
+            completionRate: 0,
+          });
+
+          setAdminInfo({
+            id: 'dev-admin-1',
+            name: '워클리 개발 관리자',
+            role: 'super_admin',
+            permissions: ['*'],
+            lastAdminLogin: new Date().toISOString(),
+          });
+        }
+      } catch (error) {
+        console.error('대시보드 데이터 로드 오류:', error);
         
-        // 임시 데이터
+        // 에러 발생 시 임시 데이터 사용
         setStats({
-          totalUsers: 1250,
-          totalProjects: 89,
-          totalTasks: 456,
-          activeUsersCount: 234,
-          completedTasksCount: 312,
-          completionRate: 68.4,
+          totalUsers: 0,
+          totalProjects: 0,
+          totalTasks: 0,
+          activeUsersCount: 0,
+          completedTasksCount: 0,
+          completionRate: 0,
         });
 
         setAdminInfo({
-          id: '1',
-          name: '관리자',
+          id: 'dev-admin-1',
+          name: '워클리 개발 관리자',
           role: 'super_admin',
-          permissions: ['admin:dashboard:read'],
+          permissions: ['*'],
           lastAdminLogin: new Date().toISOString(),
         });
-      } catch (error) {
-        console.error('대시보드 데이터 로드 오류:', error);
       } finally {
         setIsLoading(false);
       }

@@ -17,9 +17,9 @@ import {
   UserPreferences,
   NotificationPreferences,
   WorkingHours,
-  DashboardPreferences,
-  AdminRole 
+  DashboardPreferences
 } from '@workly/shared';
+import { AdminRole } from '../../types/admin.types';
 import { Exclude } from 'class-transformer';
 
 @Entity('users')
