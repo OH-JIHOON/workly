@@ -12,6 +12,7 @@ export interface User {
   lastName: string;
   avatar?: string;
   role: 'admin' | 'user';
+  adminRole?: 'super_admin' | 'admin' | 'moderator' | 'support'; // 추가된 부분
   status: 'active' | 'inactive' | 'pending_verification';
   emailVerifiedAt?: string;
   lastLoginAt?: string;
@@ -113,6 +114,7 @@ export const saveTokens = (accessToken: string, refreshToken: string): void => {
   if (typeof window !== 'undefined') {
     localStorage.setItem('accessToken', accessToken);
     localStorage.setItem('refreshToken', refreshToken);
+    api.setAuthorizationHeader(accessToken); // 추가된 부분
   }
 };
 

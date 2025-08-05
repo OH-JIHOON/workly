@@ -13,7 +13,6 @@ import { WebSocketModule } from './modules/websocket/websocket.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { AuthGuard } from './modules/auth/guards/auth.guard';
 import { CustomThrottlerGuard } from './modules/auth/guards/throttle.guard';
-import { AuthMiddleware } from './modules/auth/middleware/auth.middleware';
 import { AuditMiddleware } from './modules/auth/middleware/audit.middleware';
 
 @Module({
@@ -76,7 +75,7 @@ import { AuditMiddleware } from './modules/auth/middleware/audit.middleware';
 export class AppModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
-      .apply(AuthMiddleware, AuditMiddleware)
+      .apply(AuditMiddleware)
       .forRoutes('*'); // 모든 라우트에 적용
   }
 }

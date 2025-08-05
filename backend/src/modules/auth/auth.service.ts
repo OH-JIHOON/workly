@@ -495,6 +495,7 @@ export class AuthService {
       sub: user.id,
       email: user.email,
       role: user.role,
+      adminRole: user.adminRole,
     };
 
     return this.jwtService.signAsync(payload, {

@@ -194,7 +194,7 @@ const mockTasks: WorklyTask[] = [
 export default function TasksPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [tasks, setTasks] = useState<WorklyTask[]>(mockTasks)
+  const [tasks, setTasks] = useState<WorklyTask[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [activeFilters, setActiveFilters] = useState<string[]>(['today'])
   const [isLoggedIn, setIsLoggedIn] = useState(false)

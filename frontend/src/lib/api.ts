@@ -173,7 +173,9 @@ class ApiClient {
    */
   private getAccessToken(): string | null {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('accessToken');
+      const token = localStorage.getItem('accessToken');
+      console.log('--- API Client: Access Token 가져오기 ---', token ? '토큰 존재' : '토큰 없음');
+      return token;
     }
     return null;
   }
@@ -235,8 +237,38 @@ class ApiClient {
   }
 
   /**
+   * 수동으로 Authorization 헤더 설정
+   */
+  setAuthorizationHeader(token: string | null): void {
+    // 이 클래스는 요청 시마다 헤더를 동적으로 생성하므로,
+    // 이 메서드는 localStorage에 토큰을 저장하는 것으로 충분합니다.
+    // request 메서드가 항상 최신 토큰을 사용하게 됩니다.
+    if (typeof window !== 'undefined') {
+      if (token) {
+        localStorage.setItem('accessToken', token);
+      } else {
+        localStorage.removeItem('accessToken');
+      }
+    }
+  }
+
+  /**
    * 수동 로그아웃
    */
+  /**
+   * 수동으로 Authorization 헤더 설정
+   * 이 메서드는 localStorage에 토큰을 저장하고, API 클라이언트가 다음 요청부터 이 토큰을 사용하도록 합니다.
+   */
+  setAuthorizationHeader(token: string | null): void {
+    if (typeof window !== 'undefined') {
+      if (token) {
+        localStorage.setItem('accessToken', token);
+      } else {
+        localStorage.removeItem('accessToken');
+      }
+    }
+  }
+
   logout(): void {
     this.handleAuthFailure();
   }
@@ -252,6 +284,7 @@ export const api = {
   put: <T>(endpoint: string, data?: any, options?: ApiOptions) => apiClient.put<T>(endpoint, data, options),
   delete: <T>(endpoint: string, options?: ApiOptions) => apiClient.delete<T>(endpoint, options),
   logout: () => apiClient.logout(),
+  setAuthorizationHeader: (token: string | null) => apiClient.setAuthorizationHeader(token), // 추가된 부분
 };
 
 export default apiClient;

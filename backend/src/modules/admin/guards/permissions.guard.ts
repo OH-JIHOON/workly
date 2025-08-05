@@ -29,7 +29,26 @@ export class PermissionsGuard implements CanActivate {
       return true;
     }
 
-    const hasPermission = user.hasAllAdminPermissions && user.hasAllAdminPermissions(requiredPermissions);
+    // JWT 페이로드 또는 Entity 객체 모두 지원
+    let hasPermission = false;
+    
+    if (typeof user.hasAllAdminPermissions === 'function') {
+      // Entity 객체인 경우
+      hasPermission = user.hasAllAdminPermissions(requiredPermissions);
+    } else {
+      // JWT 페이로드인 경우 - adminPermissions 배열 직접 확인
+      const userPermissions = user.adminPermissions || [];
+      
+      // super_admin은 모든 권한 허용
+      if (user.adminRole === 'super_admin' || userPermissions.includes('*') || userPermissions.includes('{\"*\"}')) {
+        hasPermission = true;
+      } else {
+        // 개별 권한 확인
+        hasPermission = requiredPermissions.every(permission => 
+          userPermissions.includes(permission)
+        );
+      }
+    }
 
     if (!hasPermission) {
       throw new ForbiddenException(

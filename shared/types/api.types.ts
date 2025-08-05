@@ -747,6 +747,7 @@ export interface JwtPayload {
   sub: string // 사용자 ID
   email: string
   role: string
+  adminRole?: string; // 관리자 역할
   iat?: number // 발급 시간
   exp?: number // 만료 시간
 }

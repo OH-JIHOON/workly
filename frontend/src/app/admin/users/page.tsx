@@ -46,7 +46,11 @@ export default function UsersManagement() {
     const fetchUsers = async () => {  
       try {
         // 실제 API 호출
-        const token = localStorage.getItem('token') || 'dev-admin-token';
+        const token = localStorage.getItem('accessToken');
+        if (!token) {
+          throw new Error('인증 토큰이 없습니다.');
+        }
+
         const queryParams = new URLSearchParams({
           page: currentPage.toString(),
           limit: '20',
@@ -54,7 +58,7 @@ export default function UsersManagement() {
           ...(filters.role && { role: filters.role }),
         });
 
-        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/api/admin/users?${queryParams}`, {
+        const response = await fetch(`http://localhost:8000/api/v1/api/admin/users?${queryParams}`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
@@ -68,7 +72,6 @@ export default function UsersManagement() {
           setUsers(usersData.data || usersData);
           setTotalPages(usersData.totalPages || 1);
           
-          console.log('🚀 실제 백엔드에서 사용자 데이터를 가져왔습니다.', usersData);
         } else {
           // API 호출 실패 시 임시 데이터 사용
           console.warn('백엔드 API 연결 실패, 임시 데이터 사용');

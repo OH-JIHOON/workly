@@ -65,7 +65,12 @@ docker-compose.override.yml
 *.tmp
 *.tempfrontend/.next
 
+# 개발용 폴더들 (프로덕션 제외)
+references/
+instructions/
+repomix-output.xml
+*.xml
+
 # 기타 추가
 .next
 .vercel
-repomix-output.xml

@@ -29,22 +29,20 @@ export class AdminGuard implements CanActivate {
       throw new ForbiddenException('인증이 필요합니다');
     }
 
-    // 디버깅을 위한 로그 추가
-    console.log('Admin Guard - User data:', {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      adminRole: user.adminRole,
-      adminPermissions: user.adminPermissions,
-      isAdminUser: typeof user.isAdminUser === 'function' ? user.isAdminUser() : 'not a function'
-    });
 
-    if (!user.isAdminUser()) {
+    // JWT 페이로드에서 adminRole 확인 (Entity 메서드가 없는 경우)
+    const isAdmin = typeof user.isAdminUser === 'function' 
+      ? user.isAdminUser() 
+      : (user.adminRole && ['super_admin', 'admin', 'moderator'].includes(user.adminRole));
+
+    if (!isAdmin) {
       throw new ForbiddenException('관리자 권한이 필요합니다');
     }
 
-    // 마지막 어드민 로그인 시간 업데이트
-    user.updateLastAdminLogin();
+    // Entity 메서드가 있는 경우에만 호출
+    if (typeof user.updateLastAdminLogin === 'function') {
+      user.updateLastAdminLogin();
+    }
 
     return true;
   }

@@ -15,23 +15,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - 클로드는 코딩실력도 좋고 아는 게 많기 때문에, 이 프로젝트를 맡은 수석책임개발자로서 더 좋은 방식을 제안하고,
 - 전체 구조를 분석해서 불필요한 게 없는지 수시로 확인한다.
 
-## 프로젝트 개요
-
-워클리(Workly)는 CPER 워크플로우를 기반으로 한 혁신적인 업무 관리 플랫폼입니다. 기존의 복잡한 GTD와 OKR 방법론을 단순화하고 통합하여 **워클리 고유 방법론**을 제공합니다.
-
-### CPER 워크플로우
-- **C**apture (수집): 모든 아이디어와 업무를 수집함에 저장
-- **P**lan (계획): 수집된 항목을 목표, 프로젝트, 업무로 분류  
-- **E**xecute (실행): 오늘의 업무에 집중하여 생산성 극대화
-- **R**eview (검토): 주간 성과를 분석하고 개선점 도출
-
-### 5개 핵심 네비게이션
-1. **업무** (`/`): 오늘 할 일과 실행 대시보드
-2. **프로젝트** (`/projects`): 협업 프로젝트 관리  
-3. **수집함** (`/inbox`): CPER 시작점, 모든 것을 수집
-4. **목표** (`/goals`): 장기 목표 설정 및 추적
-5. **프로필** (`/profile`): 개인 설정 및 주간 리뷰
-
 ## 개발 원칙
 
 - **단순성 추구**: 복잡한 기존 방법론 대신 직관적이고 단순한 구조
@@ -59,30 +42,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Socket.io**: 실시간 통신
 - **JWT + Google OAuth**: 인증 시스템
 
-## 프로젝트 구조
-
-```
-/Workly
-├── frontend/         # Next.js + TypeScript + Tailwind CSS
-├── backend/          # NestJS + TypeORM + PostgreSQL
-├── shared/           # 공유 타입 및 상수
-├── docs/             # 프로젝트 문서
-└── docker-compose.yml # 개발 환경
-```
-
-자세한 구조는 [PROJECT_STRUCTURE.md](./PROJECT_STRUCTURE.md) 참조
 
 ## 개발 명령어
 
 ```bash
-# 전체 개발 환경 실행 (Docker)
-docker-compose up -d
-
-# 프론트엔드만 실행
-cd frontend && npm run dev
-
-# 백엔드만 실행
-cd backend && npm run start:dev
 
 # 빌드
 cd frontend && npm run build

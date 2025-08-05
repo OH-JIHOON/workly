@@ -113,10 +113,16 @@ export class AuthController {
     try {
       const user = req.user as User;
       
+      // DB에서 최신 사용자 정보를 다시 조회하여 adminRole을 포함시킴
+      const freshUser = await this.authService.validateUserById(user.id);
+      if (!freshUser) {
+        throw new Error('User not found after Google auth');
+      }
+
       // JWT 토큰 생성
-      const tokens = await this.authService.generateTokensForUser(user);
+      const tokens = await this.authService.generateTokensForUser(freshUser);
       
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
       const redirectUrl = `${frontendUrl}/auth/callback?` +
         `status=success&` +
         `accessToken=${encodeURIComponent(tokens.accessToken)}&` +
@@ -124,7 +130,7 @@ export class AuthController {
       
       res.redirect(redirectUrl);
     } catch (error) {
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
       const redirectUrl = `${frontendUrl}/auth/callback?status=error&message=${encodeURIComponent('로그인 중 오류가 발생했습니다.')}`;
       
       res.redirect(redirectUrl);

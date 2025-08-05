@@ -27,7 +27,14 @@ export class AuditLogInterceptor implements NestInterceptor {
     const request = context.switchToHttp().getRequest();
     const user = request.user;
     
-    if (!user || !user.isAdminUser()) {
+    // JWT 페이로드와 Entity 객체 모두 지원
+    const isAdmin = user && (
+      typeof user.isAdminUser === 'function' 
+        ? user.isAdminUser() 
+        : (user.adminRole && ['super_admin', 'admin', 'moderator'].includes(user.adminRole))
+    );
+
+    if (!isAdmin) {
       return next.handle();
     }
 
@@ -38,8 +45,8 @@ export class AuditLogInterceptor implements NestInterceptor {
     return next.handle().pipe(
       tap((result) => {
         this.auditService.log({
-          adminId: user.id,
-          adminName: user.name,
+          adminId: user.id || user.sub,
+          adminName: user.name || user.email,
           action,
           targetType,
           targetId,
@@ -57,8 +64,8 @@ export class AuditLogInterceptor implements NestInterceptor {
       }),
       catchError((error) => {
         this.auditService.log({
-          adminId: user.id,
-          adminName: user.name,
+          adminId: user.id || user.sub,
+          adminName: user.name || user.email,
           action,
           targetType,
           targetId,

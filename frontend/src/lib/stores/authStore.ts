@@ -56,20 +56,26 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       set({ isLoading: true })
       
-      // 개발 환경에서 임시 관리자 계정 활성화
-      const isDevelopment = process.env.NODE_ENV === 'development' || 
-                           typeof window !== 'undefined' && window.location.hostname === 'localhost';
+      // 로컬 스토리지에서 토큰 및 사용자 정보 확인
+      const token = localStorage.getItem('accessToken')
+      const savedUserStr = localStorage.getItem('user');
       
-      // 로컬 스토리지에서 토큰 확인
-      let token = localStorage.getItem('token')
-      
-      // 개발 환경에서도 실제 로그인을 우선시하므로 자동 토큰 생성 제거
-      // if (!token && isDevelopment) {
-      //   token = 'dev-admin-token'
-      //   localStorage.setItem('token', token)
-      //   console.log('🔑 개발 환경: 임시 관리자 토큰이 생성되었습니다.')
-      // }
-      
+      // 토큰과 사용자 정보가 모두 있으면 즉시 로드
+      if (token && savedUserStr) {
+        try {
+          const savedUser = JSON.parse(savedUserStr);
+          set({ 
+            user: savedUser, 
+            isAuthenticated: true, 
+            token, 
+            isLoading: false 
+          });
+          return; // API 호출 없이 즉시 반환
+        } catch (error) {
+          console.error('AuthStore - 저장된 사용자 정보 파싱 오류:', error);
+        }
+      }
+
       if (!token) {
         set({ 
           user: null, 
@@ -80,9 +86,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         return
       }
 
-      // 실제 백엔드 API 호출로 사용자 정보 검증
+      // 백엔드 API 호출로 사용자 정보 검증
       try {
-        const response = await fetch('http://localhost:8000/api/v1/api/admin/profile', {
+        const response = await fetch('http://localhost:8000/auth/profile', {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
@@ -91,18 +97,21 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
         if (response.ok) {
           const apiResponse = await response.json();
-          const userData = apiResponse.success ? apiResponse.data : apiResponse;
+          const userData = apiResponse.user;
           
           // 백엔드 데이터를 프론트엔드 User 타입에 맞게 변환
           const user: User = {
             id: userData.id,
             name: userData.name,
             email: userData.email,
-            adminRole: userData.role || userData.adminRole,
+            adminRole: userData.adminRole, // 직접 adminRole 사용
             avatar: userData.avatar,
             createdAt: userData.createdAt || new Date().toISOString(),
             updatedAt: userData.updatedAt || new Date().toISOString()
           };
+          
+          // localStorage에도 사용자 정보 저장
+          localStorage.setItem('user', JSON.stringify(user));
           
           set({ 
             user, 
@@ -110,58 +119,36 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             token, 
             isLoading: false 
           });
-          
-          if (isDevelopment) {
-            console.log('🚀 실제 백엔드에서 사용자 정보를 가져왔습니다.', user);
-          }
         } else {
-          // API 호출 실패 시 임시 사용자 데이터 사용 (개발용)
-          const mockUser: User = {
-            id: '1',
-            name: '워클리 관리자',
-            email: 'admin@workly.com',
-            adminRole: 'super_admin',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          }
-
+          // API 호출 실패 시 토큰 제거
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('refreshToken');
+          localStorage.removeItem('user');
+          
           set({ 
-            user: mockUser, 
-            isAuthenticated: true, 
-            token, 
+            user: null, 
+            isAuthenticated: false, 
+            token: null, 
             isLoading: false 
           });
-          
-          if (isDevelopment) {
-            console.log('🔄 백엔드 API 연결 실패, 임시 관리자 데이터 사용:', mockUser);
-          }
         }
       } catch (error) {
-        console.error('백엔드 연결 오류:', error);
+        console.error('AuthStore - 백엔드 연결 오류:', error);
         
-        // 에러 발생 시 임시 사용자 데이터 사용 (개발용)
-        const mockUser: User = {
-          id: '1',
-          name: '워클리 관리자',
-          email: 'admin@workly.com',
-          adminRole: 'super_admin',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        }
-
+        // 네트워크 오류 시 토큰 제거
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('user');
+        
         set({ 
-          user: mockUser, 
-          isAuthenticated: true, 
-          token, 
+          user: null, 
+          isAuthenticated: false, 
+          token: null, 
           isLoading: false 
         });
-        
-        if (isDevelopment) {
-          console.log('🔄 백엔드 연결 에러, 임시 관리자 데이터 사용:', mockUser);
-        }
       }
     } catch (error) {
-      console.error('Auth check failed:', error)
+      console.error('AuthStore - checkAuth 전체 실패:', error)
       set({ 
         user: null, 
         isAuthenticated: false, 
@@ -172,7 +159,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   login: (token: string, user: User) => {
-    localStorage.setItem('token', token)
+    localStorage.setItem('accessToken', token)
     set({ 
       token, 
       user, 
@@ -182,7 +169,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   logout: () => {
-    localStorage.removeItem('token')
+    localStorage.removeItem('accessToken')
+    localStorage.removeItem('refreshToken')
+    localStorage.removeItem('user')
     set({ 
       user: null, 
       isAuthenticated: false, 
