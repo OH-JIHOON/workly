@@ -25,6 +25,7 @@ import { isAuthenticated } from '@/lib/auth'
 import { useCalendarFilterStore } from '@/lib/stores/calendarFilterStore'
 import AdvancedFilterPanel, { AdvancedFilters } from '@/components/ui/AdvancedFilterPanel'
 import TaskDetailModal from '@/components/tasks/TaskDetailModal'
+import { api } from '@/lib/api'
 
 // 워클리 업무 인터페이스 (레거시 GTDTask 대체)
 interface WorklyTask {
@@ -51,151 +52,39 @@ interface WorklyTask {
   isFocused?: boolean  // 워클리: 집중 모드 표시
 }
 
-// 목업 워클리 업무 데이터
-const mockTasks: WorklyTask[] = [
-  {
-    id: '1',
-    title: '워클리 네비게이션 시스템 최종 점검',
-    description: '5개 핵심 네비게이션 항목의 동작을 확인하고 사용자 경험을 개선',
-    status: TaskStatus.IN_PROGRESS,
-    priority: TaskPriority.HIGH,
-    type: TaskType.TASK,
-    projectId: 'proj-1',
-    assigneeId: 'user1',
-    assignee: { id: 'user1', name: '김워클리', email: 'workly@example.com' },
-    dueDate: new Date().toISOString(),
-    scheduledDate: new Date().toISOString(),
-    tags: ['UI/UX', '네비게이션', '점검'],
-    createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date().toISOString(),
-    isToday: true,
-    isFocused: true
-  },
-  {
-    id: '2',
-    title: 'CPER 워크플로우 문서 작성',
-    description: 'Capture-Plan-Execute-Review 워크플로우의 사용법을 문서로 정리',
-    status: TaskStatus.TODO,
-    priority: TaskPriority.MEDIUM,
-    type: TaskType.TASK,
-    goalId: 'goal-1',
-    assigneeId: 'user1',
-    assignee: { id: 'user1', name: '김워클리', email: 'workly@example.com' },
-    dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
-    scheduledDate: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000).toISOString(),
-    tags: ['문서화', 'CPER', '가이드'],
-    createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date().toISOString(),
-    isToday: false
-  },
-  {
-    id: '3',
-    title: '사용자 피드백 수집 및 분석',
-    description: '베타 테스터들의 피드백을 수집하고 개선사항을 도출',
-    status: TaskStatus.TODO,
-    priority: TaskPriority.HIGH,
-    type: TaskType.IMPROVEMENT,
-    goalId: 'goal-1',
-    assigneeId: 'user1',
-    assignee: { id: 'user1', name: '김워클리', email: 'workly@example.com' },
-    dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-    tags: ['피드백', '사용자경험', '분석'],
-    createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date().toISOString(),
-    isToday: true
-  },
-  {
-    id: '4',
-    title: '데이터베이스 성능 최적화',
-    description: '쿼리 성능을 개선하고 인덱싱을 최적화',
-    status: TaskStatus.IN_REVIEW,
-    priority: TaskPriority.MEDIUM,
-    type: TaskType.IMPROVEMENT,
-    projectId: 'proj-2',
-    assigneeId: 'user1',
-    assignee: { id: 'user1', name: '김워클리', email: 'workly@example.com' },
-    dueDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
-    tags: ['데이터베이스', '성능', '최적화'],
-    createdAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date().toISOString()
-  },
-  {
-    id: '5',
-    title: '모바일 반응형 디자인 개선',
-    description: '모바일 환경에서의 사용자 경험을 개선',
-    status: TaskStatus.DONE,
-    priority: TaskPriority.MEDIUM,
-    type: TaskType.FEATURE,
-    projectId: 'proj-1',
-    assigneeId: 'user1',
-    assignee: { id: 'user1', name: '김워클리', email: 'workly@example.com' },
-    dueDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-    tags: ['모바일', '반응형', 'UI'],
-    createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString()
-  },
-  {
-    id: '6',
-    title: '차세대 기능 기획',
-    description: '사용자 요청이 많은 기능들을 검토하고 로드맵에 반영',
-    status: TaskStatus.TODO,
-    priority: TaskPriority.LOW,
-    type: TaskType.EPIC,
-    goalId: 'goal-2',
-    assigneeId: 'user1',
-    assignee: { id: 'user1', name: '김워클리', email: 'workly@example.com' },
-    tags: ['기획', '로드맵', '미래'],
-    createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date().toISOString()
-  },
-  // 정리 마법사 테스트를 위한 미분류 업무들
-  {
-    id: '7',
-    title: '이메일 응답하기',
-    description: '중요한 이메일들에 대한 응답 처리',
-    status: TaskStatus.TODO,
-    priority: TaskPriority.MEDIUM,
-    type: TaskType.TASK,
-    assigneeId: 'user1',
-    assignee: { id: 'user1', name: '김워클리', email: 'workly@example.com' },
-    tags: ['이메일', '커뮤니케이션'],
-    createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date().toISOString()
-  },
-  {
-    id: '8',
-    title: '회의실 예약',
-    description: '내일 팀 미팅을 위한 회의실 예약',
-    status: TaskStatus.TODO,
-    priority: TaskPriority.HIGH,
-    type: TaskType.TASK,
-    assigneeId: 'user1',
-    assignee: { id: 'user1', name: '김워클리', email: 'workly@example.com' },
-    tags: ['회의', '예약'],
-    createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date().toISOString()
-  },
-  {
-    id: '9',
-    title: '프로젝트 자료 정리',
-    description: '지난달 프로젝트 관련 자료들을 정리',
-    status: TaskStatus.TODO,
-    priority: TaskPriority.LOW,
-    type: TaskType.TASK,
-    assigneeId: 'user1',
-    assignee: { id: 'user1', name: '김워클리', email: 'workly@example.com' },
-    tags: ['정리', '문서'],
-    createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date().toISOString()
+// API 응답 타입 (백엔드와 호환)
+interface BackendTask {
+  id: string
+  title: string
+  description?: string
+  status: TaskStatus
+  priority: TaskPriority
+  type: TaskType
+  projectId?: string
+  goalId?: string
+  assigneeId: string
+  assignee: {
+    id: string
+    firstName: string
+    lastName: string
+    email: string
   }
-]
+  dueDate?: string
+  startDate?: string
+  tags?: string[]
+  createdAt: string
+  updatedAt: string
+  progress?: number
+  estimatedHours?: number
+}
 
 
 export default function TasksPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [tasks, setTasks] = useState<WorklyTask[]>([])
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [activeFilters, setActiveFilters] = useState<string[]>(['today'])
   const [isLoggedIn, setIsLoggedIn] = useState(false)
 
@@ -226,6 +115,37 @@ export default function TasksPage() {
     { id: 'goal-1', name: 'Q4 사용자 경험 개선' },
     { id: 'goal-2', name: '차세대 기능 개발' }
   ]
+  
+  // 백엔드 응답을 프론트엔드 형식으로 변환
+  const transformBackendTask = (backendTask: BackendTask): WorklyTask => {
+    const today = new Date()
+    const dueDate = backendTask.dueDate ? new Date(backendTask.dueDate) : null
+    
+    return {
+      id: backendTask.id,
+      title: backendTask.title,
+      description: backendTask.description,
+      status: backendTask.status,
+      priority: backendTask.priority,
+      type: backendTask.type,
+      goalId: backendTask.goalId,
+      projectId: backendTask.projectId,
+      assigneeId: backendTask.assigneeId,
+      assignee: {
+        id: backendTask.assignee.id,
+        name: `${backendTask.assignee.firstName} ${backendTask.assignee.lastName}`,
+        email: backendTask.assignee.email
+      },
+      dueDate: backendTask.dueDate,
+      scheduledDate: backendTask.startDate,
+      tags: backendTask.tags || [],
+      createdAt: backendTask.createdAt,
+      updatedAt: backendTask.updatedAt,
+      // 오늘 할 일 계산: 마감일이 오늘이거나 이미 지났고 완료되지 않은 업무
+      isToday: dueDate ? (dueDate <= today && backendTask.status !== TaskStatus.DONE) : false,
+      isFocused: backendTask.priority === TaskPriority.URGENT || backendTask.priority === TaskPriority.HIGH
+    }
+  }
   
   // 상세 필터가 활성화되었는지 확인
   const hasAdvancedFilters = Boolean(
@@ -358,9 +278,42 @@ export default function TasksPage() {
     return includeTask
   })
 
-  // 로그인 상태 초기화
+  // 데이터 로딩 함수
+  const loadTasks = async () => {
+    if (!isAuthenticated()) {
+      setIsLoading(false)
+      return
+    }
+
+    try {
+      setIsLoading(true)
+      setError(null)
+      
+      // 모든 업무 조회
+      const backendTasks = await api.get<BackendTask[]>('/api/v1/tasks')
+      
+      // 프론트엔드 형식으로 변환
+      const transformedTasks = backendTasks.map(transformBackendTask)
+      
+      setTasks(transformedTasks)
+    } catch (err) {
+      console.error('업무 로딩 실패:', err)
+      setError('업무를 불러오는데 실패했습니다.')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // 로그인 상태 확인 및 데이터 로딩
   useEffect(() => {
-    setIsLoggedIn(isAuthenticated())
+    const loggedIn = isAuthenticated()
+    setIsLoggedIn(loggedIn)
+    
+    if (loggedIn) {
+      loadTasks()
+    } else {
+      setIsLoading(false)
+    }
   }, [])
 
   // URL 쿼리 파라미터에서 필터 상태 초기화
@@ -430,53 +383,128 @@ export default function TasksPage() {
   }
   
   // 업무 상세 저장 핸들러
-  const handleTaskDetailSave = (taskDetail: TaskDetail) => {
-    // 실제로는 API 호출하여 저장
-    console.log('업무 상세 저장:', taskDetail)
-    
-    // 로컬 상태 업데이트 (기본 정보만)
-    handleTaskUpdate(taskDetail.id, {
-      title: taskDetail.title,
-      description: taskDetail.description,
-      dueDate: taskDetail.dueDate,
-      estimatedHours: taskDetail.estimatedTimeMinutes ? taskDetail.estimatedTimeMinutes / 60 : undefined
-    })
+  const handleTaskDetailSave = async (taskDetail: TaskDetail) => {
+    if (!isAuthenticated()) {
+      alert('로그인이 필요합니다.')
+      return
+    }
+
+    try {
+      // 상세 정보 업데이트 API 호출
+      const updateData = {
+        title: taskDetail.title,
+        description: taskDetail.description,
+        dueDate: taskDetail.dueDate,
+        estimatedHours: taskDetail.estimatedTimeMinutes ? taskDetail.estimatedTimeMinutes / 60 : undefined,
+        descriptionMarkdown: taskDetail.descriptionMarkdown,
+        estimatedTimeMinutes: taskDetail.estimatedTimeMinutes,
+        loggedTimeMinutes: taskDetail.loggedTimeMinutes,
+        // 체크리스트, 관계, 위키 참조는 일단 제외
+      }
+
+      const updatedBackendTask = await api.put<BackendTask>(`/api/v1/tasks/${taskDetail.id}/detail`, updateData)
+      
+      // 백엔드 응답을 프론트엔드 형식으로 변환
+      const updatedTask = transformBackendTask(updatedBackendTask)
+
+      // 로컬 상태 업데이트
+      setTasks(prevTasks => 
+        prevTasks.map(task => 
+          task.id === taskDetail.id ? updatedTask : task
+        )
+      )
+    } catch (err) {
+      console.error('업무 상세 저장 실패:', err)
+      alert('업무 상세 정보 저장에 실패했습니다.')
+    }
   }
 
   // PRD 명세: 빠른 추가 - Enter 입력 시 새 업무가 리스트 최상단에 생성
   const handleQuickAddTask = async (title: string) => {
-    const newTask: WorklyTask = {
-      id: `task-${Date.now()}`, // 임시 ID 생성
-      title: title,
-      status: TaskStatus.TODO, // PRD 명세: status는 'todo'
-      priority: TaskPriority.MEDIUM, // 기본 우선순위
-      type: TaskType.TASK,
-      assigneeId: 'user1',
-      assignee: { id: 'user1', name: '김워클리', email: 'workly@example.com' },
-      tags: [],
-      createdAt: new Date().toISOString(), // PRD 명세: created_at은 현재 시각
-      updatedAt: new Date().toISOString(),
-      isToday: true // 새로 생성된 업무는 오늘 할 일로 설정
+    if (!isAuthenticated()) {
+      alert('로그인이 필요합니다.')
+      return
     }
 
-    // 리스트 최상단에 추가
-    setTasks(prevTasks => [newTask, ...prevTasks])
+    try {
+      // 업무 생성 API 호출
+      const newBackendTask = await api.post<BackendTask>('/api/v1/tasks', {
+        title: title,
+        priority: TaskPriority.MEDIUM, // 기본 우선순위
+        type: TaskType.TASK,
+        tags: []
+      })
+
+      // 백엔드 응답을 프론트엔드 형식으로 변환
+      const newTask = transformBackendTask(newBackendTask)
+
+      // 리스트 최상단에 추가
+      setTasks(prevTasks => [newTask, ...prevTasks])
+    } catch (err) {
+      console.error('업무 생성 실패:', err)
+      alert('업무 생성에 실패했습니다.')
+    }
   }
 
   // 정리 마법사: 업무 업데이트
-  const handleTaskUpdate = (taskId: string, updates: Partial<WorklyTask>) => {
-    setTasks(prevTasks => 
-      prevTasks.map(task => 
-        task.id === taskId ? { ...task, ...updates, updatedAt: new Date().toISOString() } : task
+  const handleTaskUpdate = async (taskId: string, updates: Partial<WorklyTask>) => {
+    if (!isAuthenticated()) {
+      alert('로그인이 필요합니다.')
+      return
+    }
+
+    try {
+      // 백엔드 업데이트 데이터 준비
+      const updateData: any = {}
+      
+      if (updates.title) updateData.title = updates.title
+      if (updates.description) updateData.description = updates.description
+      if (updates.status) updateData.status = updates.status
+      if (updates.priority) updateData.priority = updates.priority
+      if (updates.type) updateData.type = updates.type
+      if (updates.dueDate) updateData.dueDate = updates.dueDate
+      if (updates.scheduledDate) updateData.startDate = updates.scheduledDate
+      if (updates.tags) updateData.tags = updates.tags
+
+      // 업무 수정 API 호출
+      const updatedBackendTask = await api.put<BackendTask>(`/api/v1/tasks/${taskId}`, updateData)
+
+      // 백엔드 응답을 프론트엔드 형식으로 변환
+      const updatedTask = transformBackendTask(updatedBackendTask)
+
+      // 로컬 상태 업데이트
+      setTasks(prevTasks => 
+        prevTasks.map(task => 
+          task.id === taskId ? updatedTask : task
+        )
       )
-    )
+    } catch (err) {
+      console.error('업무 수정 실패:', err)
+      alert('업무 수정에 실패했습니다.')
+    }
   }
 
   // 정리 마법사: 업무 삭제 (30일간 휴지통)
-  const handleTaskDelete = (taskId: string) => {
-    setTasks(prevTasks => prevTasks.filter(task => task.id !== taskId))
-    // TODO: 실제로는 deleted 상태로 변경하고 30일 후 완전 삭제
-    console.log(`업무 ${taskId} 삭제됨 (30일간 휴지통 보관)`)
+  const handleTaskDelete = async (taskId: string) => {
+    if (!isAuthenticated()) {
+      alert('로그인이 필요합니다.')
+      return
+    }
+
+    if (!confirm('이 업무를 삭제하시겠습니까?')) {
+      return
+    }
+
+    try {
+      // 업무 삭제 API 호출
+      await api.delete(`/api/v1/tasks/${taskId}`)
+
+      // 로컬 상태에서 제거
+      setTasks(prevTasks => prevTasks.filter(task => task.id !== taskId))
+    } catch (err) {
+      console.error('업무 삭제 실패:', err)
+      alert('업무 삭제에 실패했습니다.')
+    }
   }
 
   // 드래그 앤 드롭 핸들러들
@@ -563,6 +591,35 @@ export default function TasksPage() {
     })
     
     return tasksWithDates
+  }
+
+  // 에러 발생 시 에러 화면 표시
+  if (error && !isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 pb-20">
+        <Header title="업무" />
+        <MainContainer>
+          <div className="text-center py-16">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md mx-auto">
+              <div className="text-red-600 mb-4">
+                <ClipboardDocumentIcon className="w-16 h-16 mx-auto mb-2" />
+                <h3 className="text-lg font-semibold">오류가 발생했습니다</h3>
+              </div>
+              <p className="text-red-700 mb-4">{error}</p>
+              <button
+                onClick={() => {
+                  setError(null)
+                  loadTasks()
+                }}
+                className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+              >
+                다시 시도
+              </button>
+            </div>
+          </div>
+        </MainContainer>
+      </div>
+    )
   }
 
   return (
