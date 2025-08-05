@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Search, Filter, SortAsc, SortDesc } from 'lucide-react';
 import MainContainer from '@/components/layout/MainContainer';
 import TaskList from '@/components/tasks/TaskList';
-import TaskFilters from '@/components/tasks/TaskFilters';
+import SimpleFilterChips from '@/components/ui/SimpleFilterChips';
 import TaskCreationWizard from '@/components/tasks/TaskCreationWizard';
 import { apiClient } from '@/lib/api';
 import { Task, CreateTaskDto, TaskStatus, SmartFilter } from '@/types/task.types';
@@ -260,10 +260,14 @@ export default function TasksPage() {
       {/* 필터 및 검색 */}
       <div className="space-y-4 mb-6">
         {/* 스마트 필터 */}
-        <TaskFilters
-          currentFilter={currentFilter}
-          onFilterChange={setCurrentFilter}
-          taskCounts={taskCounts}
+        <SimpleFilterChips
+          options={[
+            { key: 'today', label: '오늘', count: taskCounts.today },
+            { key: 'completed', label: '완료됨', count: taskCounts.completed },
+            { key: 'all', label: '전체', count: taskCounts.all }
+          ]}
+          activeFilters={[currentFilter]}
+          onFilterChange={(filters) => setCurrentFilter(filters[0] as SmartFilter || 'all')}
         />
 
         {/* 검색 및 정렬 */}

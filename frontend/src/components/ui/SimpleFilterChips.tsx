@@ -1,7 +1,6 @@
 'use client'
 
-import { useState } from 'react'
-import { XMarkIcon, AdjustmentsHorizontalIcon, FunnelIcon } from '@heroicons/react/24/outline'
+import { XMarkIcon, FunnelIcon } from '@heroicons/react/24/outline'
 
 interface FilterOption {
   key: string
@@ -9,24 +8,12 @@ interface FilterOption {
   count?: number
 }
 
-interface FilterSetting {
-  key: string
-  label: string
-  type: 'toggle' | 'select'
-  value?: any
-  options?: string[]
-  onChange: (value: any) => void
-}
 
 interface SimpleFilterChipsProps {
   options: FilterOption[]
   activeFilters: string[]
   onFilterChange: (filters: string[]) => void
   className?: string
-  settings?: {
-    title: string
-    settings: FilterSetting[]
-  }
   onAdvancedFilterClick?: () => void
   hasAdvancedFilters?: boolean
 }
@@ -42,12 +29,10 @@ export default function SimpleFilterChips({
   activeFilters,
   onFilterChange,
   className = '',
-  settings,
   onAdvancedFilterClick,
   hasAdvancedFilters = false
 }: SimpleFilterChipsProps) {
   
-  const [showSettings, setShowSettings] = useState(false)
   
   const handleChipClick = (key: string) => {
     if (activeFilters.includes(key)) {
@@ -126,62 +111,6 @@ export default function SimpleFilterChips({
         </button>
       )}
       
-      {/* 필터 설정 버튼 */}
-      {settings && (
-        <div className="relative">
-          <button
-            onClick={() => setShowSettings(!showSettings)}
-            className="flex-shrink-0 w-10 h-10 flex items-center justify-center bg-white text-gray-600 border border-gray-200 rounded-full hover:border-gray-300 hover:bg-gray-50 transition-colors"
-            aria-label="필터 설정"
-          >
-            <AdjustmentsHorizontalIcon className="w-5 h-5" />
-          </button>
-          
-          {/* 설정 드롭다운 */}
-          {showSettings && (
-            <div className="absolute top-full right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg min-w-[200px] p-4 z-50">
-              <h3 className="text-sm font-semibold text-gray-900 mb-3">{settings.title}</h3>
-              <div className="space-y-3">
-                {settings.settings.map((setting) => (
-                  <div key={setting.key} className="flex items-center justify-between">
-                    <label className="text-sm text-gray-700">{setting.label}</label>
-                    {setting.type === 'toggle' && (
-                      <button
-                        onClick={() => setting.onChange(!setting.value)}
-                        className={`
-                          w-10 h-6 rounded-full transition-colors relative
-                          ${setting.value ? 'bg-blue-600' : 'bg-gray-300'}
-                        `}
-                      >
-                        <div className={`
-                          w-4 h-4 bg-white rounded-full absolute top-1 transition-transform
-                          ${setting.value ? 'translate-x-5' : 'translate-x-1'}
-                        `} />
-                      </button>
-                    )}
-                    {setting.type === 'select' && setting.options && (
-                      <select 
-                        value={setting.value || ''}
-                        onChange={(e) => setting.onChange(e.target.value)}
-                        className="text-sm border border-gray-200 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      >
-                        {setting.options.map((option) => (
-                          <option key={option} value={option}>
-                            {option === 'priority' ? '우선순위순' :
-                             option === 'dueDate' ? '마감일순' :
-                             option === 'status' ? '상태순' :
-                             option === 'created' ? '생성순' : option}
-                          </option>
-                        ))}
-                      </select>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
     </div>
   )
 }

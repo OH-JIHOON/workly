@@ -204,8 +204,6 @@ export default function TasksPage() {
   const [isDragMode, setIsDragMode] = useState(false)
   const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null)
 
-  // 필터 설정 상태 (간소화됨)
-  const [taskSortOrder, setTaskSortOrder] = useState('priority')
   
   // 캘린더 필터 상태 구독
   const { showNoDue, showOverdue } = useCalendarFilterStore()
@@ -586,19 +584,6 @@ export default function TasksPage() {
               onFilterChange={setActiveFilters}
               onAdvancedFilterClick={() => setShowAdvancedFilters(true)}
               hasAdvancedFilters={hasAdvancedFilters}
-              settings={{
-                title: "업무 필터 설정",
-                settings: [
-                  {
-                    key: 'sort',
-                    label: '정렬 기준',
-                    type: 'select',
-                    value: taskSortOrder,
-                    options: ['priority', 'dueDate', 'status', 'created'],
-                    onChange: setTaskSortOrder
-                  }
-                ]
-              }}
             />
           </div>
         )}
