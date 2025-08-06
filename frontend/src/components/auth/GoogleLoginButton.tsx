@@ -20,7 +20,7 @@ export default function GoogleLoginButton({
       onLogin();
     } else {
       // 기본 Google OAuth 로그인 처리
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
       window.location.href = `${backendUrl}/auth/google`;
     }
   };

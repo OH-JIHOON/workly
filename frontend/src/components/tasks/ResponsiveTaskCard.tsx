@@ -46,6 +46,7 @@ interface ResponsiveTaskCardProps {
   onDelegate: (taskId: string) => void
   onDefer: (taskId: string) => void
   onConvertToProject: (taskId: string) => void
+  onToggleComplete: (taskId: string, completed: boolean) => Promise<{ xpGained?: number }>
   onDragStart?: (taskId: string) => void
   onDragEnd?: () => void
   isDragMode?: boolean
@@ -61,6 +62,7 @@ export default function ResponsiveTaskCard({
   onDelegate,
   onDefer,
   onConvertToProject,
+  onToggleComplete,
   onDragStart,
   onDragEnd,
   isDragMode = false,
@@ -89,25 +91,39 @@ export default function ResponsiveTaskCard({
   const longPressTimerRef = useRef<NodeJS.Timeout | null>(null)
   const isDragDetectedRef = useRef(false)
   const prevDueDateRef = useRef<string | undefined>(task.dueDate)
+  const menuCloseTimerRef = useRef<NodeJS.Timeout | null>(null)
 
-  // 메뉴 외부 클릭 감지
+  // 컴포넌트 언마운트 시 타이머 정리
+  useEffect(() => {
+    return () => {
+      if (menuCloseTimerRef.current) {
+        clearTimeout(menuCloseTimerRef.current)
+      }
+      if (longPressTimerRef.current) {
+        clearTimeout(longPressTimerRef.current)
+      }
+    }
+  }, [])
+
+  // 메뉴 외부 클릭 감지 - 단순화
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (showActionMenu && menuButtonRef.current && !menuButtonRef.current.contains(event.target as Node)) {
-        setShowActionMenu(false)
+      if (showActionMenu) {
+        const target = event.target as Node
+        const menuButton = menuButtonRef.current
+        const menuElement = document.querySelector('[data-menu-portal]')
+        
+        // 메뉴 버튼이나 메뉴 자체를 클릭한 경우가 아니면 닫기
+        if (menuButton && !menuButton.contains(target) && 
+            menuElement && !menuElement.contains(target)) {
+          setShowActionMenu(false)
+        }
       }
     }
 
     if (showActionMenu) {
-      // 약간의 지연 후 이벤트 리스너 등록 (버튼 클릭 이벤트와 충돌 방지)
-      const timer = setTimeout(() => {
-        document.addEventListener('mousedown', handleClickOutside)
-      }, 100)
-      
-      return () => {
-        clearTimeout(timer)
-        document.removeEventListener('mousedown', handleClickOutside)
-      }
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
     }
   }, [showActionMenu])
 
@@ -125,12 +141,7 @@ export default function ResponsiveTaskCard({
 
   // PRD 준수: Primary Blue 중심의 마감일 시각화
   const getDueDateVisualization = (dueDate?: string) => {
-    if (!dueDate) return { 
-      color: 'bg-gray-200', 
-      topText: '무기한',
-      bottomText: '',
-      textColor: 'text-gray-600'
-    }
+    if (!dueDate) return null // 마감일이 없으면 null 반환
     
     const today = new Date()
     const due = new Date(dueDate)
@@ -175,10 +186,40 @@ export default function ResponsiveTaskCard({
     }
   }
 
+  // 체크박스 상태 관리
+  const [isUpdating, setIsUpdating] = useState(false)
+  const [showCheckAnimation, setShowCheckAnimation] = useState(false)
+  const [gainedXP, setGainedXP] = useState<number>(0)
+
   // 체크박스 클릭 처리
-  const handleCheckboxClick = (e: React.MouseEvent) => {
+  const handleCheckboxClick = async (e: React.MouseEvent) => {
     e.stopPropagation()
-    console.log('Toggle task status:', task.id)
+    
+    if (isUpdating) return // 중복 클릭 방지
+    
+    const willBeCompleted = !isCompleted
+    
+    try {
+      setIsUpdating(true)
+      
+      // 업무 완료 API 호출 및 경험치 획득
+      const result = await onToggleComplete(task.id, willBeCompleted)
+      
+      // 성취감 애니메이션 시작 (완료 시에만)
+      if (willBeCompleted && result.xpGained) {
+        setGainedXP(result.xpGained)
+        setShowCheckAnimation(true)
+        setTimeout(() => {
+          setShowCheckAnimation(false)
+          setGainedXP(0)
+        }, 1500)
+      }
+    } catch (error) {
+      console.error('업무 상태 변경 실패:', error)
+      // TODO: 에러 토스트 표시
+    } finally {
+      setIsUpdating(false)
+    }
   }
 
   // === 터치 디바이스용 이벤트 핸들러 ===
@@ -281,13 +322,26 @@ export default function ResponsiveTaskCard({
   const handleMouseEnter = () => {
     if (!isTouch) {
       setIsHovered(true)
+      // 메뉴 닫기 타이머가 있다면 취소
+      if (menuCloseTimerRef.current) {
+        clearTimeout(menuCloseTimerRef.current)
+        menuCloseTimerRef.current = null
+      }
     }
   }
 
   const handleMouseLeave = () => {
     if (!isTouch) {
-      setIsHovered(false)
-      setShowActionMenu(false)
+      if (showActionMenu) {
+        // 메뉴가 열려있으면 300ms 후에 닫기
+        menuCloseTimerRef.current = setTimeout(() => {
+          setIsHovered(false)
+          setShowActionMenu(false)
+        }, 300)
+      } else {
+        // 메뉴가 닫혀있으면 즉시 hover 해제
+        setIsHovered(false)
+      }
     }
   }
 
@@ -306,11 +360,7 @@ export default function ResponsiveTaskCard({
         top: rect.bottom + 5,
         right: window.innerWidth - rect.right
       })
-      
-      // 다음 tick에서 메뉴 상태 변경 (이벤트 전파 방지)
-      setTimeout(() => {
-        setShowActionMenu(true)
-      }, 0)
+      setShowActionMenu(true)
     } else {
       setShowActionMenu(false)
     }
@@ -363,21 +413,40 @@ export default function ResponsiveTaskCard({
   const handleDateSelect = (e: React.MouseEvent) => {
     e.stopPropagation()
     
-    // 간단한 날짜 선택을 위한 프롬프트 (향후 달력 컴포넌트로 대체 가능)
-    const dateInput = prompt('마감일을 입력하세요 (YYYY-MM-DD 형식):')
-    if (dateInput && onSetDueDate) {
-      const date = new Date(dateInput)
-      if (!isNaN(date.getTime())) {
-        onSetDueDate(task.id, dateInput)
-      } else {
-        alert('올바른 날짜 형식이 아닙니다. YYYY-MM-DD 형식으로 입력해주세요.')
-      }
+    // HTML5 date input을 사용하여 더 나은 사용자 경험 제공
+    const input = document.createElement('input')
+    input.type = 'date'
+    input.style.position = 'absolute'
+    input.style.left = '-9999px'
+    
+    // 현재 마감일이 있으면 기본값으로 설정
+    if (task.dueDate) {
+      input.value = task.dueDate.split('T')[0] // YYYY-MM-DD 형식으로 변환
     }
+    
+    document.body.appendChild(input)
+    input.showPicker?.() || input.focus()
+    
+    input.addEventListener('change', () => {
+      if (input.value && onSetDueDate) {
+        onSetDueDate(task.id, input.value)
+      }
+      document.body.removeChild(input)
+    })
+    
+    input.addEventListener('blur', () => {
+      setTimeout(() => {
+        if (document.body.contains(input)) {
+          document.body.removeChild(input)
+        }
+      }, 100)
+    })
+    
     setShowActionMenu(false)
   }
 
   const dueDateInfo = getDueDateVisualization(task.dueDate)
-  const isCompleted = task.status === TaskStatus.DONE
+  const isCompleted = task.status === TaskStatus.COMPLETED
 
   return (
     <div className="relative overflow-hidden">
@@ -449,19 +518,54 @@ export default function ResponsiveTaskCard({
       >
         <div className="flex items-center gap-4 min-h-[60px]">
           {/* 좌측: 큰 체크박스 */}
-          <div className="flex-shrink-0 flex items-center justify-center">
+          <div className="flex-shrink-0 flex items-center justify-center relative">
             <button
               onClick={handleCheckboxClick}
-              className={`w-7 h-7 rounded border-2 flex items-center justify-center transition-all ${
+              disabled={isUpdating}
+              className={`w-7 h-7 rounded border-2 flex items-center justify-center transition-all duration-200 ${
                 isCompleted 
-                  ? 'bg-green-500 border-green-500 text-white' 
-                  : 'border-gray-300 hover:border-blue-500 hover:bg-blue-50'
-              }`}
+                  ? 'bg-green-500 border-green-500 text-white transform scale-110' 
+                  : isUpdating
+                  ? 'border-blue-300 bg-blue-50 animate-pulse cursor-not-allowed'
+                  : 'border-gray-300 hover:border-blue-500 hover:bg-blue-50 hover:scale-105'
+              } ${showCheckAnimation ? 'animate-bounce' : ''}`}
             >
-              {isCompleted && (
-                <CheckCircleIcon className="w-4 h-4" />
+              {isCompleted && !isUpdating && (
+                <CheckCircleIcon className="w-4 h-4 animate-in fade-in-0 zoom-in-50 duration-300" />
+              )}
+              {isUpdating && (
+                <div className="w-3 h-3 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
               )}
             </button>
+            
+            {/* 체크 완료 애니메이션 */}
+            {showCheckAnimation && (
+              <div className="absolute inset-0 pointer-events-none overflow-visible">
+                {/* 확산 원형 애니메이션 */}
+                <div className="w-7 h-7 bg-green-400 rounded-full animate-ping opacity-75"></div>
+                
+                {/* 경험치 플로팅 애니메이션 */}
+                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                  <div className="text-green-600 font-bold text-sm animate-bounce">
+                    +{gainedXP}XP
+                  </div>
+                  {/* 위로 떠오르는 애니메이션 */}
+                  <div className="absolute inset-0 animate-[float_1.5s_ease-out_forwards]">
+                    <div className="text-green-500 font-bold text-sm opacity-70">
+                      +{gainedXP}XP
+                    </div>
+                  </div>
+                </div>
+                
+                {/* 성취감 파티클 효과 */}
+                <div className="absolute inset-0">
+                  <div className="absolute top-0 left-0 w-1 h-1 bg-yellow-400 rounded-full animate-[sparkle_1s_ease-out]"></div>
+                  <div className="absolute top-1 right-0 w-1 h-1 bg-yellow-400 rounded-full animate-[sparkle_1s_ease-out_0.2s]"></div>
+                  <div className="absolute bottom-0 left-1 w-1 h-1 bg-yellow-400 rounded-full animate-[sparkle_1s_ease-out_0.4s]"></div>
+                  <div className="absolute bottom-1 right-1 w-1 h-1 bg-yellow-400 rounded-full animate-[sparkle_1s_ease-out_0.6s]"></div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* 중앙: 콘텐츠 영역 */}
@@ -507,17 +611,19 @@ export default function ResponsiveTaskCard({
 
           {/* 우측: 마감일 + 데스크톱 더보기 버튼 */}
           <div className="flex-shrink-0 flex items-center gap-3">
-            {/* 마감일 시각화 */}
-            <div className={`w-12 h-12 rounded-full ${dueDateInfo.color} flex flex-col items-center justify-center transition-all duration-300`}>
-              <span className={`font-bold text-xs leading-tight ${dueDateInfo.textColor}`}>
-                {dueDateInfo.topText}
-              </span>
-              {dueDateInfo.bottomText && (
-                <span className={`font-medium text-xs leading-tight ${dueDateInfo.textColor}`}>
-                  {dueDateInfo.bottomText}
+            {/* 마감일 시각화 - 마감일이 있을 때만 표시 */}
+            {dueDateInfo && (
+              <div className={`w-12 h-12 rounded-full ${dueDateInfo.color} flex flex-col items-center justify-center transition-all duration-300`}>
+                <span className={`font-bold text-xs leading-tight ${dueDateInfo.textColor}`}>
+                  {dueDateInfo.topText}
                 </span>
-              )}
-            </div>
+                {dueDateInfo.bottomText && (
+                  <span className={`font-medium text-xs leading-tight ${dueDateInfo.textColor}`}>
+                    {dueDateInfo.bottomText}
+                  </span>
+                )}
+              </div>
+            )}
 
             {/* 데스크톱: 더보기 버튼 (항상 보임) */}
             {!isTouch && (
@@ -542,23 +648,40 @@ export default function ResponsiveTaskCard({
       {/* Portal로 렌더링되는 더보기 메뉴 */}
       {!isTouch && showActionMenu && menuPosition && typeof window !== 'undefined' && createPortal(
         <div 
+          data-menu-portal
           className="fixed w-36 bg-white border border-gray-200 rounded-lg shadow-xl z-[999]"
           style={{
             top: menuPosition.top,
             right: menuPosition.right
           }}
-          onClick={(e) => e.stopPropagation()}
+          onMouseEnter={() => {
+            // 메뉴에 마우스가 들어오면 닫기 타이머 취소
+            if (menuCloseTimerRef.current) {
+              clearTimeout(menuCloseTimerRef.current)
+              menuCloseTimerRef.current = null
+            }
+            setIsHovered(true)
+          }}
+          onMouseLeave={() => {
+            // 메뉴에서 마우스가 나가면 300ms 후에 닫기
+            menuCloseTimerRef.current = setTimeout(() => {
+              setIsHovered(false)
+              setShowActionMenu(false)
+            }, 300)
+          }}
         >
             <button
-              onClick={handleDateSelect}
+              onClick={() => {
+                handleDateSelect({ stopPropagation: () => {} } as any)
+                setShowActionMenu(false)
+              }}
               className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 first:rounded-t-lg flex items-center gap-2"
             >
               <CalendarIcon className="w-4 h-4" />
               날짜 설정
             </button>
             <button
-              onClick={(e) => {
-                e.stopPropagation()
+              onClick={() => {
                 onDelegate(task.id)
                 setShowActionMenu(false)
               }}
@@ -568,8 +691,7 @@ export default function ResponsiveTaskCard({
               위임
             </button>
             <button
-              onClick={(e) => {
-                e.stopPropagation()
+              onClick={() => {
                 onDefer(task.id)
                 setShowActionMenu(false)
               }}
@@ -579,8 +701,7 @@ export default function ResponsiveTaskCard({
               보류
             </button>
             <button
-              onClick={(e) => {
-                e.stopPropagation()
+              onClick={() => {
                 onConvertToProject(task.id)
                 setShowActionMenu(false)
               }}
@@ -590,8 +711,7 @@ export default function ResponsiveTaskCard({
               프로젝트로 전환
             </button>
             <button
-              onClick={(e) => {
-                e.stopPropagation()
+              onClick={() => {
                 if (window.confirm('정말로 이 업무를 삭제하시겠습니까?')) {
                   onDelete(task.id)
                 }

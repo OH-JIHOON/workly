@@ -16,7 +16,7 @@ class ApiClient {
   private baseUrl: string;
 
   constructor() {
-    this.baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
+    this.baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
   }
 
   /**
@@ -162,6 +162,17 @@ class ApiClient {
   }
 
   /**
+   * PATCH 요청
+   */
+  async patch<T>(endpoint: string, data?: any, options?: ApiOptions): Promise<T> {
+    return this.request<T>(endpoint, {
+      ...options,
+      method: 'PATCH',
+      body: data ? JSON.stringify(data) : undefined,
+    });
+  }
+
+  /**
    * DELETE 요청
    */
   async delete<T>(endpoint: string, options?: ApiOptions): Promise<T> {
@@ -238,25 +249,6 @@ class ApiClient {
 
   /**
    * 수동으로 Authorization 헤더 설정
-   */
-  setAuthorizationHeader(token: string | null): void {
-    // 이 클래스는 요청 시마다 헤더를 동적으로 생성하므로,
-    // 이 메서드는 localStorage에 토큰을 저장하는 것으로 충분합니다.
-    // request 메서드가 항상 최신 토큰을 사용하게 됩니다.
-    if (typeof window !== 'undefined') {
-      if (token) {
-        localStorage.setItem('accessToken', token);
-      } else {
-        localStorage.removeItem('accessToken');
-      }
-    }
-  }
-
-  /**
-   * 수동 로그아웃
-   */
-  /**
-   * 수동으로 Authorization 헤더 설정
    * 이 메서드는 localStorage에 토큰을 저장하고, API 클라이언트가 다음 요청부터 이 토큰을 사용하도록 합니다.
    */
   setAuthorizationHeader(token: string | null): void {
@@ -282,6 +274,7 @@ export const api = {
   get: <T>(endpoint: string, params?: Record<string, any>, options?: ApiOptions) => apiClient.get<T>(endpoint, params, options),
   post: <T>(endpoint: string, data?: any, options?: ApiOptions) => apiClient.post<T>(endpoint, data, options),
   put: <T>(endpoint: string, data?: any, options?: ApiOptions) => apiClient.put<T>(endpoint, data, options),
+  patch: <T>(endpoint: string, data?: any, options?: ApiOptions) => apiClient.patch<T>(endpoint, data, options),
   delete: <T>(endpoint: string, options?: ApiOptions) => apiClient.delete<T>(endpoint, options),
   logout: () => apiClient.logout(),
   setAuthorizationHeader: (token: string | null) => apiClient.setAuthorizationHeader(token), // 추가된 부분

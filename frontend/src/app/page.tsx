@@ -21,11 +21,13 @@ import QuickAddInput from '@/components/ui/QuickAddInput'
 import ResponsiveTaskCard from '@/components/tasks/ResponsiveTaskCard'
 import CollapsibleCalendar from '@/components/tasks/CollapsibleCalendar'
 import { TaskStatus, TaskPriority, TaskType, TaskDetail } from '@/types/task.types'
-import { isAuthenticated } from '@/lib/auth'
+import { PaginatedResponse } from '@workly/shared'
+import { isAuthenticated, initializeApiClients } from '@/lib/auth'
 import { useCalendarFilterStore } from '@/lib/stores/calendarFilterStore'
 import AdvancedFilterPanel, { AdvancedFilters } from '@/components/ui/AdvancedFilterPanel'
 import TaskDetailModal from '@/components/tasks/TaskDetailModal'
 import { api } from '@/lib/api'
+import { worklyApi } from '@/lib/api/workly-api'
 
 // 워클리 업무 인터페이스 (레거시 GTDTask 대체)
 interface WorklyTask {
@@ -85,7 +87,7 @@ export default function TasksPage() {
   const [tasks, setTasks] = useState<WorklyTask[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [activeFilters, setActiveFilters] = useState<string[]>(['today'])
+  const [activeFilters, setActiveFilters] = useState<string[]>([])
   const [isLoggedIn, setIsLoggedIn] = useState(false)
 
   // 캘린더 상태 관리
@@ -142,7 +144,7 @@ export default function TasksPage() {
       createdAt: backendTask.createdAt,
       updatedAt: backendTask.updatedAt,
       // 오늘 할 일 계산: 마감일이 오늘이거나 이미 지났고 완료되지 않은 업무
-      isToday: dueDate ? (dueDate <= today && backendTask.status !== TaskStatus.DONE) : false,
+      isToday: dueDate ? (dueDate <= today && backendTask.status !== TaskStatus.COMPLETED) : false,
       isFocused: backendTask.priority === TaskPriority.URGENT || backendTask.priority === TaskPriority.HIGH
     }
   }
@@ -160,7 +162,7 @@ export default function TasksPage() {
     { 
       key: 'today',
       label: '오늘 할 일',
-      count: tasks.filter(t => t.isToday && t.status !== TaskStatus.DONE).length
+      count: tasks.filter(t => t.isToday && t.status !== TaskStatus.COMPLETED).length
     },
     { 
       key: 'in-progress',
@@ -170,7 +172,7 @@ export default function TasksPage() {
     { 
       key: 'completed',
       label: '완료됨',
-      count: tasks.filter(t => t.status === TaskStatus.DONE).length
+      count: tasks.filter(t => t.status === TaskStatus.COMPLETED).length
     },
     { 
       key: 'high-priority',
@@ -193,14 +195,14 @@ export default function TasksPage() {
       includeTask = activeFilters.some(filter => {
         switch (filter) {
           case 'today':
-            return task.isToday && task.status !== TaskStatus.DONE
+            return task.isToday && task.status !== TaskStatus.COMPLETED
           case 'in-progress':
             return task.status === TaskStatus.IN_PROGRESS
           case 'completed':
-            return task.status === TaskStatus.DONE
+            return task.status === TaskStatus.COMPLETED
           case 'high-priority':
             return (task.priority === TaskPriority.HIGH || task.priority === TaskPriority.URGENT) && 
-                   task.status !== TaskStatus.DONE
+                   task.status !== TaskStatus.COMPLETED
           case 'all':
             return true
           default:
@@ -220,7 +222,7 @@ export default function TasksPage() {
         calendarMatch = true
       }
       
-      if (showOverdue && taskDueDate && taskDueDate < today && task.status !== TaskStatus.DONE) {
+      if (showOverdue && taskDueDate && taskDueDate < today && task.status !== TaskStatus.COMPLETED) {
         calendarMatch = true  
       }
       
@@ -238,7 +240,7 @@ export default function TasksPage() {
         
         switch (advancedFilters.dueDate) {
           case 'overdue':
-            advancedMatch = advancedMatch && taskDueDate && taskDueDate < today && task.status !== TaskStatus.DONE
+            advancedMatch = advancedMatch && taskDueDate && taskDueDate < today && task.status !== TaskStatus.COMPLETED
             break
           case 'today':
             advancedMatch = advancedMatch && taskDueDate && taskDueDate.toDateString() === today.toDateString()
@@ -278,6 +280,109 @@ export default function TasksPage() {
     return includeTask
   })
 
+  // 경험치 계산 함수
+  const calculateExperience = (task: WorklyTask): number => {
+    let baseXP = 10 // 기본 경험치
+    
+    // 우선순위별 경험치 배수
+    switch (task.priority) {
+      case TaskPriority.URGENT:
+        baseXP *= 3
+        break
+      case TaskPriority.HIGH:
+        baseXP *= 2
+        break
+      case TaskPriority.MEDIUM:
+        baseXP *= 1.5
+        break
+      case TaskPriority.LOW:
+        baseXP *= 1
+        break
+    }
+    
+    // 업무 유형별 추가 경험치
+    switch (task.type) {
+      case TaskType.EPIC:
+        baseXP += 50
+        break
+      case TaskType.FEATURE:
+        baseXP += 30
+        break
+      case TaskType.BUG:
+        baseXP += 20
+        break
+      case TaskType.IMPROVEMENT:
+        baseXP += 15
+        break
+    }
+    
+    // 연체된 업무 완료 시 보너스
+    if (task.dueDate) {
+      const dueDate = new Date(task.dueDate)
+      const today = new Date()
+      if (dueDate < today) {
+        baseXP *= 1.5 // 연체 업무 완료 보너스
+      }
+    }
+    
+    return Math.round(baseXP)
+  }
+
+  // 업무 완료 토글 핸들러
+  const handleToggleComplete = async (taskId: string, completed: boolean): Promise<{ xpGained?: number }> => {
+    try {
+      const task = tasks.find(t => t.id === taskId)
+      if (!task) return { xpGained: 0 }
+
+      // 낙관적 업데이트
+      setTasks(prevTasks => 
+        prevTasks.map(t => 
+          t.id === taskId 
+            ? { ...t, status: completed ? TaskStatus.COMPLETED : TaskStatus.TODO }
+            : t
+        )
+      )
+
+      // 백엔드 API 호출
+      const newStatus = completed ? TaskStatus.COMPLETED : TaskStatus.TODO
+      console.log('🔄 API 호출:', { taskId, completed, newStatus })
+      await api.patch(`/api/v1/tasks/${taskId}/status?status=${newStatus}`)
+
+      // 완료 시 경험치 획득 및 프로젝트 진행률 업데이트
+      if (completed) {
+        const xpGained = calculateExperience(task)
+        console.log(`🎉 업무 완료! +${xpGained}XP 획득`)
+        
+        // TODO: 실제 사용자 경험치 업데이트 API 호출
+        // await api.post('/api/v1/users/me/experience', { amount: xpGained })
+        
+        // TODO: 프로젝트 진행률 업데이트
+        if (task.projectId) {
+          console.log(`📊 프로젝트 진행률 업데이트: ${task.projectId}`)
+          // await api.patch(`/api/v1/projects/${task.projectId}/update-progress`)
+        }
+        
+        return { xpGained }
+      }
+      
+      return { xpGained: 0 }
+
+    } catch (error) {
+      console.error('업무 상태 변경 실패:', error)
+      
+      // 실패 시 롤백
+      setTasks(prevTasks => 
+        prevTasks.map(t => 
+          t.id === taskId 
+            ? { ...t, status: completed ? TaskStatus.TODO : TaskStatus.COMPLETED }
+            : t
+        )
+      )
+      
+      throw error
+    }
+  }
+
   // 데이터 로딩 함수
   const loadTasks = async () => {
     if (!isAuthenticated()) {
@@ -289,8 +394,11 @@ export default function TasksPage() {
       setIsLoading(true)
       setError(null)
       
-      // 모든 업무 조회
-      const backendTasks = await api.get<BackendTask[]>('/api/v1/tasks')
+      // 모든 업무 조회 (PaginatedResponse 형태)
+      const response = await api.get<PaginatedResponse<BackendTask>>('/api/v1/tasks')
+      
+      // items 배열에서 실제 태스크 데이터 추출
+      const backendTasks = response.items || response.data || []
       
       // 프론트엔드 형식으로 변환
       const transformedTasks = backendTasks.map(transformBackendTask)
@@ -306,6 +414,9 @@ export default function TasksPage() {
 
   // 로그인 상태 확인 및 데이터 로딩
   useEffect(() => {
+    // API 클라이언트 초기화
+    initializeApiClients()
+    
     const loggedIn = isAuthenticated()
     setIsLoggedIn(loggedIn)
     
@@ -329,7 +440,11 @@ export default function TasksPage() {
         }
       } catch (e) {
         console.warn('Invalid filters in URL:', e)
+        setActiveFilters([]) // 파싱 실패 시 빈 배열
       }
+    } else {
+      // URL에 필터가 없으면 빈 상태로 유지
+      setActiveFilters([])
     }
     
     if (advanced) {
@@ -338,7 +453,11 @@ export default function TasksPage() {
         setAdvancedFilters(parsedAdvanced)
       } catch (e) {
         console.warn('Invalid advanced filters in URL:', e)
+        setAdvancedFilters({}) // 파싱 실패 시 빈 객체
       }
+    } else {
+      // URL에 고급 필터가 없으면 빈 상태로 유지
+      setAdvancedFilters({})
     }
   }, [searchParams])
 
@@ -359,27 +478,65 @@ export default function TasksPage() {
   }, [activeFilters, advancedFilters, hasAdvancedFilters])
 
 
-  const handleTaskClick = (task: WorklyTask) => {
-    // WorklyTask를 TaskDetail로 변환
-    const taskDetail: TaskDetail = {
-      ...task,
-      descriptionMarkdown: task.description,
-      checklist: [
-        { id: 'check-1', text: '기본 요구사항 검토', completed: false, order: 0 },
-        { id: 'check-2', text: '설계 문서 작성', completed: true, order: 1 },
-        { id: 'check-3', text: '코드 구현', completed: false, order: 2 }
-      ],
-      relationships: [],
-      wikiReferences: [
-        { id: 'wiki-1', title: '워클리 디자인 가이드', url: '/wiki/design-guide', description: '워클리 UI/UX 디자인 표준' },
-        { id: 'wiki-2', title: 'CPER 워크플로우', url: '/wiki/cper', description: 'Capture-Plan-Execute-Review 방법론' }
-      ],
-      estimatedTimeMinutes: task.id === '1' ? 120 : undefined,
-      loggedTimeMinutes: task.id === '1' ? 80 : undefined
+  const handleTaskClick = async (task: WorklyTask) => {
+    try {
+      // 실제 API에서 상세 정보 가져오기
+      const taskDetail = await worklyApi.tasks.getById(task.id) as TaskDetail
+      
+      // TaskDetail에 필요한 필드들을 보장
+      const completeTaskDetail: TaskDetail = {
+        ...taskDetail,
+        // 기본값들을 설정 (백엔드에서 없을 수 있는 필드들)
+        descriptionMarkdown: taskDetail.descriptionMarkdown || taskDetail.description || '',
+        checklist: taskDetail.checklist || [],
+        relationships: taskDetail.relationships || [],
+        wikiReferences: taskDetail.wikiReferences || [],
+        estimatedTimeMinutes: taskDetail.estimatedTimeMinutes || undefined,
+        loggedTimeMinutes: taskDetail.loggedTimeMinutes || 0,
+        
+        // WorklyTask에서 TaskDetail로 변환 시 필요한 기본 필드들
+        reporterId: taskDetail.reporterId || taskDetail.assigneeId || 'unknown',
+        actualHours: taskDetail.actualHours || 0,
+        progress: taskDetail.progress || 0,
+        customFields: taskDetail.customFields || {},
+        subtasks: taskDetail.subtasks || [],
+        labels: taskDetail.labels || [],
+        comments: taskDetail.comments || [],
+        dependencies: taskDetail.dependencies || [],
+        dependents: taskDetail.dependents || [],
+        watchers: taskDetail.watchers || [],
+        timeEntries: taskDetail.timeEntries || [],
+      }
+      
+      setSelectedTask(completeTaskDetail)
+      setIsTaskDetailOpen(true)
+    } catch (error) {
+      console.error('업무 상세 정보 로딩 실패:', error)
+      // 에러 시 기본 TaskDetail 생성
+      const basicTaskDetail: TaskDetail = {
+        ...task,
+        descriptionMarkdown: task.description || '',
+        checklist: [],
+        relationships: [],
+        wikiReferences: [],
+        reporterId: task.assigneeId || 'unknown',
+        actualHours: 0,
+        progress: 0,
+        customFields: {},
+        subtasks: [],
+        labels: [],
+        comments: [],
+        dependencies: [],
+        dependents: [],
+        watchers: [],
+        timeEntries: [],
+        estimatedTimeMinutes: undefined,
+        loggedTimeMinutes: 0,
+      }
+      
+      setSelectedTask(basicTaskDetail)
+      setIsTaskDetailOpen(true)
     }
-    
-    setSelectedTask(taskDetail)
-    setIsTaskDetailOpen(true)
   }
   
   // 업무 상세 저장 핸들러
@@ -402,7 +559,7 @@ export default function TasksPage() {
         // 체크리스트, 관계, 위키 참조는 일단 제외
       }
 
-      const updatedBackendTask = await api.put<BackendTask>(`/api/v1/tasks/${taskDetail.id}/detail`, updateData)
+      const updatedBackendTask = await api.patch<BackendTask>(`/api/v1/tasks/${taskDetail.id}/detail`, updateData)
       
       // 백엔드 응답을 프론트엔드 형식으로 변환
       const updatedTask = transformBackendTask(updatedBackendTask)
@@ -467,7 +624,7 @@ export default function TasksPage() {
       if (updates.tags) updateData.tags = updates.tags
 
       // 업무 수정 API 호출
-      const updatedBackendTask = await api.put<BackendTask>(`/api/v1/tasks/${taskId}`, updateData)
+      const updatedBackendTask = await api.patch<BackendTask>(`/api/v1/tasks/${taskId}`, updateData)
 
       // 백엔드 응답을 프론트엔드 형식으로 변환
       const updatedTask = transformBackendTask(updatedBackendTask)
@@ -679,9 +836,15 @@ export default function TasksPage() {
                   onDelegate={handleTaskDelegate}
                   onDefer={handleTaskDefer}
                   onConvertToProject={handleTaskConvertToProject}
+                  onToggleComplete={handleToggleComplete}
                   onDragStart={handleDragStart}
                   onDragEnd={handleDragEnd}
                   isDragMode={isDragMode}
+                  onSetDueDate={(taskId, date) => handleTaskUpdate(taskId, { dueDate: date })}
+                  onDueDateUpdated={(taskId, date) => {
+                    console.log(`업무 ${taskId}의 마감일이 ${date}로 업데이트됨`)
+                  }}
+                  keepCalendarOpen={isDragMode}
                 />
               ))}
             </div>

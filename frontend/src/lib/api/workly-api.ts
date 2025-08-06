@@ -20,7 +20,7 @@ import { Goal, CreateGoalDto, UpdateGoalDto } from '@/shared/types/goal.types'
 import { Project, CreateProjectDto, UpdateProjectDto } from '@/types/project.types'
 
 // API 기본 설정
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'
 const API_VERSION = 'v1'
 
 class WorklyApiClient {
@@ -258,7 +258,7 @@ class WorklyApiClient {
 
     // 업무 업데이트
     update: (id: string, data: any): Promise<WorklyTask> => {
-      return this.put(`/tasks/${id}`, data)
+      return this.patch(`/tasks/${id}`, data)
     },
 
     // 업무 상세 정보 업데이트 (Notion 스타일 모달용)

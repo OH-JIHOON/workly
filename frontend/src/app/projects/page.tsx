@@ -10,6 +10,7 @@ import MainContainer from '@/components/layout/MainContainer';
 import SimpleFilterChips from '@/components/ui/SimpleFilterChips';
 import WorklyFloatingActionButton from '@/components/ui/WorklyFloatingActionButton';
 import LoginBanner from '@/components/ui/LoginBanner';
+import ProjectCard from '@/components/projects/ProjectCard';
 import { isAuthenticated } from '@/lib/auth';
 // import { apiClient } from '@/lib/api'; // 목업 모드에서는 주석 처리
 import { 
@@ -21,209 +22,6 @@ import {
   ProjectPriority,
   ProjectVisibility
 } from '@/types/project.types';
-
-// 향상된 프로젝트 카드 컴포넌트 (섹션 3 - 채팅 우선 협업 허브)
-function ProjectCard({ project, onClick }: { project: Project; onClick: () => void }) {
-  // OKR 진행률 계산 (목업 데이터)
-  const completedObjectives = project.completedObjectiveCount || Math.floor(Math.random() * 3);
-  const totalObjectives = project.objectives?.length || Math.floor(Math.random() * 3) + 2;
-  const completedKeyResults = project.completedKeyResultCount || Math.floor(Math.random() * 5);
-  const totalKeyResults = project.keyResults?.length || Math.floor(Math.random() * 6) + 3;
-  
-  // 최근 채팅 활동 (목업 데이터)
-  const mockActivities = [
-    { user: '김개발자', content: '/add-task UI 컴포넌트 완성', timestamp: '2분 전' },
-    { user: '박디자이너', content: '목업 디자인 검토 완료했습니다', timestamp: '5분 전' },
-    { user: '이매니저', content: '/set-milestone 베타 출시 2024-02-15', timestamp: '10분 전' },
-    { user: '최기획자', content: '요구사항 문서 업데이트했습니다', timestamp: '15분 전' },
-    { user: '정개발자', content: 'API 개발 진행상황 공유드려요', timestamp: '30분 전' }
-  ];
-  
-  const recentChatActivity = {
-    lastMessage: mockActivities[Math.floor(Math.random() * mockActivities.length)],
-    unreadCount: Math.floor(Math.random() * 8) + 1
-  };
-
-  // 모집 상태 (목업 데이터) - 프로젝트 ID 기반으로 일관된 데이터 생성
-  const memberCount = project.memberCount || (parseInt(project.id) % 6) + 2; // 2-7명 사이
-  const maxMembers = 6; // 최대 팀 크기
-  const isRecruiting = memberCount < maxMembers;
-  const availableSlots = maxMembers - memberCount;
-  
-  // 업무 개수도 더 현실적으로
-  const taskCount = project.taskCount || (parseInt(project.id) % 15) + 5; // 5-19개 업무
-
-  return (
-    <div 
-      className="p-6 hover:bg-gray-50 transition-all duration-200 cursor-pointer group"
-      onClick={onClick}
-    >
-      {/* 프로젝트 헤더 */}
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex items-center space-x-3 flex-1">
-          <div 
-            className="w-12 h-12 rounded-lg flex items-center justify-center text-white font-semibold relative"
-            style={{ backgroundColor: project.color || '#3B82F6' }}
-          >
-            {project.icon || project.title.charAt(0).toUpperCase()}
-            {/* 활성 채팅 인디케이터 */}
-            {recentChatActivity.unreadCount > 0 && (
-              <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                {recentChatActivity.unreadCount}
-              </div>
-            )}
-          </div>
-          <div className="flex-1">
-            <div className="flex items-center space-x-2 mb-1">
-              <h3 className="font-semibold text-gray-900">{project.title}</h3>
-              {isRecruiting && (
-                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                  <UserPlus className="w-3 h-3 mr-1" />
-                  모집중
-                </span>
-              )}
-              {project.status === 'completed' && (
-                <CheckCircle2 className="w-4 h-4 text-green-600" />
-              )}
-            </div>
-            <p className="text-sm text-gray-500 line-clamp-2">{project.description}</p>
-          </div>
-        </div>
-      </div>
-
-      {/* 최근 채팅 활동 */}
-      <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-        <div className="flex items-center space-x-2 mb-2">
-          <MessageCircle className="w-4 h-4 text-blue-600" />
-          <span className="text-sm font-medium text-gray-700">최근 활동</span>
-          <span className="text-xs text-gray-500">{recentChatActivity.lastMessage.timestamp}</span>
-        </div>
-        <div className="text-sm text-gray-600">
-          <span className="font-medium">{recentChatActivity.lastMessage.user}:</span>
-          <span className="ml-2">{recentChatActivity.lastMessage.content}</span>
-        </div>
-      </div>
-
-      {/* OKR 진행률 섹션 */}
-      <div className="mb-4">
-        <div className="flex items-center justify-between text-sm mb-2">
-          <div className="flex items-center space-x-2">
-            <Target className="w-4 h-4 text-purple-600" />
-            <span className="text-gray-600">OKR 진행률</span>
-          </div>
-          <span className="font-medium">{totalKeyResults > 0 ? Math.round((completedKeyResults / totalKeyResults) * 100) : project.progress || 0}%</span>
-        </div>
-        
-        {/* 전체 진행률 바 */}
-        <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
-          <div 
-            className="bg-gradient-to-r from-blue-600 to-purple-600 h-2 rounded-full transition-all duration-300"
-            style={{ width: `${totalKeyResults > 0 ? Math.round((completedKeyResults / totalKeyResults) * 100) : project.progress || 0}%` }}
-          />
-        </div>
-        
-        {/* 세부 OKR 지표 */}
-        <div className="grid grid-cols-2 gap-2 text-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-gray-500">목표</span>
-            <span className="font-medium">{completedObjectives}/{totalObjectives}</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-gray-500">핵심결과</span>
-            <span className="font-medium">{completedKeyResults}/{totalKeyResults}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* 팀 정보 & 메타데이터 */}
-      <div className="flex items-center justify-between text-sm mb-3">
-        <div className="flex items-center space-x-4 text-gray-500">
-          <div className="flex items-center space-x-1">
-            <Users className="w-4 h-4" />
-            <span>{memberCount}명</span>
-            {isRecruiting && (
-              <span className="text-green-600 text-xs">({availableSlots}자리)</span>
-            )}
-          </div>
-          <div className="flex items-center space-x-1">
-            <BarChart3 className="w-4 h-4" />
-            <span>{taskCount}개 업무</span>
-          </div>
-          <div className="flex items-center space-x-1">
-            <TrendingUp className="w-4 h-4" />
-            <span className="text-green-600">+12%</span>
-          </div>
-        </div>
-        <div className={`px-2 py-1 rounded-full text-xs font-medium ${
-          project.status === 'active' ? 'bg-green-100 text-green-800' :
-          project.status === 'planning' ? 'bg-blue-100 text-blue-800' :
-          project.status === 'completed' ? 'bg-gray-100 text-gray-800' :
-          'bg-yellow-100 text-yellow-800'
-        }`}>
-          {project.status === 'active' ? '진행중' :
-           project.status === 'planning' ? '계획중' :
-           project.status === 'completed' ? '완료' : '일시중단'}
-        </div>
-      </div>
-
-      {/* 태그 */}
-      {project.tags.length > 0 && (
-        <div className="flex flex-wrap gap-1">
-          {project.tags.slice(0, 3).map((tag, index) => (
-            <span
-              key={index}
-              className="inline-block px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full"
-            >
-              {tag}
-            </span>
-          ))}
-          {project.tags.length > 3 && (
-            <span className="inline-block px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-full">
-              +{project.tags.length - 3}
-            </span>
-          )}
-        </div>
-      )}
-
-      {/* 호버 시 액션 버튼 */}
-      <div className="mt-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-        <div className="flex space-x-2">
-          <button 
-            onClick={(e) => {
-              e.stopPropagation();
-              console.log('채팅으로 이동');
-            }}
-            className="flex-1 flex items-center justify-center space-x-1 px-3 py-2 text-sm bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100"
-          >
-            <MessageCircle className="w-4 h-4" />
-            <span>채팅</span>
-          </button>
-          <button 
-            onClick={(e) => {
-              e.stopPropagation();
-              console.log('목표 관리로 이동');
-            }}
-            className="flex-1 flex items-center justify-center space-x-1 px-3 py-2 text-sm bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100"
-          >
-            <Target className="w-4 h-4" />
-            <span>목표</span>
-          </button>
-          {isRecruiting && (
-            <button 
-              onClick={(e) => {
-                e.stopPropagation();
-                console.log('팀 모집 신청');
-              }}
-              className="flex items-center justify-center px-3 py-2 text-sm bg-green-50 text-green-600 rounded-lg hover:bg-green-100"
-            >
-              <UserPlus className="w-4 h-4" />
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
 
 
 export default function ProjectsPage() {
@@ -356,7 +154,8 @@ export default function ProjectsPage() {
             }
           ],
           completedObjectiveCount: 1,
-          completedKeyResultCount: 1
+          completedKeyResultCount: 1,
+          isRecruiting: true
         },
         {
           id: '2',
@@ -411,7 +210,8 @@ export default function ProjectsPage() {
             }
           ],
           completedObjectiveCount: 0,
-          completedKeyResultCount: 0
+          completedKeyResultCount: 0,
+          isRecruiting: true
         },
         {
           id: '3',
@@ -466,7 +266,8 @@ export default function ProjectsPage() {
             }
           ],
           completedObjectiveCount: 0,
-          completedKeyResultCount: 0
+          completedKeyResultCount: 0,
+          isRecruiting: false
         },
         {
           id: '4',
@@ -541,7 +342,8 @@ export default function ProjectsPage() {
             }
           ],
           completedObjectiveCount: 2,
-          completedKeyResultCount: 2
+          completedKeyResultCount: 2,
+          isRecruiting: false
         }
       ];
 
@@ -745,6 +547,18 @@ export default function ProjectsPage() {
                   key={project.id} 
                   project={project} 
                   onClick={() => router.push(`/projects/${project.id}`)}
+                  onJoinProject={(projectId) => {
+                    console.log('프로젝트 참여 신청:', projectId)
+                    // TODO: 프로젝트 참여 로직 구현
+                  }}
+                  onOpenChat={(projectId) => {
+                    console.log('채팅방 열기:', projectId)
+                    // TODO: 채팅방 이동 로직 구현
+                  }}
+                  onManageGoals={(projectId) => {
+                    console.log('목표 관리:', projectId)
+                    // TODO: 목표 관리 페이지 이동 로직 구현
+                  }}
                 />
               ))}
             </div>

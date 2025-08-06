@@ -148,6 +148,7 @@ export interface Project {
   completedKeyResultCount?: number; // 선택적으로 변경
   isOverdue?: boolean;
   isDueSoon?: boolean;
+  isRecruiting?: boolean; // 멤버 모집 중인지 여부
 }
 
 // 프로젝트 생성 DTO (워클리 방법론 적용)

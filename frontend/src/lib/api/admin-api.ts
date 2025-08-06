@@ -6,7 +6,7 @@
 import { ApiResponse } from '@workly/shared';
 
 // 기본 API 설정
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 const ADMIN_API_PREFIX = '/api/admin';
 
 // 에러 타입 정의

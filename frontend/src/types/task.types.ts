@@ -2,13 +2,14 @@
  * Task 관련 타입 정의
  */
 
-// Task 상태
+// Task 상태 (백엔드 @workly/shared와 호환)
 export enum TaskStatus {
   TODO = 'todo',
-  IN_PROGRESS = 'in_progress',
-  IN_REVIEW = 'in_review',
+  IN_PROGRESS = 'in-progress', // 백엔드 호환: in-progress (하이픈)
+  IN_REVIEW = 'in-review',
   DONE = 'done',
-  BLOCKED = 'blocked',
+  COMPLETED = 'completed', // 백엔드 호환성을 위해 추가
+  BLOCKED = 'blocked', 
   DEFERRED = 'deferred',
   CANCELLED = 'cancelled',
 }
@@ -98,6 +99,7 @@ export interface Task {
   startDate?: string;
   completedAt?: string;
   projectId?: string;
+  goalId?: string;
   assigneeId?: string;
   reporterId: string;
   parentTaskId?: string;

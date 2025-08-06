@@ -3,6 +3,7 @@
  */
 
 import { api } from './api';
+import { worklyApi } from './api/workly-api';
 
 // 사용자 타입
 export interface User {
@@ -96,15 +97,35 @@ export const getCurrentUser = (): User | null => {
 };
 
 /**
- * 로그인 상태 확인
+ * 로그인 상태 확인 및 API 클라이언트 토큰 설정
  */
 export const isAuthenticated = (): boolean => {
   if (typeof window !== 'undefined') {
     const accessToken = localStorage.getItem('accessToken');
     const user = getCurrentUser();
+    
+    // 토큰이 있으면 API 클라이언트에 설정
+    if (accessToken) {
+      api.setAuthorizationHeader(accessToken);
+      worklyApi.setAuthToken(accessToken);
+    }
+    
     return !!(accessToken && user);
   }
   return false;
+};
+
+/**
+ * API 클라이언트 초기화 (페이지 로드 시 호출)
+ */
+export const initializeApiClients = (): void => {
+  if (typeof window !== 'undefined') {
+    const accessToken = localStorage.getItem('accessToken');
+    if (accessToken) {
+      api.setAuthorizationHeader(accessToken);
+      worklyApi.setAuthToken(accessToken);
+    }
+  }
 };
 
 /**
@@ -114,7 +135,8 @@ export const saveTokens = (accessToken: string, refreshToken: string): void => {
   if (typeof window !== 'undefined') {
     localStorage.setItem('accessToken', accessToken);
     localStorage.setItem('refreshToken', refreshToken);
-    api.setAuthorizationHeader(accessToken); // 추가된 부분
+    api.setAuthorizationHeader(accessToken); // 기존 API 클라이언트
+    worklyApi.setAuthToken(accessToken); // 워클리 API 클라이언트
   }
 };
 
@@ -166,6 +188,16 @@ export const logout = async (): Promise<void> => {
   } finally {
     // 로컬 데이터 정리
     api.logout();
+    
+    // 워클리 API 클라이언트 토큰 제거
+    worklyApi.setAuthToken('');
+    
+    // 로컬스토리지에서 토큰 제거
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('user');
+    }
   }
 };
 

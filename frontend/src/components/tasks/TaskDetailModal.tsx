@@ -30,6 +30,9 @@ import {
 } from '@heroicons/react/24/outline'
 import { TaskDetail, ChecklistItem, TaskRelationship, WikiReference, TaskStatus, TaskPriority } from '@/types/task.types'
 import { worklyApi } from '@/lib/api/workly-api'
+import PrioritySelector from '../ui/PrioritySelector'
+import ProjectSelector from '../ui/ProjectSelector'
+import GoalSelector from '../ui/GoalSelector'
 
 // WorklyMDXEditor를 동적으로 로드 (SSR 방지)
 const WorklyMDXEditor = dynamic(
@@ -78,11 +81,51 @@ export default function TaskDetailModal({
   // 모달이 열릴 때 로컬 상태 초기화
   useEffect(() => {
     if (isOpen && task) {
-      setLocalTask({ ...task })
+      // 완전히 새로운 객체로 초기화하여 이전 데이터 남음 방지
+      setLocalTask({
+        ...task,
+        // 체크리스트, 관계, 위키 레퍼런스 등이 undefined면 빈 배열로 초기화
+        checklist: task.checklist || [],
+        relationships: task.relationships || [],
+        wikiReferences: task.wikiReferences || []
+      })
+      
+      // 편집 상태들도 초기화
+      setEditingChecklistId(null)
+      setShowTaskSearch(false)
+      setTaskSearchQuery('')
+      setShowWikiForm(false)
+      setNewWikiTitle('')
+      setNewWikiUrl('')
+      setNewWikiDescription('')
+      setUrlValidation(null)
+      setEditingWikiId(null)
+      
       // 제목 입력 필드에 포커스 (약간의 지연 후)
       setTimeout(() => {
         titleRef.current?.focus()
       }, 100)
+    } else if (!isOpen) {
+      // 모달이 닫힐 때 모든 상태 초기화
+      setLocalTask(null)
+      setEditingChecklistId(null)
+      setShowTaskSearch(false)
+      setTaskSearchQuery('')
+      setShowWikiForm(false)
+      setNewWikiTitle('')
+      setNewWikiUrl('')
+      setNewWikiDescription('')
+      setUrlValidation(null)
+      setEditingWikiId(null)
+      setIsTimerRunning(false)
+      setTimerStartTime(null)
+      setCurrentSessionTime(0)
+      
+      // 타이머 정리
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current)
+        timerIntervalRef.current = null
+      }
     }
   }, [isOpen, task])
 
@@ -128,23 +171,84 @@ export default function TaskDetailModal({
     saveTimeoutRef.current = setTimeout(async () => {
       try {
         setIsSaving(true)
-        await worklyApi.tasks.updateDetail(taskData.id, {
-          title: taskData.title,
-          description: taskData.description,
-          descriptionMarkdown: taskData.descriptionMarkdown,
-          status: taskData.status,
-          priority: taskData.priority,
-          dueDate: taskData.dueDate,
-          checklist: taskData.checklist,
-          relationships: taskData.relationships,
-          wikiReferences: taskData.wikiReferences,
-          estimatedTimeMinutes: taskData.estimatedTimeMinutes,
-          loggedTimeMinutes: taskData.loggedTimeMinutes,
-          tags: taskData.tags,
-          customFields: taskData.customFields
-        })
-      } catch (error) {
+        
+        // UpdateTaskDetailDto 구조에 맞게 페이로드 구성
+        const updatePayload: any = {}
+        
+        // 기본 필드들
+        if (taskData.title !== undefined && taskData.title !== null) {
+          updatePayload.title = taskData.title
+        }
+        if (taskData.description !== undefined && taskData.description !== null) {
+          updatePayload.description = taskData.description
+        }
+        if (taskData.status !== undefined) {
+          updatePayload.status = taskData.status
+        }
+        if (taskData.priority !== undefined) {
+          updatePayload.priority = taskData.priority
+        }
+        if (taskData.dueDate !== undefined) {
+          updatePayload.dueDate = taskData.dueDate
+        }
+        // UUID 필드들 - 유효한 값일 때만 포함
+        if (taskData.projectId !== undefined && taskData.projectId !== null && 
+            typeof taskData.projectId === 'string' && taskData.projectId.trim() !== '' && 
+            taskData.projectId !== 'undefined' && taskData.projectId !== 'null') {
+          updatePayload.projectId = taskData.projectId
+        }
+        if (taskData.goalId !== undefined && taskData.goalId !== null && 
+            typeof taskData.goalId === 'string' && taskData.goalId.trim() !== '' && 
+            taskData.goalId !== 'undefined' && taskData.goalId !== 'null') {
+          updatePayload.goalId = taskData.goalId
+        }
+        
+        // 상세 필드들
+        if (taskData.descriptionMarkdown !== undefined) {
+          updatePayload.descriptionMarkdown = taskData.descriptionMarkdown
+        }
+        if (taskData.checklist !== undefined) {
+          updatePayload.checklist = taskData.checklist
+        }
+        if (taskData.relationships !== undefined) {
+          updatePayload.relationships = taskData.relationships
+        }
+        if (taskData.wikiReferences !== undefined) {
+          updatePayload.wikiReferences = taskData.wikiReferences
+        }
+        if (taskData.estimatedTimeMinutes !== undefined) {
+          updatePayload.estimatedTimeMinutes = taskData.estimatedTimeMinutes
+        }
+        if (taskData.loggedTimeMinutes !== undefined) {
+          updatePayload.loggedTimeMinutes = taskData.loggedTimeMinutes
+        }
+        
+        console.log('Sending updateDetail payload:', JSON.stringify(updatePayload, null, 2))
+        
+        // 상세 정보 업데이트 API 시도, 실패하면 기본 API로 폴백
+        try {
+          await worklyApi.tasks.updateDetail(taskData.id, updatePayload)
+        } catch (detailError: any) {
+          console.warn('UpdateTaskDetail API 실패, 기본 API로 폴백:', detailError)
+          
+          // UpdateTaskDetailDto에서 문제가 되는 필드들을 제거하고 기본 API로 재시도
+          const basicPayload = { ...updatePayload }
+          delete basicPayload.descriptionMarkdown
+          delete basicPayload.checklist
+          delete basicPayload.relationships
+          delete basicPayload.wikiReferences
+          delete basicPayload.estimatedTimeMinutes
+          delete basicPayload.loggedTimeMinutes
+          
+          console.log('Sending basic update payload:', JSON.stringify(basicPayload, null, 2))
+          await worklyApi.tasks.update(taskData.id, basicPayload)
+        }
+      } catch (error: any) {
         console.error('자동 저장 실패:', error)
+        if (error.response) {
+          console.error('Error response:', error.response.data)
+          console.error('Error status:', error.response.status)
+        }
       } finally {
         setIsSaving(false)
       }
@@ -218,45 +322,32 @@ export default function TaskDetailModal({
   }
 
   // 업무 관계 추가
-  const addTaskRelationship = (targetTaskId: string, type: 'blocks' | 'blocked_by' | 'related') => {
+  const addTaskRelationship = async (targetTaskId: string, type: 'blocks' | 'blocked_by' | 'related') => {
     if (!localTask) return
     
-    const newRelationship: TaskRelationship = {
-      id: `rel-${Date.now()}`,
-      targetTaskId,
-      type,
-      targetTask: {
-        // 목업 데이터 - 실제로는 API에서 가져와야 함
-        id: targetTaskId,
-        title: `관련 업무 #${targetTaskId}`,
-        status: 'todo' as any,
-        priority: 'medium' as any,
-        type: 'task' as any,
-        assigneeId: 'user1',
-        reporterId: 'user1',
-        reporter: { id: 'user1', firstName: '김', lastName: '워클리', email: 'workly@example.com' },
-        actualHours: 0,
-        progress: 0,
-        tags: [],
-        customFields: {},
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        subtasks: [],
-        labels: [],
-        comments: [],
-        dependencies: [],
-        dependents: [],
-        watchers: [],
-        timeEntries: []
+    try {
+      // 실제 대상 업무 정보를 API에서 가져오기 (옵션)
+      // const targetTask = await worklyApi.tasks.getById(targetTaskId)
+      
+      const newRelationship: TaskRelationship = {
+        id: `rel-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        targetTaskId,
+        type,
+        // targetTask는 백엔드에서 자동으로 조인해서 가져오므로 생략 가능
+        // 또는 간단한 정보만 저장하고 실제 데이터는 백엔드에서 처리
+        targetTask: undefined // 백엔드에서 처리하도록 undefined로 설정
       }
+      
+      updateLocalTask({ 
+        relationships: [...localTask.relationships, newRelationship] 
+      })
+      
+      setShowTaskSearch(false)
+      setTaskSearchQuery('')
+    } catch (error) {
+      console.error('업무 관계 추가 실패:', error)
+      // 에러 처리
     }
-    
-    updateLocalTask({ 
-      relationships: [...localTask.relationships, newRelationship] 
-    })
-    
-    setShowTaskSearch(false)
-    setTaskSearchQuery('')
   }
 
   // 업무 관계 삭제
@@ -268,20 +359,46 @@ export default function TaskDetailModal({
     updateLocalTask({ relationships: updatedRelationships })
   }
 
-  // 목업 업무 데이터 (검색용)
-  const mockAvailableTasks = [
-    { id: '1', title: '워클리 네비게이션 시스템 최종 점검' },
-    { id: '2', title: 'CPER 워크플로우 문서 작성' },
-    { id: '3', title: '사용자 피드백 수집 및 분석' },
-    { id: '4', title: '데이터베이스 성능 최적화' },
-    { id: '5', title: '모바일 반응형 디자인 개선' },
-    { id: '6', title: '차세대 기능 기획' }
-  ].filter(task => task.id !== localTask?.id) // 자기 자신 제외
+  // 사용 가능한 업무 목록 상태
+  const [availableTasks, setAvailableTasks] = useState<{ id: string; title: string }[]>([])
+  const [isLoadingTasks, setIsLoadingTasks] = useState(false)
+
+  // 업무 검색
+  useEffect(() => {
+    const searchTasks = async () => {
+      if (!taskSearchQuery.trim() || !showTaskSearch) {
+        setAvailableTasks([])
+        return
+      }
+
+      try {
+        setIsLoadingTasks(true)
+        // 실제 업무 검색 API 호출
+        const tasks = await worklyApi.tasks.list({ 
+          search: taskSearchQuery,
+          limit: 10 
+        })
+        
+        // 자기 자신 제외
+        const filteredTasks = tasks
+          .filter(task => task.id !== localTask?.id)
+          .map(task => ({ id: task.id, title: task.title }))
+        
+        setAvailableTasks(filteredTasks)
+      } catch (error) {
+        console.error('업무 검색 실패:', error)
+        setAvailableTasks([])
+      } finally {
+        setIsLoadingTasks(false)
+      }
+    }
+
+    const timeoutId = setTimeout(searchTasks, 300) // 300ms 디바운스
+    return () => clearTimeout(timeoutId)
+  }, [taskSearchQuery, showTaskSearch, localTask?.id])
 
   // 검색된 업무 목록
-  const filteredTasks = mockAvailableTasks.filter(task =>
-    task.title.toLowerCase().includes(taskSearchQuery.toLowerCase())
-  )
+  const filteredTasks = availableTasks
 
   // 시간 형식 변환 함수
   const formatTime = (minutes: number): string => {
@@ -513,22 +630,74 @@ export default function TaskDetailModal({
     if (!localTask) return
 
     try {
-      // API를 통해 실제 백엔드에 저장
-      const updatedTask = await worklyApi.tasks.updateDetail(localTask.id, {
-        title: localTask.title,
-        description: localTask.description,
-        descriptionMarkdown: localTask.descriptionMarkdown,
-        status: localTask.status,
-        priority: localTask.priority,
-        dueDate: localTask.dueDate,
-        checklist: localTask.checklist,
-        relationships: localTask.relationships,
-        wikiReferences: localTask.wikiReferences,
-        estimatedTimeMinutes: localTask.estimatedTimeMinutes,
-        loggedTimeMinutes: localTask.loggedTimeMinutes,
-        tags: localTask.tags,
-        customFields: localTask.customFields
-      })
+      // UpdateTaskDetailDto 구조에 맞게 페이로드 구성
+      const updatePayload: any = {}
+      
+      // 기본 필드들
+      if (localTask.title !== undefined && localTask.title !== null) {
+        updatePayload.title = localTask.title
+      }
+      if (localTask.description !== undefined && localTask.description !== null) {
+        updatePayload.description = localTask.description
+      }
+      if (localTask.status !== undefined) {
+        updatePayload.status = localTask.status
+      }
+      if (localTask.priority !== undefined) {
+        updatePayload.priority = localTask.priority
+      }
+      if (localTask.dueDate !== undefined) {
+        updatePayload.dueDate = localTask.dueDate
+      }
+      // UUID 필드들은 null/빈문자열 검증 추가
+      if (localTask.projectId !== undefined && localTask.projectId !== null && localTask.projectId.trim() !== '') {
+        updatePayload.projectId = localTask.projectId
+      }
+      if (localTask.goalId !== undefined && localTask.goalId !== null && localTask.goalId.trim() !== '') {
+        updatePayload.goalId = localTask.goalId
+      }
+      
+      // 상세 필드들
+      if (localTask.descriptionMarkdown !== undefined) {
+        updatePayload.descriptionMarkdown = localTask.descriptionMarkdown
+      }
+      if (localTask.estimatedTimeMinutes !== undefined) {
+        updatePayload.estimatedTimeMinutes = localTask.estimatedTimeMinutes
+      }
+      if (localTask.loggedTimeMinutes !== undefined) {
+        updatePayload.loggedTimeMinutes = localTask.loggedTimeMinutes
+      }
+      
+      // 중첩 배열 필드들은 class-transformer 검증 문제로 일시적으로 제외
+      // TODO: 별도 엔드포인트 또는 DTO 수정 후 재활성화
+      // if (localTask.checklist !== undefined) {
+      //   updatePayload.checklist = localTask.checklist
+      // }
+      // if (localTask.relationships !== undefined) {
+      //   updatePayload.relationships = localTask.relationships
+      // }
+      // if (localTask.wikiReferences !== undefined) {
+      //   updatePayload.wikiReferences = localTask.wikiReferences
+      // }
+      
+      console.log('수동 저장 payload:', updatePayload)
+      
+      // 상세 정보 업데이트 API 사용 (중첩 필드 문제 시 기본 API로 대안)
+      let updatedTask
+      try {
+        updatedTask = await worklyApi.tasks.updateDetail(localTask.id, updatePayload)
+      } catch (error) {
+        console.warn('상세 API 실패, 기본 API로 대안 시도:', error)
+        
+        // 기본 API에는 없는 필드들 제거
+        const basicPayload = { ...updatePayload }
+        delete basicPayload.descriptionMarkdown
+        delete basicPayload.estimatedTimeMinutes
+        delete basicPayload.loggedTimeMinutes
+        
+        // 기본 업데이트 API 사용
+        updatedTask = await worklyApi.tasks.update(localTask.id, basicPayload)
+      }
 
       // 부모 컴포넌트에 업데이트된 태스크 전달
       onSave(updatedTask as TaskDetail)
@@ -634,7 +803,39 @@ export default function TaskDetailModal({
             </div>
 
             {/* 메타 정보 */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* 중요도 설정 */}
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <label className="block text-sm font-medium text-gray-700 mb-2">중요도</label>
+                <PrioritySelector
+                  value={localTask.priority}
+                  onChange={(priority) => updateLocalTask({ priority })}
+                  size="sm"
+                />
+              </div>
+
+              {/* 프로젝트 연동 */}
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <label className="block text-sm font-medium text-gray-700 mb-2">프로젝트</label>
+                <ProjectSelector
+                  value={localTask.projectId || null}
+                  onChange={(projectId) => updateLocalTask({ projectId })}
+                  size="sm"
+                  placeholder="프로젝트 선택"
+                />
+              </div>
+
+              {/* 목표 연동 */}
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <label className="block text-sm font-medium text-gray-700 mb-2">목표</label>
+                <GoalSelector
+                  value={localTask.goalId || null}
+                  onChange={(goalId) => updateLocalTask({ goalId })}
+                  size="sm"
+                  placeholder="목표 선택"
+                />
+              </div>
+
               {/* 마감일 */}
               <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                 <CalendarDaysIcon className="w-5 h-5 text-gray-500" />
@@ -998,7 +1199,12 @@ export default function TaskDetailModal({
 
                     {/* 업무 목록 */}
                     <div className="max-h-80 overflow-y-auto">
-                      {filteredTasks.length > 0 ? (
+                      {isLoadingTasks ? (
+                        <div className="p-8 text-center text-gray-500">
+                          <div className="animate-spin w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full mx-auto mb-2"></div>
+                          <p className="text-sm">업무를 검색하고 있습니다...</p>
+                        </div>
+                      ) : filteredTasks.length > 0 ? (
                         <div className="p-2">
                           {filteredTasks.map((task) => (
                             <div
