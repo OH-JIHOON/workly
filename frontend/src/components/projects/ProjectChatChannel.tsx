@@ -1,40 +1,12 @@
 'use client'
 
-import React, { useState, useEffect, useRef } from 'react'
-import { Send, Plus, Paperclip, Smile, MoreHorizontal, User, Calendar, Hash, ArrowLeft, PanelRightOpen, PanelRightClose } from 'lucide-react'
+import React, { useState, useRef, useEffect } from 'react'
+import { Send, Plus, Paperclip, Smile, MoreHorizontal, User, Calendar, Hash, ArrowLeft, PanelRightOpen, PanelRightClose, Wifi, WifiOff } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { Project, ProjectMember } from '@/types/project.types'
 import SlashCommandInput from './SlashCommandInput'
 import { useScrollVisibility } from '@/hooks/useScrollVisibility'
-
-// 채팅 메시지 타입
-interface ChatMessage {
-  id: string
-  type: 'message' | 'system' | 'task_created' | 'milestone_update'
-  content: string
-  userId: string
-  user: {
-    id: string
-    name: string
-    avatar?: string
-  }
-  timestamp: string
-  metadata?: any
-  isEdited?: boolean
-  editedAt?: string
-  mentions?: string[]
-  attachments?: {
-    id: string
-    name: string
-    type: string
-    url: string
-    size: number
-  }[]
-  slashCommandResult?: {
-    type: 'task_created' | 'milestone_set' | 'user_delegated'
-    data: any
-  }
-}
+import useProjectChat, { ChatMessage } from '@/hooks/useProjectChat'
 
 interface ProjectChatChannelProps {
   project: Project
@@ -58,10 +30,8 @@ export default function ProjectChatChannel({
   onUserDelegate
 }: ProjectChatChannelProps) {
   const router = useRouter()
-  const [messages, setMessages] = useState<ChatMessage[]>([])
   const [newMessage, setNewMessage] = useState('')
   const [isSlashCommandMode, setIsSlashCommandMode] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -72,52 +42,23 @@ export default function ProjectChatChannel({
     showOnHover: true
   })
 
-  // 목업 메시지 데이터
-  useEffect(() => {
-    const mockMessages: ChatMessage[] = [
-      {
-        id: '1',
-        type: 'system',
-        content: `${project.title} 프로젝트 채널에 오신 것을 환영합니다!`,
-        userId: 'system',
-        user: { id: 'system', name: 'System' },
-        timestamp: new Date(Date.now() - 86400000).toISOString(), // 1일 전
-      },
-      {
-        id: '2',
-        type: 'message',
-        content: '안녕하세요! 프로젝트 킥오프 미팅 일정을 공유드립니다.',
-        userId: 'user1',
-        user: { id: 'user1', name: '김워클리', avatar: '👤' },
-        timestamp: new Date(Date.now() - 3600000).toISOString(), // 1시간 전
-      },
-      {
-        id: '3',
-        type: 'task_created',
-        content: '/add-task UI 목업 디자인 완료 @김디자이너 2024-01-30',
-        userId: 'user2',
-        user: { id: 'user2', name: '박매니저', avatar: '👨‍💼' },
-        timestamp: new Date(Date.now() - 1800000).toISOString(), // 30분 전
-        slashCommandResult: {
-          type: 'task_created',
-          data: {
-            title: 'UI 목업 디자인 완료',
-            assignee: '김디자이너',
-            dueDate: '2024-01-30'
-          }
-        }
-      },
-      {
-        id: '4',
-        type: 'message',
-        content: '네, 확인했습니다! 내일까지 완료하겠습니다.',
-        userId: 'user3',
-        user: { id: 'user3', name: '김디자이너', avatar: '🎨' },
-        timestamp: new Date(Date.now() - 900000).toISOString(), // 15분 전
-      }
-    ]
-    setMessages(mockMessages)
-  }, [project.title])
+  // 프로젝트 채팅 훅 사용
+  const {
+    messages,
+    isConnected,
+    isLoading,
+    error,
+    sendMessage,
+    sendSlashCommand,
+    typingUsers,
+    onlineUsers
+  } = useProjectChat({
+    project,
+    members,
+    onTaskCreate,
+    onMilestoneCreate,
+    onUserDelegate
+  })
 
   // 메시지 목록 스크롤 자동 이동
   useEffect(() => {
@@ -171,95 +112,23 @@ export default function ProjectChatChannel({
   const handleSendMessage = async () => {
     if (!newMessage.trim() || isLoading) return
 
-    const message: ChatMessage = {
-      id: Date.now().toString(),
-      type: 'message',
-      content: newMessage,
-      userId: 'current_user',
-      user: { id: 'current_user', name: '나', avatar: '👤' },
-      timestamp: new Date().toISOString(),
+    try {
+      await sendMessage(newMessage.trim())
+      setNewMessage('')
+      setIsSlashCommandMode(false)
+    } catch (error) {
+      console.error('메시지 전송 실패:', error)
     }
-
-    setMessages(prev => [...prev, message])
-    setNewMessage('')
-    setIsSlashCommandMode(false)
   }
 
   // 슬래시 명령어 실행
   const handleSlashCommand = async (command: string, params: any) => {
-    setIsLoading(true)
-    
     try {
-      let systemMessage: ChatMessage
-
-      switch (command) {
-        case 'add-task':
-          systemMessage = {
-            id: Date.now().toString(),
-            type: 'task_created',
-            content: `✅ 새 업무가 생성되었습니다: "${params.title}" → ${params.assignee} (마감: ${params.dueDate})`,
-            userId: 'current_user',
-            user: { id: 'current_user', name: '나', avatar: '👤' },
-            timestamp: new Date().toISOString(),
-            slashCommandResult: {
-              type: 'task_created',
-              data: params
-            }
-          }
-          onTaskCreate?.(params)
-          break
-
-        case 'set-milestone':
-          systemMessage = {
-            id: Date.now().toString(),
-            type: 'milestone_update',
-            content: `🎯 마일스톤이 설정되었습니다: "${params.name}" (마감: ${params.dueDate})`,
-            userId: 'current_user',
-            user: { id: 'current_user', name: '나', avatar: '👤' },
-            timestamp: new Date().toISOString(),
-            slashCommandResult: {
-              type: 'milestone_set',
-              data: params
-            }
-          }
-          onMilestoneCreate?.(params)
-          break
-
-        case 'delegate':
-          systemMessage = {
-            id: Date.now().toString(),
-            type: 'system',
-            content: `🔄 업무가 ${params.fromUser}에서 ${params.toUser}로 재할당되었습니다`,
-            userId: 'current_user',
-            user: { id: 'current_user', name: '나', avatar: '👤' },
-            timestamp: new Date().toISOString(),
-            slashCommandResult: {
-              type: 'user_delegated',
-              data: params
-            }
-          }
-          onUserDelegate?.(params)
-          break
-
-        default:
-          systemMessage = {
-            id: Date.now().toString(),
-            type: 'system',
-            content: `❌ 알 수 없는 명령어: /${command}`,
-            userId: 'system',
-            user: { id: 'system', name: 'System' },
-            timestamp: new Date().toISOString(),
-          }
-      }
-
-      setMessages(prev => [...prev, systemMessage])
+      await sendSlashCommand(command, params)
       setNewMessage('')
       setIsSlashCommandMode(false)
-
     } catch (error) {
       console.error('슬래시 명령어 실행 실패:', error)
-    } finally {
-      setIsLoading(false)
     }
   }
 
@@ -347,8 +216,17 @@ export default function ProjectChatChannel({
           </button>
           <Hash className="w-5 h-5 text-gray-500" />
           <div>
-            <h2 className="font-semibold text-gray-900">{project.title}</h2>
-            <p className="text-sm text-gray-500">{members.length}명의 멤버</p>
+            <h2 className="font-semibold text-gray-900 flex items-center space-x-2">
+              <span>{project.title}</span>
+              {isConnected ? (
+                <Wifi className="w-4 h-4 text-green-500" title="실시간 연결됨" />
+              ) : (
+                <WifiOff className="w-4 h-4 text-red-500" title="연결 끊어짐" />
+              )}
+            </h2>
+            <p className="text-sm text-gray-500">
+              {members.length}명의 멤버 • {onlineUsers.length}명 온라인
+            </p>
           </div>
         </div>
         <div className="flex items-center space-x-2">

@@ -4,6 +4,19 @@ export class InitialSchema1706000000000 implements MigrationInterface {
   name = 'InitialSchema1706000000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
+    // ENUM 타입들 생성
+    await queryRunner.query(`CREATE TYPE "public"."users_role_enum" AS ENUM('member', 'admin', 'super_admin')`);
+    await queryRunner.query(`CREATE TYPE "public"."users_status_enum" AS ENUM('pending_verification', 'active', 'inactive', 'suspended')`);
+    await queryRunner.query(`CREATE TYPE "public"."projects_status_enum" AS ENUM('planning', 'active', 'on_hold', 'completed', 'cancelled')`);
+    await queryRunner.query(`CREATE TYPE "public"."projects_priority_enum" AS ENUM('low', 'medium', 'high', 'urgent')`);
+    await queryRunner.query(`CREATE TYPE "public"."projects_visibility_enum" AS ENUM('private', 'internal', 'public')`);
+    await queryRunner.query(`CREATE TYPE "public"."project_members_role_enum" AS ENUM('owner', 'admin', 'member', 'viewer')`);
+    await queryRunner.query(`CREATE TYPE "public"."project_applications_status_enum" AS ENUM('pending', 'approved', 'rejected', 'withdrawn')`);
+    await queryRunner.query(`CREATE TYPE "public"."tasks_status_enum" AS ENUM('todo', 'in_progress', 'in_review', 'done', 'blocked', 'cancelled')`);
+    await queryRunner.query(`CREATE TYPE "public"."tasks_priority_enum" AS ENUM('low', 'medium', 'high', 'urgent')`);
+    await queryRunner.query(`CREATE TYPE "public"."tasks_type_enum" AS ENUM('task', 'feature', 'bug', 'improvement', 'epic')`);
+    await queryRunner.query(`CREATE TYPE "public"."task_dependencies_type_enum" AS ENUM('blocks', 'blocked_by', 'related')`);
+
     // Users 테이블 생성
     await queryRunner.query(`
       CREATE TABLE "users" (
@@ -97,6 +110,37 @@ export class InitialSchema1706000000000 implements MigrationInterface {
     await queryRunner.query(`CREATE INDEX "IDX_project_members_userId" ON "project_members" ("userId")`);
     await queryRunner.query(`CREATE INDEX "IDX_project_members_role" ON "project_members" ("role")`);
 
+    // Project Applications 테이블 생성
+    await queryRunner.query(`
+      CREATE TABLE "project_applications" (
+        "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
+        "project_id" uuid NOT NULL,
+        "user_id" uuid NOT NULL,
+        "coverLetter" text NOT NULL,
+        "skills" text array,
+        "experience" text,
+        "available_hours" integer NOT NULL DEFAULT 20,
+        "expected_role" character varying NOT NULL DEFAULT 'member',
+        "status" "public"."project_applications_status_enum" NOT NULL DEFAULT 'pending',
+        "reviewNote" text,
+        "reviewed_by" uuid,
+        "reviewed_at" TIMESTAMP,
+        "created_at" TIMESTAMP NOT NULL DEFAULT now(),
+        "updated_at" TIMESTAMP NOT NULL DEFAULT now(),
+        CONSTRAINT "UQ_project_applications_project_user" UNIQUE ("project_id", "user_id"),
+        CONSTRAINT "PK_project_applications_id" PRIMARY KEY ("id"),
+        CONSTRAINT "FK_project_applications_project_id" FOREIGN KEY ("project_id") REFERENCES "projects"("id") ON DELETE CASCADE,
+        CONSTRAINT "FK_project_applications_user_id" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE,
+        CONSTRAINT "FK_project_applications_reviewed_by" FOREIGN KEY ("reviewed_by") REFERENCES "users"("id") ON DELETE SET NULL
+      )
+    `);
+
+    // Project Applications 인덱스 생성
+    await queryRunner.query(`CREATE INDEX "IDX_project_applications_project_id" ON "project_applications" ("project_id")`);
+    await queryRunner.query(`CREATE INDEX "IDX_project_applications_user_id" ON "project_applications" ("user_id")`);
+    await queryRunner.query(`CREATE INDEX "IDX_project_applications_status" ON "project_applications" ("status")`);
+    await queryRunner.query(`CREATE INDEX "IDX_project_applications_created_at" ON "project_applications" ("created_at")`);
+
     // Task Labels 테이블 생성
     await queryRunner.query(`
       CREATE TABLE "task_labels" (
@@ -122,6 +166,7 @@ export class InitialSchema1706000000000 implements MigrationInterface {
         "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
         "title" character varying NOT NULL,
         "description" text,
+        "descriptionMarkdown" text,
         "status" "public"."tasks_status_enum" NOT NULL DEFAULT 'todo',
         "priority" "public"."tasks_priority_enum" NOT NULL DEFAULT 'medium',
         "type" "public"."tasks_type_enum" NOT NULL DEFAULT 'task',
@@ -138,6 +183,11 @@ export class InitialSchema1706000000000 implements MigrationInterface {
         "workflowStageId" character varying,
         "tags" text array NOT NULL DEFAULT '{}',
         "customFields" jsonb NOT NULL DEFAULT '{}',
+        "checklist" jsonb NOT NULL DEFAULT '[]',
+        "relationships" jsonb NOT NULL DEFAULT '[]',
+        "wikiReferences" jsonb NOT NULL DEFAULT '[]',
+        "estimatedTimeMinutes" integer,
+        "loggedTimeMinutes" integer NOT NULL DEFAULT 0,
         "createdAt" TIMESTAMP NOT NULL DEFAULT now(),
         "updatedAt" TIMESTAMP NOT NULL DEFAULT now(),
         CONSTRAINT "PK_tasks_id" PRIMARY KEY ("id"),
@@ -302,8 +352,22 @@ export class InitialSchema1706000000000 implements MigrationInterface {
     await queryRunner.query(`DROP TABLE IF EXISTS "task_labels_mapping"`);
     await queryRunner.query(`DROP TABLE IF EXISTS "tasks"`);
     await queryRunner.query(`DROP TABLE IF EXISTS "task_labels"`);
+    await queryRunner.query(`DROP TABLE IF EXISTS "project_applications"`);
     await queryRunner.query(`DROP TABLE IF EXISTS "project_members"`);
     await queryRunner.query(`DROP TABLE IF EXISTS "projects"`);
     await queryRunner.query(`DROP TABLE IF EXISTS "users"`);
+    
+    // ENUM 타입들 삭제
+    await queryRunner.query(`DROP TYPE IF EXISTS "public"."task_dependencies_type_enum"`);
+    await queryRunner.query(`DROP TYPE IF EXISTS "public"."tasks_type_enum"`);
+    await queryRunner.query(`DROP TYPE IF EXISTS "public"."tasks_priority_enum"`);
+    await queryRunner.query(`DROP TYPE IF EXISTS "public"."tasks_status_enum"`);
+    await queryRunner.query(`DROP TYPE IF EXISTS "public"."project_applications_status_enum"`);
+    await queryRunner.query(`DROP TYPE IF EXISTS "public"."project_members_role_enum"`);
+    await queryRunner.query(`DROP TYPE IF EXISTS "public"."projects_visibility_enum"`);
+    await queryRunner.query(`DROP TYPE IF EXISTS "public"."projects_priority_enum"`);
+    await queryRunner.query(`DROP TYPE IF EXISTS "public"."projects_status_enum"`);
+    await queryRunner.query(`DROP TYPE IF EXISTS "public"."users_status_enum"`);
+    await queryRunner.query(`DROP TYPE IF EXISTS "public"."users_role_enum"`);
   }
 }

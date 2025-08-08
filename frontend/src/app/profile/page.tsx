@@ -104,7 +104,7 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       {/* 헤더 */}
-      <Header title="프로필" />
+      <Header title="Worker" />
       
       {/* 로그인 배너 (헤더 바깥) */}
       <LoginBanner />

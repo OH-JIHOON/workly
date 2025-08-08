@@ -1,15 +1,13 @@
 /**
  * 워클리 고유 방법론 - 네비게이션 관련 타입 정의
- * 5개 핵심 네비게이션 항목: 업무 → 프로젝트 → 수집함 → 목표 → 프로필
+ * 3개 핵심 네비게이션 항목: Work → Workspace → Worker (간소화)
  */
 
 // 메인 네비게이션 항목
 export enum NavigationItem {
-  TASKS = 'tasks',           // 업무
-  PROJECTS = 'projects',     // 프로젝트  
-  INBOX = 'inbox',          // 수집함 (중앙 위치, 강조)
-  GOALS = 'goals',          // 목표
-  PROFILE = 'profile',      // 프로필
+  TASKS = 'tasks',           // Work (업무)
+  PROJECTS = 'projects',     // Workspace (프로젝트)
+  PROFILE = 'profile',       // Worker (프로필)
 }
 
 // 네비게이션 아이템 정보
@@ -37,7 +35,7 @@ export interface FloatingAction {
   id: string;
   label: string;
   icon: string;
-  action: 'quick-capture' | 'add-task' | 'add-project' | 'add-goal';
+  action: 'quick-capture' | 'add-task' | 'add-project';
   color?: string;
   shortcut?: string;        // 키보드 단축키
 }
@@ -101,9 +99,7 @@ export interface UserNavigationContext {
   preferences: NavigationSettings;
   workflow: WorkflowState;
   quickStats: {
-    inboxCount: number;
     todayTasksCount: number;
     activeProjectsCount: number;
-    activeGoalsCount: number;
   };
 }

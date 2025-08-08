@@ -77,7 +77,12 @@ export class TasksController {
     @Query() query: TaskQueryDto,
     @CurrentUser('id') userId: string,
   ) {
-    return this.tasksService.findAll(query, userId);
+    try {
+      return await this.tasksService.findAll(query, userId);
+    } catch (error) {
+      console.error('Tasks Controller findAll error:', error);
+      throw error;
+    }
   }
 
   // 내 태스크 조회 (GTD 컨텍스트별)

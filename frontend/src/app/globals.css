@@ -556,3 +556,27 @@
 .slide-in-from-top-1 {
   animation-name: slide-in-from-top;
 }
+
+/* 네비게이션 아이템 스타일 */
+.nav-item {
+  @apply w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-200;
+  @apply text-muted-foreground hover:text-foreground hover:bg-accent;
+}
+
+.nav-item.active {
+  @apply bg-primary text-primary-foreground shadow-md;
+}
+
+/* 데스크톱에서 브라우저 창이 486px보다 작아지지 않게 강제 */
+html {
+  min-width: 486px !important;
+}
+
+body {
+  min-width: 486px !important;
+}
+
+/* 루트 컨테이너도 최소 너비 강제 */
+body > * {
+  min-width: 486px !important;
+}

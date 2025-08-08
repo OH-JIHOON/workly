@@ -1,5 +1,5 @@
 // API 기본 설정
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 export const API_VERSION = 'v1'
 export const API_PREFIX = `/api/${API_VERSION}`
 
@@ -23,7 +23,7 @@ export const USER_ENDPOINTS = {
   UPLOAD_AVATAR: (id: string) => `${API_PREFIX}/users/${id}/avatar`,
 } as const
 
-// 프로젝트 관련 엔드포인트
+// Workspace 관련 엔드포인트
 export const PROJECT_ENDPOINTS = {
   BASE: `${API_PREFIX}/projects`,
   BY_ID: (id: string) => `${API_PREFIX}/projects/${id}`,
@@ -34,7 +34,7 @@ export const PROJECT_ENDPOINTS = {
   TASKS: (id: string) => `${API_PREFIX}/projects/${id}/tasks`,
 } as const
 
-// 업무 관련 엔드포인트
+// Work 관련 엔드포인트
 export const TASK_ENDPOINTS = {
   BASE: `${API_PREFIX}/tasks`,
   BY_ID: (id: string) => `${API_PREFIX}/tasks/${id}`,

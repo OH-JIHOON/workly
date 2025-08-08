@@ -31,6 +31,7 @@ import { TimeEntry } from './time-entry.entity';
 @Index(['priority'])
 @Index(['type'])
 @Index(['projectId'])
+@Index(['goalId'])
 @Index(['assigneeId'])
 @Index(['reporterId'])
 @Index(['parentTaskId'])
@@ -82,6 +83,9 @@ export class Task {
 
   @Column({ nullable: true })
   projectId?: string;
+
+  @Column({ nullable: true })
+  goalId?: string;
 
   @Column({ nullable: true })
   assigneeId?: string;

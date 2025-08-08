@@ -50,6 +50,7 @@ export class TasksService {
       title,
       description,
       projectId,
+      goalId,
       assigneeId,
       parentTaskId,
       priority = 'medium',
@@ -120,6 +121,7 @@ export class TasksService {
       dueDate: dueDate ? new Date(dueDate) : null,
       startDate: startDate ? new Date(startDate) : null,
       projectId,
+      goalId,
       assigneeId: assigneeId || userId,
       reporterId: userId,
       parentTaskId,
@@ -163,135 +165,131 @@ export class TasksService {
 
   // 태스크 목록 조회 (필터링, 정렬, 페이징)
   async findAll(queryDto: TaskQueryDto, userId: string): Promise<PaginatedResponse<Task>> {
-    const {
-      page = 1,
-      limit = 20,
-      status,
-      priority,
-      type,
-      projectId,
-      assigneeId,
-      reporterId,
-      dueDate,
-      search,
-      sortBy = 'createdAt',
-      sortOrder = 'DESC',
-      includeSubtasks = false,
-      labelIds,
-      tags,
-    } = queryDto;
+    try {
+      const {
+        page = 1,
+        limit = 20,
+        status,
+        priority,
+        type,
+        projectId,
+        goalId,
+        assigneeId,
+        reporterId,
+        dueDate,
+        search,
+        sortBy = 'createdAt',
+        sortOrder = 'DESC',
+        includeSubtasks = false,
+        labelIds,
+        tags,
+      } = queryDto;
 
-    const queryBuilder = this.taskRepository.createQueryBuilder('task')
-      .leftJoinAndSelect('task.project', 'project')
-      .leftJoinAndSelect('task.assignee', 'assignee')
-      .leftJoinAndSelect('task.reporter', 'reporter')
-      .leftJoinAndSelect('task.parentTask', 'parentTask')
-      .leftJoinAndSelect('task.labels', 'labels')
-      .leftJoinAndSelect('task.timeEntries', 'timeEntries');
+      const queryBuilder = this.taskRepository.createQueryBuilder('task')
+        .leftJoinAndSelect('task.assignee', 'assignee')
+        .leftJoinAndSelect('task.reporter', 'reporter');
 
-    // 권한 필터링: 할당된 태스크, 생성한 태스크, 또는 참여 중인 프로젝트의 태스크만
-    queryBuilder.where(`(
-      task.assigneeId = :userId OR 
-      task.reporterId = :userId OR 
-      project.ownerId = :userId OR
-      EXISTS (
-        SELECT 1 FROM project_members pm 
-        WHERE pm.projectId = task.projectId AND pm.userId = :userId
-      )
-    )`, { userId });
+      // 간소화된 권한 필터링: 할당된 태스크 또는 생성한 태스크만
+      queryBuilder.where(`(
+        task.assigneeId = :userId OR 
+        task.reporterId = :userId
+      )`, { userId });
 
-    // 상태 필터
-    if (status) {
-      queryBuilder.andWhere('task.status = :status', { status });
-    }
+      // 상태 필터
+      if (status) {
+        queryBuilder.andWhere('task.status = :status', { status });
+      }
 
-    // 우선순위 필터
-    if (priority) {
-      queryBuilder.andWhere('task.priority = :priority', { priority });
-    }
+      // 우선순위 필터
+      if (priority) {
+        queryBuilder.andWhere('task.priority = :priority', { priority });
+      }
 
-    // 타입 필터
-    if (type) {
-      queryBuilder.andWhere('task.type = :type', { type });
-    }
+      // 타입 필터
+      if (type) {
+        queryBuilder.andWhere('task.type = :type', { type });
+      }
 
-    // 프로젝트 필터
-    if (projectId) {
-      queryBuilder.andWhere('task.projectId = :projectId', { projectId });
-    }
+      // 프로젝트 필터
+      if (projectId) {
+        queryBuilder.andWhere('task.projectId = :projectId', { projectId });
+      }
 
-    // 담당자 필터
-    if (assigneeId) {
-      queryBuilder.andWhere('task.assigneeId = :assigneeId', { assigneeId });
-    }
+      // 목표 필터
+      if (goalId) {
+        queryBuilder.andWhere('task.goalId = :goalId', { goalId });
+      }
 
-    // 생성자 필터
-    if (reporterId) {
-      queryBuilder.andWhere('task.reporterId = :reporterId', { reporterId });
-    }
+      // 담당자 필터
+      if (assigneeId) {
+        queryBuilder.andWhere('task.assigneeId = :assigneeId', { assigneeId });
+      }
 
-    // 마감일 필터
-    if (dueDate) {
-      const targetDate = new Date(dueDate);
-      const nextDay = new Date(targetDate);
-      nextDay.setDate(nextDay.getDate() + 1);
-      queryBuilder.andWhere('task.dueDate >= :startDate AND task.dueDate < :endDate', {
-        startDate: targetDate,
-        endDate: nextDay,
-      });
-    }
+      // 생성자 필터
+      if (reporterId) {
+        queryBuilder.andWhere('task.reporterId = :reporterId', { reporterId });
+      }
 
-    // 검색 필터
-    if (search) {
-      queryBuilder.andWhere(`(
-        task.title ILIKE :search OR 
-        task.description ILIKE :search OR
-        array_to_string(task.tags, ' ') ILIKE :search
-      )`, { search: `%${search}%` });
-    }
+      // 마감일 필터
+      if (dueDate) {
+        const targetDate = new Date(dueDate);
+        const nextDay = new Date(targetDate);
+        nextDay.setDate(nextDay.getDate() + 1);
+        queryBuilder.andWhere('task.dueDate >= :startDate AND task.dueDate < :endDate', {
+          startDate: targetDate,
+          endDate: nextDay,
+        });
+      }
 
-    // 레이블 필터
-    if (labelIds && labelIds.length > 0) {
-      queryBuilder.andWhere('labels.id IN (:...labelIds)', { labelIds });
-    }
+      // 검색 필터
+      if (search) {
+        queryBuilder.andWhere(`(
+          task.title ILIKE :search OR 
+          task.description ILIKE :search
+        )`, { search: `%${search}%` });
+      }
 
-    // 태그 필터
-    if (tags && tags.length > 0) {
-      queryBuilder.andWhere('task.tags && :tags', { tags });
-    }
+      // 태그 필터 (간소화)
+      if (tags && tags.length > 0) {
+        queryBuilder.andWhere('task.tags && :tags', { tags });
+      }
 
-    // 서브태스크 제외 (기본값)
-    if (!includeSubtasks) {
-      queryBuilder.andWhere('task.parentTaskId IS NULL');
-    }
+      // 서브태스크 제외 (기본값)
+      if (!includeSubtasks) {
+        queryBuilder.andWhere('task.parentTaskId IS NULL');
+      }
 
-    // 정렬
-    const allowedSortFields = ['createdAt', 'updatedAt', 'title', 'priority', 'dueDate', 'status'];
-    const sortField = allowedSortFields.includes(sortBy) ? sortBy : 'createdAt';
-    queryBuilder.orderBy(`task.${sortField}`, sortOrder as 'ASC' | 'DESC');
+      // 정렬
+      const allowedSortFields = ['createdAt', 'updatedAt', 'title', 'priority', 'dueDate', 'status'];
+      const sortField = allowedSortFields.includes(sortBy) ? sortBy : 'createdAt';
+      queryBuilder.orderBy(`task.${sortField}`, sortOrder as 'ASC' | 'DESC');
 
-    // 페이징
-    const offset = (page - 1) * limit;
-    queryBuilder.skip(offset).take(limit);
+      // 페이징
+      const offset = (page - 1) * limit;
+      queryBuilder.skip(offset).take(limit);
 
-    // 실행
-    const [items, total] = await queryBuilder.getManyAndCount();
+      // 실행
+      const [items, total] = await queryBuilder.getManyAndCount();
 
-    return {
-      success: true,
-      data: items,
-      items,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-      meta: {
+      return {
+        success: true,
+        data: items,
+        items,
+        total,
         page,
         limit,
-        total,
         totalPages: Math.ceil(total / limit),
-      },
-    };
+        meta: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
+      };
+    } catch (error) {
+      console.error('Tasks findAll error:', error);
+      throw error;
+    }
   }
 
   // 특정 태스크 조회

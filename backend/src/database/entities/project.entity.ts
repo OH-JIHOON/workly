@@ -23,6 +23,7 @@ import {
 import { User } from './user.entity';
 import { Task } from './task.entity';
 import { ProjectMember } from './project-member.entity';
+import { ProjectApplication } from './project-application.entity';
 
 @Entity('projects')
 @Index(['title'])
@@ -123,6 +124,11 @@ export class Project {
     cascade: true 
   })
   tasks: Task[];
+
+  @OneToMany(() => ProjectApplication, application => application.project, { 
+    cascade: true 
+  })
+  applications: ProjectApplication[];
 
   // 계산된 필드들
   tasksCount: number;

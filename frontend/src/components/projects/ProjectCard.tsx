@@ -1,36 +1,30 @@
 'use client'
 
-import { useState } from 'react'
 import { 
   Users,
   MessageCircle, 
   Target,
   UserPlus,
   CheckCircle2,
-  Calendar,
-  MoreHorizontal
+  Calendar
 } from 'lucide-react'
-import { useIsTouch } from '@/hooks/useDeviceType'
 import CircularProgress from '@/components/ui/CircularProgress'
 import { Project, ProjectStatus } from '@/types/project.types'
 
 interface ProjectCardProps {
   project: Project
   onClick: () => void
-  onJoinProject?: (projectId: string) => void
-  onOpenChat?: (projectId: string) => void
-  onManageGoals?: (projectId: string) => void
+  onApply?: (project: Project) => void
+  currentUserId?: string
 }
 
 export default function ProjectCard({
   project,
   onClick,
-  onJoinProject,
-  onOpenChat,
-  onManageGoals
+  onApply,
+  currentUserId
 }: ProjectCardProps) {
-  const isTouch = useIsTouch()
-  const [isHovered, setIsHovered] = useState(false)
+  // 컴포넌트 간소화로 제거된 상태들
   
   // 진행률 계산 (업무 완료율 기준)
   const taskProgress = project.taskCount > 0 
@@ -42,6 +36,17 @@ export default function ProjectCard({
   const maxMembers = 6
   const isRecruiting = memberCount < maxMembers && project.status !== ProjectStatus.COMPLETED
   const availableSlots = maxMembers - memberCount
+
+  // 현재 사용자가 이미 프로젝트 멤버인지 확인
+  const isCurrentUserMember = currentUserId && project.members?.some(member => member.userId === currentUserId)
+  const isOwner = currentUserId && project.ownerId === currentUserId
+
+  const handleApplyClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // 카드 클릭 이벤트 방지
+    if (onApply) {
+      onApply(project);
+    }
+  };
 
   // 최근 채팅 활동 (목업 데이터)
   const mockActivities = [
@@ -58,15 +63,15 @@ export default function ProjectCard({
   const getStatusColor = (status: ProjectStatus) => {
     switch (status) {
       case ProjectStatus.ACTIVE:
-        return 'bg-green-100 text-green-800'
+        return 'bg-green-100 text-green-700' // 디자인 시스템: Success 계열
       case ProjectStatus.PLANNING:
-        return 'bg-blue-100 text-blue-800'
+        return 'bg-blue-100 text-blue-700'   // 디자인 시스템: Primary Light
       case ProjectStatus.COMPLETED:
-        return 'bg-gray-100 text-gray-800'
+        return 'bg-green-100 text-green-700' // 완료는 Success 색상 사용
       case ProjectStatus.ON_HOLD:
-        return 'bg-yellow-100 text-yellow-800'
+        return 'bg-amber-100 text-amber-700'  // 디자인 시스템: Warning 계열
       default:
-        return 'bg-gray-100 text-gray-800'
+        return 'bg-gray-100 text-gray-500'    // 디자인 시스템: Text Secondary
     }
   }
 
@@ -89,10 +94,7 @@ export default function ProjectCard({
     onClick()
   }
 
-  const handleActionClick = (e: React.MouseEvent, action: () => void) => {
-    e.stopPropagation()
-    action()
-  }
+  // 액션 핸들러 제거됨 - 카드 간소화
 
   return (
     <div 
@@ -102,15 +104,13 @@ export default function ProjectCard({
         hover:bg-gray-50
       `}
       onClick={handleCardClick}
-      onMouseEnter={() => !isTouch && setIsHovered(true)}
-      onMouseLeave={() => !isTouch && setIsHovered(false)}
     >
       <div className="flex items-center gap-4 min-h-[80px]">
         {/* 좌측: 프로젝트 아이콘 + 알림 */}
         <div className="flex-shrink-0 relative">
           <div 
             className="w-12 h-12 rounded-lg flex items-center justify-center text-white font-semibold text-lg"
-            style={{ backgroundColor: project.color || '#3B82F6' }}
+            style={{ backgroundColor: '#2563eb' }}
           >
 {typeof project.icon === 'string' && project.icon.length === 1 ? 
               project.icon : 
@@ -139,7 +139,7 @@ export default function ProjectCard({
             
             {/* 모집 배지 */}
             {isRecruiting && (
-              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 flex-shrink-0">
+              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700 flex-shrink-0">
                 <UserPlus className="w-3 h-3" />
                 모집중
               </span>
@@ -166,7 +166,7 @@ export default function ProjectCard({
               <Users className="w-3 h-3" />
               <span>{memberCount}명</span>
               {isRecruiting && (
-                <span className="text-green-600">({availableSlots}자리)</span>
+                <span className="text-green-700">({availableSlots}자리)</span>
               )}
             </div>
             <div className="flex items-center gap-1">
@@ -182,19 +182,16 @@ export default function ProjectCard({
           </div>
         </div>
 
-        {/* 우측: 진행률 + 액션 */}
+        {/* 우측: 진행률 + 상태 */}
         <div className="flex-shrink-0 flex items-center gap-3">
           {/* 원형 프로그레스 */}
-          <div className="flex flex-col items-center">
+          <div className="flex-shrink-0">
             <CircularProgress 
               percentage={taskProgress} 
               size="md"
-              color={project.color || '#2563eb'}
+              color="#2563eb"
               showPercentage={true}
             />
-            <div className="text-xs text-gray-500 mt-1">
-              {project.completedTaskCount}/{project.taskCount}
-            </div>
           </div>
 
           {/* 상태 배지 */}
@@ -202,74 +199,32 @@ export default function ProjectCard({
             {getStatusText(project.status)}
           </div>
 
-          {/* 더보기 버튼 (데스크톱만) */}
-          {!isTouch && (
-            <button
-              onClick={(e) => handleActionClick(e, () => console.log('더보기 메뉴'))}
-              className="w-8 h-8 flex items-center justify-center text-gray-400 hover:bg-gray-100 rounded-md transition-colors"
-              title="더 많은 액션"
-            >
-              <MoreHorizontal className="w-4 h-4" />
-            </button>
-          )}
         </div>
       </div>
 
-      {/* 호버 시 액션 버튼 (데스크톱) */}
-      {!isTouch && (isHovered || isTouch) && (
-        <div className="mt-3 flex gap-2 animate-in fade-in-0 slide-in-from-top-1 duration-200">
-          <button 
-            onClick={(e) => handleActionClick(e, () => onOpenChat?.(project.id))}
-            className="flex-1 flex items-center justify-center gap-1 px-3 py-2 text-sm bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
+      {/* 지원하기 버튼 (모집 중이고 현재 사용자가 멤버가 아닌 경우만 표시) */}
+      {isRecruiting && !isCurrentUserMember && !isOwner && onApply && (
+        <div className="mt-4 pt-4 border-t border-gray-100">
+          <button
+            onClick={handleApplyClick}
+            className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
-            <MessageCircle className="w-4 h-4" />
-            <span>채팅</span>
+            <UserPlus className="w-4 h-4" />
+            <span>프로젝트 지원하기</span>
           </button>
-          <button 
-            onClick={(e) => handleActionClick(e, () => onManageGoals?.(project.id))}
-            className="flex-1 flex items-center justify-center gap-1 px-3 py-2 text-sm bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 transition-colors"
-          >
-            <Target className="w-4 h-4" />
-            <span>목표</span>
-          </button>
-          {isRecruiting && (
-            <button 
-              onClick={(e) => handleActionClick(e, () => onJoinProject?.(project.id))}
-              className="flex items-center justify-center px-3 py-2 text-sm bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors"
-            >
-              <UserPlus className="w-4 h-4" />
-            </button>
-          )}
+        </div>
+      )}
+
+      {/* 이미 멤버인 경우 */}
+      {isCurrentUserMember && (
+        <div className="mt-4 pt-4 border-t border-gray-100">
+          <div className="flex items-center justify-center space-x-2 px-4 py-2 bg-green-50 text-green-700 rounded-lg">
+            <CheckCircle2 className="w-4 h-4" />
+            <span>참여 중인 프로젝트</span>
+          </div>
         </div>
       )}
       
-      {/* 모바일 터치 액션 표시 */}
-      {isTouch && (
-        <div className="mt-3 flex gap-2">
-          <button 
-            onClick={(e) => handleActionClick(e, () => onOpenChat?.(project.id))}
-            className="flex-1 flex items-center justify-center gap-1 px-3 py-2 text-sm bg-blue-50 text-blue-600 rounded-lg active:bg-blue-100"
-          >
-            <MessageCircle className="w-4 h-4" />
-            <span>채팅</span>
-          </button>
-          <button 
-            onClick={(e) => handleActionClick(e, () => onManageGoals?.(project.id))}
-            className="flex-1 flex items-center justify-center gap-1 px-3 py-2 text-sm bg-purple-50 text-purple-600 rounded-lg active:bg-purple-100"
-          >
-            <Target className="w-4 h-4" />
-            <span>목표</span>
-          </button>
-          {isRecruiting && (
-            <button 
-              onClick={(e) => handleActionClick(e, () => onJoinProject?.(project.id))}
-              className="flex items-center justify-center px-3 py-2 text-sm bg-green-50 text-green-600 rounded-lg active:bg-green-100"
-            >
-              <UserPlus className="w-4 h-4" />
-            </button>
-          )}
-        </div>
-      )}
     </div>
   )
 }

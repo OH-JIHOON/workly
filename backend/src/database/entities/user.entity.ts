@@ -140,6 +140,9 @@ export class User {
   // @OneToMany(() => Notification, notification => notification.recipient)
   // receivedNotifications: Notification[];
 
+  // @OneToMany(() => ProjectApplication, application => application.user)
+  // projectApplications: ProjectApplication[];
+
   // 비밀번호 해싱
   @BeforeInsert()
   @BeforeUpdate()

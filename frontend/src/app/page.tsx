@@ -12,7 +12,7 @@ import {
   UserIcon,
   FlagIcon
 } from '@heroicons/react/24/outline'
-import Header from '@/components/layout/Header'
+import ContentHeader from '@/components/layout/ContentHeader'
 import MainContainer from '@/components/layout/MainContainer'
 import SimpleFilterChips from '@/components/ui/SimpleFilterChips'
 import CalendarToggleFAB from '@/components/ui/CalendarToggleFAB'
@@ -754,7 +754,7 @@ export default function TasksPage() {
   if (error && !isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 pb-20">
-        <Header title="업무" />
+        <ContentHeader title="Work" />
         <MainContainer>
           <div className="text-center py-16">
             <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md mx-auto">
@@ -782,7 +782,7 @@ export default function TasksPage() {
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       {/* 헤더 */}
-      <Header title="업무" />
+      <ContentHeader title="Work" />
       
       {/* 로그인 배너 (헤더 바깥) */}
       <LoginBanner />
@@ -822,7 +822,7 @@ export default function TasksPage() {
           ) : filteredTasks.length === 0 ? (
             <div className="p-8 text-center">
               <ClipboardDocumentIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="workly-card-title text-gray-600 mb-1">업무가 없습니다</h3>
+              <h3 className="workly-card-title text-gray-600 mb-1">Work가 없습니다</h3>
               <p className="workly-caption mb-4">우측 하단의 수집함 버튼(+)을 눌러 업무를 추가해보세요!</p>
             </div>
           ) : (

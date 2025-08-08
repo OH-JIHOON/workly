@@ -90,6 +90,21 @@ git push origin main
 
 워클리의 비즈니스 성공을 위해 사용자 경험과 비즈니스 가치를 최우선으로 고려하여 개발합니다.
 
+## 프로젝트 문서 참조
+
+### 핵심 문서
+@./references/README.md
+@./references/core/philosophy.md
+@./references/core/architecture.md
+@./references/features/home-tasks.md
+
+### 구현 가이드
+@./references/implementation/frontend-guide.md
+@./references/implementation/backend-guide.md
+@./references/implementation/api-specs.md
+
+## SuperClaude Guide
+@./references/guides/korean-superclaude-guide.md
 ## Task Master AI Instructions
 **Import Task Master's development workflow commands and guidelines, treat as if import is in the main CLAUDE.md file.**
 @./.taskmaster/CLAUDE.md

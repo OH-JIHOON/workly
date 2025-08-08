@@ -52,6 +52,14 @@ export class CreateTaskDto {
   projectId?: string;
 
   @ApiPropertyOptional({
+    description: '목표 ID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @IsOptional()
+  @IsUUID(4, { message: '유효한 목표 ID를 입력해주세요.' })
+  goalId?: string;
+
+  @ApiPropertyOptional({
     description: '담당자 ID',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
@@ -313,6 +321,14 @@ export class TaskQueryDto {
   @IsOptional()
   @IsUUID(4, { message: '유효한 프로젝트 ID를 입력해주세요.' })
   projectId?: string;
+
+  @ApiPropertyOptional({
+    description: '목표 ID 필터',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @IsOptional()
+  @IsUUID(4, { message: '유효한 목표 ID를 입력해주세요.' })
+  goalId?: string;
 
   @ApiPropertyOptional({
     description: '담당자 ID 필터',
