@@ -3,10 +3,12 @@ services:
   postgres:
     image: postgres:15-alpine
     container_name: workly-postgres
+    env_file:
+      - .env
     environment:
       POSTGRES_DB: workly
       POSTGRES_USER: workly
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-your_postgres_password}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5432:5432"
     volumes:
@@ -32,18 +34,17 @@ services:
       context: .
       dockerfile: backend/Dockerfile
     container_name: workly-backend
+    env_file:
+      - .env
     environment:
       - NODE_ENV=development
       - DATABASE_HOST=postgres
       - DATABASE_PORT=5432
       - DATABASE_NAME=workly
       - DATABASE_USERNAME=workly
-      - DATABASE_PASSWORD=${POSTGRES_PASSWORD:-your_postgres_password}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - JWT_SECRET=your-jwt-secret-key
-      - GOOGLE_CLIENT_ID=your-google-client-id
-      - GOOGLE_CLIENT_SECRET=your-google-client-secret
       - FRONTEND_URL=http://localhost:3000
     ports:
       - "8000:8000"
@@ -78,9 +79,11 @@ services:
   minio:
     image: minio/minio:latest
     container_name: workly-minio
+    env_file:
+      - .env
     environment:
       - MINIO_ROOT_USER=minioadmin
-      - MINIO_ROOT_PASSWORD=${MINIO_PASSWORD:-minioadmin123}
+      - MINIO_ROOT_PASSWORD=${MINIO_SECRET_KEY}
     ports:
       - "9000:9000"
       - "9001:9001"

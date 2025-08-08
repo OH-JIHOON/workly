@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, KeyboardEvent } from 'react'
-import { PlusIcon } from '@heroicons/react/24/outline'
+import { useState, KeyboardEvent, useRef } from 'react'
+import { PaperAirplaneIcon } from '@heroicons/react/24/outline'
 
 interface QuickAddInputProps {
   placeholder?: string
@@ -16,6 +16,7 @@ export default function QuickAddInput({
 }: QuickAddInputProps) {
   const [inputValue, setInputValue] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
 
   const handleKeyPress = async (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && inputValue.trim()) {
@@ -23,9 +24,12 @@ export default function QuickAddInput({
       setIsLoading(true)
       
       try {
-        // PRD 명세: Enter 입력 시 새 업무가 리스트 최상단에 생성
         await onTaskCreate(inputValue.trim())
-        setInputValue('') // 입력창 초기화
+        setInputValue('')
+        // 생성 완료 후 입력창에 다시 포커스
+        setTimeout(() => {
+          inputRef.current?.focus()
+        }, 100)
       } catch (error) {
         console.error('업무 생성 실패:', error)
       } finally {
@@ -34,13 +38,17 @@ export default function QuickAddInput({
     }
   }
 
-  const handleButtonClick = async () => {
+  const handleSubmit = async () => {
     if (!inputValue.trim()) return
     
     setIsLoading(true)
     try {
       await onTaskCreate(inputValue.trim())
       setInputValue('')
+      // 생성 완료 후 입력창에 다시 포커스
+      setTimeout(() => {
+        inputRef.current?.focus()
+      }, 100)
     } catch (error) {
       console.error('업무 생성 실패:', error)
     } finally {
@@ -48,38 +56,57 @@ export default function QuickAddInput({
     }
   }
 
+  const hasContent = inputValue.trim().length > 0
+
   return (
-    <div className={`workly-card ${className}`}>
-      <div className="flex items-center space-x-3">
-        <div className="flex-1 relative">
+    <div className={`
+      bg-white rounded-full shadow-lg border border-gray-200
+      transition-all duration-200 ease-in-out hover:shadow-lg
+      ${hasContent ? 'pr-2' : 'px-4'}
+      ${className}
+    `}>
+      <div className="flex items-center">
+        {/* 입력 필드 */}
+        <div className="flex-1">
           <input
+            ref={inputRef}
             type="text"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder={placeholder}
             disabled={isLoading}
-            className="w-full px-4 py-3 text-base border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-500 disabled:bg-gray-50 disabled:cursor-not-allowed"
+            className="w-full py-4 px-4 text-base bg-transparent border-none outline-none placeholder-gray-500 disabled:cursor-not-allowed"
+            style={{ fontSize: '16px' }} // iOS 줌 방지
           />
-          {isLoading && (
-            <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-            </div>
-          )}
         </div>
-        <button
-          onClick={handleButtonClick}
-          disabled={!inputValue.trim() || isLoading}
-          className="workly-button flex items-center justify-center w-12 h-12 disabled:bg-gray-300 disabled:cursor-not-allowed"
-        >
-          <PlusIcon className="w-5 h-5" />
-        </button>
+
+        {/* 전송 버튼 - 텍스트가 있을 때만 표시 */}
+        {hasContent && (
+          <div className="flex items-center">
+            <button
+              onClick={handleSubmit}
+              disabled={isLoading}
+              className={`
+                flex items-center justify-center w-10 h-10 rounded-full
+                transition-all duration-200 ease-in-out
+                ${isLoading 
+                  ? 'bg-gray-200 cursor-not-allowed' 
+                  : 'bg-blue-500 hover:bg-blue-600 active:bg-blue-700 hover:scale-105 active:scale-95'
+                }
+                shadow-md hover:shadow-lg
+              `}
+              aria-label="업무 추가"
+            >
+              {isLoading ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+              ) : (
+                <PaperAirplaneIcon className="w-5 h-5 text-white" />
+              )}
+            </button>
+          </div>
+        )}
       </div>
-      
-      {/* 힌트 텍스트 */}
-      <p className="workly-caption mt-2 ml-1">
-        Enter 키를 누르거나 + 버튼을 클릭하여 업무를 추가하세요
-      </p>
     </div>
   )
 }

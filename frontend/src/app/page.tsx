@@ -94,6 +94,9 @@ export default function TasksPage() {
   const [isCalendarExpanded, setIsCalendarExpanded] = useState(false)
   const [isDragMode, setIsDragMode] = useState(false)
   const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null)
+  
+  // 새로 생성된 업무 애니메이션 추적
+  const [newlyCreatedTaskId, setNewlyCreatedTaskId] = useState<string | null>(null)
 
   
   // 캘린더 필터 상태 구독
@@ -597,6 +600,14 @@ export default function TasksPage() {
 
       // 리스트 최상단에 추가
       setTasks(prevTasks => [newTask, ...prevTasks])
+      
+      // 새로 생성된 업무 애니메이션 적용
+      setNewlyCreatedTaskId(newTask.id)
+      
+      // 500ms 후 애니메이션 상태 제거
+      setTimeout(() => {
+        setNewlyCreatedTaskId(null)
+      }, 500)
     } catch (err) {
       console.error('업무 생성 실패:', err)
       alert('업무 생성에 실패했습니다.')
@@ -780,7 +791,7 @@ export default function TasksPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div className="min-h-screen bg-gray-50">
       {/* 헤더 */}
       <ContentHeader title="Work" />
       
@@ -788,7 +799,7 @@ export default function TasksPage() {
       <LoginBanner />
       
       {/* 메인 콘텐츠 */}
-      <MainContainer>
+      <MainContainer className="pb-20 md:pb-20">
         {/* 필터 관리자 - 로그인된 사용자만 표시 */}
         {isLoggedIn && (
           <div className="mb-4">
@@ -798,16 +809,6 @@ export default function TasksPage() {
               onFilterChange={setActiveFilters}
               onAdvancedFilterClick={() => setShowAdvancedFilters(true)}
               hasAdvancedFilters={hasAdvancedFilters}
-            />
-          </div>
-        )}
-
-        {/* PRD 명세: 빠른 추가 입력창 - 로그인된 사용자만 표시 */}
-        {isLoggedIn && (
-          <div className="mb-4">
-            <QuickAddInput
-              placeholder="무엇을 해야 하나요?"
-              onTaskCreate={handleQuickAddTask}
             />
           </div>
         )}
@@ -823,37 +824,68 @@ export default function TasksPage() {
             <div className="p-8 text-center">
               <ClipboardDocumentIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
               <h3 className="workly-card-title text-gray-600 mb-1">Work가 없습니다</h3>
-              <p className="workly-caption mb-4">우측 하단의 수집함 버튼(+)을 눌러 업무를 추가해보세요!</p>
+              <p className="workly-caption mb-4">하단의 입력창에서 새로운 업무를 추가해보세요!</p>
             </div>
           ) : (
             <div className="divide-y divide-gray-100">
               {filteredTasks.map((task) => (
-                <ResponsiveTaskCard
+                <div 
                   key={task.id}
-                  task={task}
-                  onClick={() => handleTaskClick(task)}
-                  onDelete={handleTaskDelete}
-                  onDelegate={handleTaskDelegate}
-                  onDefer={handleTaskDefer}
-                  onConvertToProject={handleTaskConvertToProject}
-                  onToggleComplete={handleToggleComplete}
-                  onDragStart={handleDragStart}
-                  onDragEnd={handleDragEnd}
-                  isDragMode={isDragMode}
-                  onSetDueDate={(taskId, date) => handleTaskUpdate(taskId, { dueDate: date })}
-                  onDueDateUpdated={(taskId, date) => {
-                    console.log(`업무 ${taskId}의 마감일이 ${date}로 업데이트됨`)
-                  }}
-                  keepCalendarOpen={isDragMode}
-                />
+                  className={`
+                    ${newlyCreatedTaskId === task.id 
+                      ? 'animate-slide-in-from-top' 
+                      : ''
+                    }
+                  `}
+                >
+                  <ResponsiveTaskCard
+                    task={task}
+                    onClick={() => handleTaskClick(task)}
+                    onDelete={handleTaskDelete}
+                    onDelegate={handleTaskDelegate}
+                    onDefer={handleTaskDefer}
+                    onConvertToProject={handleTaskConvertToProject}
+                    onToggleComplete={handleToggleComplete}
+                    onDragStart={handleDragStart}
+                    onDragEnd={handleDragEnd}
+                    isDragMode={isDragMode}
+                    onSetDueDate={(taskId, date) => handleTaskUpdate(taskId, { dueDate: date })}
+                    onDueDateUpdated={(taskId, date) => {
+                      console.log(`업무 ${taskId}의 마감일이 ${date}로 업데이트됨`)
+                    }}
+                    keepCalendarOpen={isDragMode}
+                  />
+                </div>
               ))}
             </div>
           )}
         </div>
       </MainContainer>
       
-      {/* 접이식 캘린더 - 모바일 네비 덮어서 전체, 데스크톱 사이드바 제외 */}
-      <div className="fixed bottom-0 left-0 right-0 md:left-64 z-[60]">
+      {/* 데스크톱: 메인 컨텐츠 영역(720px) 하단에 fixed 고정 */}
+      {isLoggedIn && (
+        <div className="hidden md:block fixed bottom-4 left-[76px] right-0 z-[65]">
+          <div className="w-full max-w-[720px] mx-auto">
+            <QuickAddInput
+              placeholder="무엇을 해야 하나요?"
+              onTaskCreate={handleQuickAddTask}
+            />
+          </div>
+        </div>
+      )}
+      
+      {/* 모바일: 하단 네비게이션 바로 위에 fixed 고정 */}
+      {isLoggedIn && (
+        <div className="md:hidden fixed left-0 right-0 bottom-16 bg-white border-t border-gray-200 px-4 pt-3 pb-4 z-[65]">
+          <QuickAddInput
+            placeholder="무엇을 해야 하나요?"
+            onTaskCreate={handleQuickAddTask}
+          />
+        </div>
+      )}
+      
+      {/* 접이식 캘린더 - 컴포저 위에 표시 */}
+      <div className="fixed left-0 right-0 md:left-64 z-[60]" style={{ bottom: isLoggedIn ? '80px' : '0px' }}>
         <CollapsibleCalendar
           isExpanded={isCalendarExpanded}
           onDateSelect={handleDateSelect}
@@ -865,19 +897,21 @@ export default function TasksPage() {
         />
       </div>
       
-      {/* 캘린더 토글 FAB - 캘린더 높이만큼 위로 이동 */}
-      <div className={`
-        fixed right-4 md:right-6 z-[70] transition-all duration-300
-        ${isCalendarExpanded 
-          ? 'bottom-[480px] md:bottom-[480px]' 
-          : 'bottom-[72px] md:bottom-6'
-        }
-      `}>
-        <CalendarToggleFAB 
-          isCalendarExpanded={isCalendarExpanded}
-          onToggle={handleCalendarToggle}
-        />
-      </div>
+      {/* 캘린더 토글 FAB - 임시 숨김 */}
+      {false && (
+        <div className={`
+          fixed right-4 md:right-6 z-[70] transition-all duration-300
+          ${isCalendarExpanded 
+            ? 'bottom-[560px] md:bottom-[480px]' 
+            : 'bottom-[88px] md:bottom-6'
+          }
+        `}>
+          <CalendarToggleFAB 
+            isCalendarExpanded={isCalendarExpanded}
+            onToggle={handleCalendarToggle}
+          />
+        </div>
+      )}
       
       {/* 상세 필터 패널 */}
       <AdvancedFilterPanel

@@ -580,3 +580,48 @@ body {
 body > * {
   min-width: 486px !important;
 }
+
+/* 플로팅 컴포저 애니메이션 */
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slide-down {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out forwards;
+}
+
+.animate-slide-down {
+  animation: slide-down 0.3s ease-out forwards;
+}
+
+/* 모바일에서 키보드 나타날 때 컴포저 위치 조정 */
+@supports (height: 100dvh) {
+  .mobile-composer {
+    height: 100dvh;
+  }
+}
+
+/* iOS Safari에서 주소창 높이 변화 대응 */
+@supports (-webkit-touch-callout: none) {
+  .ios-composer-fix {
+    padding-bottom: env(keyboard-inset-height, 0);
+  }
+}

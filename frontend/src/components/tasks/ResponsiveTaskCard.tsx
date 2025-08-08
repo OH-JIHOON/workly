@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { 
-  CheckCircleIcon, 
+  CheckIcon,
   FlagIcon,
   TrashIcon,
   UserGroupIcon,
@@ -188,7 +188,7 @@ export default function ResponsiveTaskCard({
 
   // 체크박스 상태 관리
   const [isUpdating, setIsUpdating] = useState(false)
-  const [showCheckAnimation, setShowCheckAnimation] = useState(false)
+  const [showToast, setShowToast] = useState(false)
   const [gainedXP, setGainedXP] = useState<number>(0)
 
   // 체크박스 클릭 처리
@@ -205,14 +205,14 @@ export default function ResponsiveTaskCard({
       // 업무 완료 API 호출 및 경험치 획득
       const result = await onToggleComplete(task.id, willBeCompleted)
       
-      // 성취감 애니메이션 시작 (완료 시에만)
+      // 토스트 알림 표시 (완료 시에만)
       if (willBeCompleted && result.xpGained) {
         setGainedXP(result.xpGained)
-        setShowCheckAnimation(true)
+        setShowToast(true)
         setTimeout(() => {
-          setShowCheckAnimation(false)
+          setShowToast(false)
           setGainedXP(0)
-        }, 1500)
+        }, 3000)
       }
     } catch (error) {
       console.error('업무 상태 변경 실패:', error)
@@ -516,56 +516,32 @@ export default function ResponsiveTaskCard({
         onMouseLeave={handleMouseLeave}
         onClick={handleDesktopClick}
       >
-        <div className="flex items-center gap-4 min-h-[60px]">
-          {/* 좌측: 큰 체크박스 */}
+        <div className="flex items-center gap-6 min-h-[60px]">
+          {/* 좌측: 세련된 체크박스 */}
           <div className="flex-shrink-0 flex items-center justify-center relative">
             <button
               onClick={handleCheckboxClick}
               disabled={isUpdating}
-              className={`w-7 h-7 rounded border-2 flex items-center justify-center transition-all duration-200 ${
-                isCompleted 
-                  ? 'bg-green-500 border-green-500 text-white transform scale-110' 
+              className={`
+                w-6 h-6 rounded-md flex items-center justify-center transition-all duration-300 ease-out
+                shadow-sm active:scale-95
+                ${isCompleted 
+                  ? 'bg-gray-800 border-gray-800 text-white shadow-gray-300 shadow-md' 
                   : isUpdating
-                  ? 'border-blue-300 bg-blue-50 animate-pulse cursor-not-allowed'
-                  : 'border-gray-300 hover:border-blue-500 hover:bg-blue-50 hover:scale-105'
-              } ${showCheckAnimation ? 'animate-bounce' : ''}`}
+                  ? 'border-2 border-blue-300 bg-blue-50 animate-pulse cursor-not-allowed'
+                  : 'border-2 border-gray-300 bg-white hover:border-gray-500 hover:bg-gray-50 hover:shadow-md hover:scale-105 focus:ring-2 focus:ring-gray-200 focus:ring-offset-1 focus:outline-none'
+                }
+              `}
+              aria-label={isCompleted ? "업무 완료 취소" : "업무 완료"}
             >
               {isCompleted && !isUpdating && (
-                <CheckCircleIcon className="w-4 h-4 animate-in fade-in-0 zoom-in-50 duration-300" />
+                <CheckIcon className="w-3.5 h-3.5 stroke-[3] animate-in fade-in-0 zoom-in-50 duration-300" />
               )}
               {isUpdating && (
                 <div className="w-3 h-3 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
               )}
             </button>
             
-            {/* 체크 완료 애니메이션 */}
-            {showCheckAnimation && (
-              <div className="absolute inset-0 pointer-events-none overflow-visible">
-                {/* 확산 원형 애니메이션 */}
-                <div className="w-7 h-7 bg-green-400 rounded-full animate-ping opacity-75"></div>
-                
-                {/* 경험치 플로팅 애니메이션 */}
-                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                  <div className="text-green-600 font-bold text-sm animate-bounce">
-                    +{gainedXP}XP
-                  </div>
-                  {/* 위로 떠오르는 애니메이션 */}
-                  <div className="absolute inset-0 animate-[float_1.5s_ease-out_forwards]">
-                    <div className="text-green-500 font-bold text-sm opacity-70">
-                      +{gainedXP}XP
-                    </div>
-                  </div>
-                </div>
-                
-                {/* 성취감 파티클 효과 */}
-                <div className="absolute inset-0">
-                  <div className="absolute top-0 left-0 w-1 h-1 bg-yellow-400 rounded-full animate-[sparkle_1s_ease-out]"></div>
-                  <div className="absolute top-1 right-0 w-1 h-1 bg-yellow-400 rounded-full animate-[sparkle_1s_ease-out_0.2s]"></div>
-                  <div className="absolute bottom-0 left-1 w-1 h-1 bg-yellow-400 rounded-full animate-[sparkle_1s_ease-out_0.4s]"></div>
-                  <div className="absolute bottom-1 right-1 w-1 h-1 bg-yellow-400 rounded-full animate-[sparkle_1s_ease-out_0.6s]"></div>
-                </div>
-              </div>
-            )}
           </div>
 
           {/* 중앙: 콘텐츠 영역 */}
@@ -724,6 +700,21 @@ export default function ResponsiveTaskCard({
             </button>
         </div>,
         document.body
+      )}
+
+      {/* 경험치 토스트 알림 */}
+      {showToast && (
+        <div className="fixed bottom-4 right-4 z-[100] animate-slide-up">
+          <div className="bg-gray-900 text-white px-4 py-3 rounded-lg shadow-xl flex items-center gap-3">
+            <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+              <CheckIcon className="w-4 h-4 stroke-[3]" />
+            </div>
+            <div>
+              <p className="font-medium text-sm">업무 완료!</p>
+              <p className="text-xs text-gray-300">+{gainedXP} XP 획득</p>
+            </div>
+          </div>
+        </div>
       )}
 
     </div>

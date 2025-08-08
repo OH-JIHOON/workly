@@ -74,3 +74,9 @@ repomix-output.xml
 # 기타 추가
 .next
 .vercel
+.mcp.json
+CLAUDE.md
+GEMINI.md
+.claude/
+.github/
+.taskmaster/
