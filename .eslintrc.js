@@ -1,37 +1,60 @@
 module.exports = {
-  root: true,
+  extends: [
+    'next/core-web-vitals',
+    'plugin:react/recommended',
+    'plugin:react-hooks/recommended',
+    'plugin:jsx-a11y/recommended',
+    '@typescript-eslint/recommended',
+  ],
   env: {
     browser: true,
     es2020: true,
     node: true,
   },
-  extends: [
-    'eslint:recommended',
-  ],
-  ignorePatterns: [
-    'dist',
-    '.eslintrc.js',
-    'node_modules',
-    '**/*.d.ts',
-  ],
+  parser: '@typescript-eslint/parser',
   parserOptions: {
+    ecmaFeatures: {
+      jsx: true,
+    },
     ecmaVersion: 'latest',
     sourceType: 'module',
   },
+  plugins: [
+    'react',
+    'react-hooks',
+    'jsx-a11y',
+    '@typescript-eslint',
+  ],
   rules: {
-    'prefer-const': 'error',
-    'no-var': 'error',
+    'react/react-in-jsx-scope': 'off',
+    'react/prop-types': 'off',
+    'react/jsx-props-no-spreading': 'off',
+    'react/jsx-filename-extension': [
+      'warn',
+      { extensions: ['.tsx', '.jsx'] },
+    ],
+    'react-hooks/rules-of-hooks': 'error',
+    'react-hooks/exhaustive-deps': 'warn',
+    'jsx-a11y/anchor-is-valid': 'off',
+    '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+    '@typescript-eslint/explicit-function-return-type': 'off',
+    '@typescript-eslint/explicit-module-boundary-types': 'off',
+    '@typescript-eslint/no-explicit-any': 'warn',
+    'import/prefer-default-export': 'off',
+    'import/extensions': 'off',
     'no-console': 'warn',
-    'no-debugger': 'warn',
+  },
+  settings: {
+    react: {
+      version: 'detect',
+    },
   },
   overrides: [
     {
-      files: ['**/*.test.ts', '**/*.test.tsx', '**/*.spec.ts', '**/*.spec.tsx'],
-      env: {
-        jest: true,
-      },
+      files: ['**/*.stories.*'],
       rules: {
-        'no-console': 'off',
+        'import/no-anonymous-default-export': 'off',
+        '@typescript-eslint/no-explicit-any': 'off',
       },
     },
   ],
