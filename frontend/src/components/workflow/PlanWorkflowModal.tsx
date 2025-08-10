@@ -10,7 +10,7 @@ import {
   XMarkIcon,
   CalendarIcon
 } from '@heroicons/react/24/outline'
-import { InboxItem, InboxItemStatus } from '@/shared/types/inbox.types'
+import { InboxItem, InboxItemStatus } from '@/types/inbox.types'
 
 interface PlanWorkflowModalProps {
   isOpen: boolean

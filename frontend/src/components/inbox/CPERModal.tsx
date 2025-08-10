@@ -15,7 +15,7 @@ import {
   PlayIcon,
   ChartBarIcon
 } from '@heroicons/react/24/outline'
-import { HierarchyType, CPERStage, WorklyTask, HierarchyChoice } from '@/shared/types/workly-core.types'
+import { HierarchyType, CPERStage, WorklyTask, HierarchyChoice } from '@/types/workly-core.types'
 
 // CPER 모달 Props
 interface CPERModalProps {

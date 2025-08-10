@@ -1,27 +1,57 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
+import { useSupabaseAuth, isDevMode } from '../../lib/stores/supabaseAuthStore';
 
 interface GoogleLoginButtonProps {
   onLogin?: () => void;
   isLoading?: boolean;
   disabled?: boolean;
   text?: string;
+  redirectUrl?: string;
 }
 
 export default function GoogleLoginButton({ 
   onLogin, 
-  isLoading = false, 
+  isLoading: externalLoading = false, 
   disabled = false,
-  text = 'Google로 로그인'
+  text = 'Google로 로그인',
+  redirectUrl
 }: GoogleLoginButtonProps) {
-  const handleGoogleLogin = () => {
+  const [internalLoading, setInternalLoading] = useState(false);
+  const { signInWithGoogle } = useSupabaseAuth();
+  
+  const isLoadingState = externalLoading || internalLoading;
+
+  const handleGoogleLogin = async () => {
+    // 외부에서 onLogin을 제공한 경우 그것을 우선 사용
     if (onLogin) {
       onLogin();
-    } else {
-      // 기본 Google OAuth 로그인 처리
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
-      window.location.href = `${backendUrl}/auth/google`;
+      return;
+    }
+
+    // 개발 모드에서는 바로 메인 페이지로 이동
+    if (isDevMode()) {
+      window.location.href = '/';
+      return;
+    }
+    
+    // Supabase Google OAuth 로그인
+    setInternalLoading(true);
+    
+    try {
+      const { error } = await signInWithGoogle(redirectUrl);
+      
+      if (error) {
+        console.error('Google 로그인 오류:', error);
+        alert('로그인 중 오류가 발생했습니다. 다시 시도해주세요.');
+      }
+      // 성공 시 Supabase가 자동으로 리다이렉트 처리
+    } catch (error) {
+      console.error('Google 로그인 예외:', error);
+      alert('로그인 중 오류가 발생했습니다. 다시 시도해주세요.');
+    } finally {
+      setInternalLoading(false);
     }
   };
 
@@ -29,10 +59,10 @@ export default function GoogleLoginButton({
     <button
       type="button"
       onClick={handleGoogleLogin}
-      disabled={isLoading || disabled}
+      disabled={isLoadingState || disabled}
       className="w-full flex justify-center items-center px-4 py-3 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
     >
-      {isLoading ? (
+      {isLoadingState ? (
         <>
           <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>

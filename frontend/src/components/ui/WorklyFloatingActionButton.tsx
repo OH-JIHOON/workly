@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { usePathname } from 'next/navigation'
 import { SparklesIcon } from '@heroicons/react/24/outline'
 import TriageWizardModal from '@/components/ui/TriageWizardModal'
-import { WorklyTask } from '@/shared/types/workly-core.types'
+import { WorklyTask } from '@/types/workly-core.types'
 
 interface WorklyFloatingActionButtonProps {
   tasks?: WorklyTask[] // 정리 마법사를 위한 업무 목록

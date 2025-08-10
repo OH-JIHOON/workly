@@ -9,14 +9,14 @@ import {
   CPERWorkflowData,
   TodayTasksOptimized,
   HierarchyAnalytics 
-} from '@/shared/types/workly-core.types'
+} from '@/types/workly-core.types'
 import { 
   InboxItem, 
   CreateInboxItemDto, 
   UpdateInboxItemDto,
   InboxQueryDto 
-} from '@/shared/types/inbox.types'
-import { Goal, CreateGoalDto, UpdateGoalDto } from '@/shared/types/goal.types'
+} from '@/types/inbox.types'
+import { Goal, CreateGoalDto, UpdateGoalDto } from '@/types/goal.types'
 import { Project, CreateProjectDto, UpdateProjectDto } from '@/types/project.types'
 
 // API 기본 설정

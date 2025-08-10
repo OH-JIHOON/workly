@@ -15,8 +15,24 @@ export default function LoginPage() {
   }, [router])
 
   const handleGoogleLogin = () => {
-    // 백엔드 Google OAuth 엔드포인트로 리다이렉트
+    // 디버그 정보 출력
+    console.log('=== DEBUG LOGIN ===');
+    console.log('NODE_ENV:', process.env.NODE_ENV);
+    console.log('NEXT_PUBLIC_DEV_MODE:', process.env.NEXT_PUBLIC_DEV_MODE);
+    console.log('DEV_MODE check:', process.env.NEXT_PUBLIC_DEV_MODE === 'true');
+    console.log('==================');
+    
+    // 개발 모드에서는 바로 메인 페이지로 이동
+    if (process.env.NEXT_PUBLIC_DEV_MODE === 'true' || process.env.NEXT_PUBLIC_DEV_MODE === true) {
+      console.log('DEV MODE: Redirecting to home');
+      router.push('/')
+      return
+    }
+    
+    // 백엔드 Google OAuth 엔드포인트로 리다이렉트 (프로덕션에서만)
+    console.log('PROD MODE: Redirecting to OAuth');
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000'
+    console.log('Backend URL:', backendUrl);
     window.location.href = `${backendUrl}/auth/google`
   }
 
@@ -31,9 +47,15 @@ export default function LoginPage() {
           <h1 className="text-2xl font-bold text-foreground mb-2">
             워클리에 오신 것을 환영합니다
           </h1>
-          <p className="text-muted-foreground mb-8">
+          <p className="text-muted-foreground mb-4">
             업무를 정리하고, 목표를 달성하며, 역량을 성장시키세요
           </p>
+          {/* 디버그 정보 표시 */}
+          <div className="text-xs text-red-600 bg-red-50 p-2 rounded mb-4">
+            <div>NODE_ENV: {process.env.NODE_ENV}</div>
+            <div>DEV_MODE: {process.env.NEXT_PUBLIC_DEV_MODE}</div>
+            <div>DEV_MODE === 'true': {String(process.env.NEXT_PUBLIC_DEV_MODE === 'true')}</div>
+          </div>
         </div>
 
         {/* 헤더 바로 아래 위치한 로그인 버튼 */}

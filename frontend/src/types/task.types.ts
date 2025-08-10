@@ -2,7 +2,7 @@
  * Task 관련 타입 정의
  */
 
-// Task 상태 (백엔드 @workly/shared와 호환)
+// Task 상태 (백엔드와 호환)
 export enum TaskStatus {
   TODO = 'todo',
   IN_PROGRESS = 'in-progress', // 백엔드 호환: in-progress (하이픈)

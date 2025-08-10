@@ -29,7 +29,7 @@ import {
   InboxItemStatus, 
   InboxItemPriority,
   QuickCaptureDto 
-} from '@/shared/types/inbox.types'
+} from '@/types/inbox.types'
 
 // 목업 수집함 데이터 (CPER 워크플로우의 '수집' 단계)
 const mockInboxItems: InboxItem[] = [

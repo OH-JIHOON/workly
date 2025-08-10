@@ -81,8 +81,54 @@ export interface RegisterDto {
 
 /**
  * 현재 로그인된 사용자 정보 가져오기
+ * 개발 모드에서는 가짜 사용자 데이터 반환
  */
 export const getCurrentUser = (): User | null => {
+  // 개발 모드에서는 가짜 사용자 데이터 반환
+  if (process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_DEV_MODE === 'true') {
+    return {
+      id: 'dev-user-001',
+      email: 'dev@workly.com',
+      firstName: '개발자',
+      lastName: '테스트',
+      avatar: 'https://via.placeholder.com/100x100.png?text=DEV',
+      role: 'admin',
+      adminRole: 'super_admin',
+      status: 'active',
+      emailVerifiedAt: new Date().toISOString(),
+      lastLoginAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      profile: {
+        displayName: '개발자 테스트',
+        bio: '개발 및 테스트용 계정입니다.',
+        location: '서울, 대한민국',
+        website: 'https://workly.com',
+        linkedinUrl: '',
+        githubUrl: ''
+      },
+      preferences: {
+        language: 'ko',
+        timezone: 'Asia/Seoul',
+        dateFormat: 'YYYY-MM-DD',
+        timeFormat: '24h',
+        weekStartDay: 1,
+        notifications: {
+          email: true,
+          push: true,
+          desktop: true,
+          mentions: true,
+          updates: true,
+          marketing: false
+        },
+        privacy: {
+          profileVisibility: 'public',
+          activityVisibility: 'team'
+        }
+      }
+    };
+  }
+  
   if (typeof window !== 'undefined') {
     const userStr = localStorage.getItem('user');
     if (userStr) {
@@ -98,8 +144,14 @@ export const getCurrentUser = (): User | null => {
 
 /**
  * 로그인 상태 확인 및 API 클라이언트 토큰 설정
+ * 개발 모드에서는 항상 인증된 것으로 처리
  */
 export const isAuthenticated = (): boolean => {
+  // 개발 모드에서는 항상 true 반환
+  if (process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_DEV_MODE === 'true') {
+    return true;
+  }
+  
   if (typeof window !== 'undefined') {
     const accessToken = localStorage.getItem('accessToken');
     const user = getCurrentUser();

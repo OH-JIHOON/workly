@@ -21,7 +21,13 @@ import QuickAddInput from '@/components/ui/QuickAddInput'
 import ResponsiveTaskCard from '@/components/tasks/ResponsiveTaskCard'
 import CollapsibleCalendar from '@/components/tasks/CollapsibleCalendar'
 import { TaskStatus, TaskPriority, TaskType, TaskDetail } from '@/types/task.types'
-import { PaginatedResponse } from '@workly/shared'
+// PaginatedResponse 타입을 로컬에서 정의
+interface PaginatedResponse<T> {
+  data: T[]
+  total: number
+  page: number
+  limit: number
+}
 import { isAuthenticated, initializeApiClients } from '@/lib/auth'
 import { useCalendarFilterStore } from '@/lib/stores/calendarFilterStore'
 import AdvancedFilterPanel, { AdvancedFilters } from '@/components/ui/AdvancedFilterPanel'

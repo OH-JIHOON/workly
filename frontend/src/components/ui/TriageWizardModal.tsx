@@ -11,7 +11,7 @@ import {
   ArrowRightIcon,
   CheckCircleIcon
 } from '@heroicons/react/24/outline'
-import { WorklyTask } from '@/shared/types/workly-core.types'
+import { WorklyTask } from '@/types/workly-core.types'
 import { TaskStatus } from '@/types/task.types'
 
 interface TriageWizardModalProps {

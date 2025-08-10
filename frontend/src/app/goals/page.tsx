@@ -26,7 +26,7 @@ import {
   GoalType, 
   GoalTimeframe,
   CreateGoalDto 
-} from '@/shared/types/goal.types'
+} from '@/types/goal.types'
 
 // 목업 목표 데이터
 const mockGoals: Goal[] = [

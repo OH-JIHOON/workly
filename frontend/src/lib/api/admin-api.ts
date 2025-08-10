@@ -3,7 +3,13 @@
  * 관리자 전용 API 호출을 담당하는 모듈
  */
 
-import { ApiResponse } from '@workly/shared';
+// ApiResponse 타입을 로컬에서 정의
+interface ApiResponse<T = any> {
+  success: boolean
+  data?: T
+  message?: string
+  error?: string
+}
 
 // 기본 API 설정
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
