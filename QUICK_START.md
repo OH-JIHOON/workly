@@ -35,12 +35,13 @@ npm run dev
 # 1. 변경사항 저장
 git add .
 git commit -m "작업 내용 요약"
-
-# 2. 서버에 배포
 git push origin main
 
+# 2. 수동 배포 (자동 배포 현재 미설정)
+vercel --prod
+
 # 3. 배포 확인
-# → https://workly-silk.vercel.app (자동 배포됨)
+# → https://workly-silk.vercel.app
 ```
 
 ## 🔧 자주 사용하는 명령어
