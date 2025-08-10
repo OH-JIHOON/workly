@@ -1,79 +1,26 @@
 {
-  "name": "workly-monorepo",
+  "name": "workly",
   "version": "1.0.0",
+  "description": "워클리 - 업무 관리 플랫폼 (Next.js + Supabase)",
   "private": true,
-  "description": "워클리 비즈니스 성공을 위한 풀스택 웹 애플리케이션",
   "author": "Workly Team",
   "license": "MIT",
-  "workspaces": [
-    "frontend",
-    "backend",
-    "shared"
-  ],
   "scripts": {
-    "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
-    "dev:frontend": "npm run dev --workspace=frontend",
-    "dev:backend": "npm run dev --workspace=backend",
-    "build": "npm run build:shared && npm run build:frontend && npm run build:backend",
-    "build:frontend": "npm run build --workspace=frontend",
-    "build:backend": "npm run build --workspace=backend",
-    "build:shared": "npm run build --workspace=shared",
-    "lint": "npm run lint:frontend && npm run lint:backend",
-    "lint:frontend": "npm run lint --workspace=frontend",
-    "lint:backend": "npm run lint --workspace=backend",
-    "lint:fix": "npm run lint:fix:frontend && npm run lint:fix:backend",
-    "lint:fix:frontend": "npm run lint:fix --workspace=frontend",
-    "lint:fix:backend": "npm run lint:fix --workspace=backend",
-    "test": "npm run test:frontend && npm run test:backend",
-    "test:frontend": "npm run test --workspace=frontend",
-    "test:backend": "npm run test --workspace=backend",
-    "clean": "npm run clean:frontend && npm run clean:backend && npm run clean:shared",
-    "clean:frontend": "rm -rf frontend/node_modules frontend/.next",
-    "clean:backend": "rm -rf backend/node_modules backend/dist",
-    "clean:shared": "rm -rf shared/node_modules shared/dist",
-    "setup": "npm install && npm run build:shared",
-    "db:migrate": "npm run db:migrate --workspace=backend",
-    "db:seed": "npm run db:seed --workspace=backend",
-    "docker:dev": "docker-compose up -d",
-    "docker:prod": "docker-compose -f docker-compose.prod.yml up -d",
-    "docker:down": "docker-compose down"
-  },
-  "devDependencies": {
-    "@types/passport-jwt": "^4.0.1",
-    "@typescript-eslint/eslint-plugin": "^6.21.0",
-    "@typescript-eslint/parser": "^6.21.0",
-    "concurrently": "^8.2.2",
-    "eslint": "^8.57.0",
-    "eslint-config-prettier": "^9.1.0",
-    "eslint-plugin-prettier": "^5.1.3",
-    "husky": "^8.0.3",
-    "lint-staged": "^15.2.2",
-    "prettier": "^3.2.5",
-    "typescript": "^5.4.5"
-  },
-  "husky": {
-    "hooks": {
-      "pre-commit": "lint-staged",
-      "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
-    }
-  },
-  "lint-staged": {
-    "**/*.{js,jsx,ts,tsx}": [
-      "eslint --fix",
-      "prettier --write"
-    ],
-    "**/*.{json,css,md}": [
-      "prettier --write"
-    ]
+    "dev": "npm run dev --prefix frontend",
+    "build": "npm run build --prefix frontend",
+    "start": "npm run start --prefix frontend",
+    "lint": "npm run lint --prefix frontend",
+    "test": "npm run test --prefix frontend"
   },
   "engines": {
     "node": ">=18.0.0",
     "npm": ">=9.0.0"
   },
-  "dependencies": {
-    "@nestjs/jwt": "^11.0.0",
-    "@nestjs/passport": "^11.0.5",
-    "passport": "^0.7.0",
-    "passport-jwt": "^4.0.1"
-  }
+  "keywords": [
+    "task-management",
+    "productivity",
+    "nextjs",
+    "supabase",
+    "vercel"
+  ]
 }
