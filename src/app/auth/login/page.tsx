@@ -76,11 +76,11 @@ function LoginPageContent() {
           <div className="text-center">
             <p className="text-xs text-muted-foreground">
               계속 진행하면{' '}
-              <a href="/terms" className="text-foreground hover:underline mx-1">
+              <a href="/auth/terms" className="text-foreground hover:underline mx-1">
                 서비스 약관
               </a>
               및
-              <a href="/privacy" className="text-foreground hover:underline mx-1">
+              <a href="/auth/privacy" className="text-foreground hover:underline mx-1">
                 개인정보처리방침
               </a>
               에 동의하는 것으로 간주됩니다.
