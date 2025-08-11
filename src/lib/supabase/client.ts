@@ -419,7 +419,25 @@ function getSupabaseClient() {
       console.warn('🔶 개발 환경: localhost fallback 사용');
       return createClient('http://localhost:54321', 'dummy-key');
     } else {
-      throw new Error('Production에서 Supabase 환경 변수가 설정되지 않았습니다.');
+      // 프로덕션에서도 임시 fallback (환경 변수 설정 후 제거 예정)
+      console.warn('🚨 임시 fallback 사용 - 환경 변수를 설정해주세요');
+      const fallbackUrl = 'https://wryixncvydcnalvepbox.supabase.co';
+      const fallbackKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndyeWl4bmN2eWRjbmFsdmVwYm94Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4MTA5OTAsImV4cCI6MjA3MDM4Njk5MH0.O9JRA3iCeSxHKkXcN-p7ySY0rZS6W0aonG_a8CvNzC4';
+      
+      supabaseClient = createClient<Database>(fallbackUrl, fallbackKey, {
+        auth: {
+          autoRefreshToken: true,
+          persistSession: true,
+          detectSessionInUrl: true,
+        },
+        realtime: {
+          params: {
+            eventsPerSecond: 10,
+          },
+        },
+      });
+      
+      return supabaseClient;
     }
   }
 
