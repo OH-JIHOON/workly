@@ -429,10 +429,18 @@ function getSupabaseClient() {
           autoRefreshToken: true,
           persistSession: true,
           detectSessionInUrl: true,
+          storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+          storageKey: 'workly-supabase-auth-token',
+          debug: false
         },
         realtime: {
           params: {
             eventsPerSecond: 10,
+          },
+        },
+        global: {
+          headers: {
+            'X-Client-Info': 'workly-web@1.0.0',
           },
         },
       });
@@ -446,10 +454,18 @@ function getSupabaseClient() {
       autoRefreshToken: true,
       persistSession: true,
       detectSessionInUrl: true,
+      storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+      storageKey: 'workly-supabase-auth-token',
+      debug: process.env.NODE_ENV === 'development'
     },
     realtime: {
       params: {
         eventsPerSecond: 10,
+      },
+    },
+    global: {
+      headers: {
+        'X-Client-Info': 'workly-web@1.0.0',
       },
     },
   });

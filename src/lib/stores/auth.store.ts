@@ -202,8 +202,17 @@ export const useSupabaseAuth = create<AuthState>()(
         set({ isLoading: true })
         
         try {
+          console.log('🔄 Auth Store 초기화 시작');
+          
           // 현재 세션 확인
           const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+          
+          console.log('세션 확인 결과:', {
+            hasSession: !!session,
+            hasUser: !!session?.user,
+            error: sessionError?.message,
+            userId: session?.user?.id
+          });
           
           if (sessionError) {
             console.error('세션 확인 오류:', sessionError)

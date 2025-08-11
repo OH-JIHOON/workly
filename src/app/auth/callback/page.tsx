@@ -6,6 +6,7 @@ import React, { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { useSupabaseAuth } from '@/lib/stores/auth.store';
+import { supabase } from '@/lib/supabase/client';
 
 function AuthCallbackPageContent() {
   const router = useRouter();
@@ -16,9 +17,70 @@ function AuthCallbackPageContent() {
   const [displayMessage, setDisplayMessage] = useState<string>('');
 
   useEffect(() => {
-    // Supabase 인증 상태 초기화
-    initialize();
-  }, [initialize]);
+    const handleAuthCallback = async () => {
+      console.log('🔄 Auth callback 처리 시작');
+      console.log('현재 URL:', window.location.href);
+      console.log('Search params:', Object.fromEntries(searchParams.entries()));
+      
+      try {
+        // Supabase auth 코드/토큰 교환 처리
+        const { data, error } = await supabase.auth.getSession();
+        
+        console.log('세션 확인 결과:', { 
+          hasSession: !!data.session, 
+          hasUser: !!data.session?.user,
+          error: error?.message 
+        });
+        
+        if (error) {
+          console.error('❌ Auth callback 오류:', error);
+          setDisplayStatus('error');
+          setDisplayMessage(`인증 처리 오류: ${error.message}`);
+          return;
+        }
+
+        // 세션이 없는 경우, URL에서 직접 처리 시도
+        if (!data.session) {
+          console.log('🔄 세션이 없어서 URL 파라미터에서 토큰 확인 중...');
+          
+          // URL hash에서 토큰 추출 시도
+          const hashParams = new URLSearchParams(window.location.hash.substring(1));
+          const accessToken = hashParams.get('access_token');
+          const refreshToken = hashParams.get('refresh_token');
+          
+          if (accessToken) {
+            console.log('✅ URL에서 access_token 발견, 세션 설정 시도');
+            const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken || ''
+            });
+            
+            if (sessionError) {
+              console.error('❌ 세션 설정 오류:', sessionError);
+              setDisplayStatus('error');
+              setDisplayMessage(`세션 설정 오류: ${sessionError.message}`);
+              return;
+            }
+            
+            console.log('✅ 세션 설정 성공:', { 
+              hasSession: !!sessionData.session, 
+              hasUser: !!sessionData.session?.user 
+            });
+          }
+        }
+        
+        // Auth store 초기화
+        await initialize();
+        
+      } catch (error) {
+        console.error('❌ Auth callback 예외:', error);
+        setDisplayStatus('error');
+        setDisplayMessage('인증 처리 중 오류가 발생했습니다.');
+      }
+    };
+
+    handleAuthCallback();
+  }, [initialize, searchParams]);
 
   useEffect(() => {
     if (!isLoading) {
