@@ -2,9 +2,20 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
 export async function GET(request: NextRequest) {
-  console.log('🔄 비대칭 암호화 OAuth 콜백 처리');
-  
   const requestUrl = new URL(request.url);
+  
+  // Vercel 환경에서 강력한 디버깅
+  console.log('🔄 [VERCEL] OAuth 콜백 시작:', {
+    url: request.url,
+    method: request.method,
+    headers: Object.fromEntries(request.headers.entries()),
+    searchParams: Object.fromEntries(requestUrl.searchParams.entries()),
+    origin: requestUrl.origin,
+    pathname: requestUrl.pathname,
+    NODE_ENV: process.env.NODE_ENV,
+    VERCEL_ENV: process.env.VERCEL_ENV || 'unknown'
+  });
+  
   const code = requestUrl.searchParams.get('code');
   const error = requestUrl.searchParams.get('error');
   const error_description = requestUrl.searchParams.get('error_description');
@@ -16,8 +27,9 @@ export async function GET(request: NextRequest) {
   const expires_at = requestUrl.searchParams.get('expires_at');
   const token_type = requestUrl.searchParams.get('token_type');
 
-  console.log('OAuth 콜백 상태:', { 
+  console.log('📊 [VERCEL] OAuth 파라미터:', { 
     hasCode: !!code,
+    codeLength: code?.length || 0,
     hasAccessToken: !!access_token,
     hasError: !!error,
     error,
@@ -25,7 +37,8 @@ export async function GET(request: NextRequest) {
     next,
     origin: requestUrl.origin,
     tokenType: token_type,
-    expiresAt: expires_at
+    expiresAt: expires_at,
+    allSearchParams: Object.fromEntries(requestUrl.searchParams.entries())
   });
 
   // OAuth 오류가 있는 경우
@@ -38,8 +51,16 @@ export async function GET(request: NextRequest) {
   // Authorization Code Flow (권장 방식)
   if (code) {
     try {
+      console.log('🔍 [VERCEL] 환경변수 확인:', {
+        hasSupabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+        hasSupabaseKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+        supabaseUrlPreview: process.env.NEXT_PUBLIC_SUPABASE_URL?.substring(0, 50) + '...',
+        keyPreview: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.substring(0, 30) + '...'
+      });
+      
       const supabase = await createClient();
-      console.log('🔄 Authorization Code Flow: 코드를 세션으로 교환 중...');
+      console.log('✅ [VERCEL] Supabase 클라이언트 생성 완료');
+      console.log('🔄 [VERCEL] Authorization Code Flow: 코드를 세션으로 교환 중...');
       
       const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
       
@@ -51,17 +72,28 @@ export async function GET(request: NextRequest) {
       }
 
       if (data.session && data.user) {
-        console.log('✅ Authorization Code Flow OAuth 인증 성공:', { 
+        console.log('✅ [VERCEL] Authorization Code Flow OAuth 인증 성공:', { 
           userId: data.user.id,
           email: data.user.email,
           provider: data.user.app_metadata?.provider,
-          authMethod: 'authorization_code'
+          authMethod: 'authorization_code',
+          sessionExpiry: data.session.expires_at,
+          tokenType: data.session.token_type,
+          hasRefreshToken: !!data.session.refresh_token
         });
-
+        
+        const redirectUrl = `${requestUrl.origin}${next}`;
+        console.log('🔄 [VERCEL] 메인 페이지로 리다이렉트:', redirectUrl);
+        
         // 성공적으로 인증 완료 - 메인 페이지로 리다이렉트
-        return NextResponse.redirect(`${requestUrl.origin}${next}`);
+        return NextResponse.redirect(redirectUrl);
       } else {
-        console.error('❌ 세션 또는 사용자 정보 누락');
+        console.error('❌ [VERCEL] 세션 또는 사용자 정보 누락:', {
+          hasSession: !!data.session,
+          hasUser: !!data.user,
+          sessionData: data.session ? 'exists' : 'null',
+          userData: data.user ? 'exists' : 'null'
+        });
         return NextResponse.redirect(`${requestUrl.origin}/auth/login?error=invalid_session`);
       }
       

@@ -1,6 +1,7 @@
 /**
- * 단순화된 Supabase 인증 상태 관리
- * 복잡한 비대칭 암호화 없이 기본 Supabase 인증만 사용
+ * Supabase 기반 인증 상태 관리 (비대칭 암호화 적용)
+ * Zustand를 사용한 전역 인증 상태
+ * ECC (P-256) 키 기반 JWT 검증 시스템
  */
 
 import { create } from 'zustand'
@@ -8,6 +9,7 @@ import { persist } from 'zustand/middleware'
 import { supabase } from '../supabase/client'
 import type { User as SupabaseUser, Session } from '@supabase/supabase-js'
 import { profiles } from '../api/profiles.api'
+import { asymmetricAuth, type AuthClaims, type AuthVerificationResult } from '../auth/asymmetric-auth'
 
 // 사용자 프로필 타입 (확장된 정보)
 export interface UserProfile {
@@ -58,6 +60,7 @@ export interface AuthState {
   session: Session | null
   isLoading: boolean
   isAuthenticated: boolean
+  authClaims: AuthClaims | null
   
   // 액션
   signInWithGoogle: (redirectUrl?: string) => Promise<{ error?: Error | null }>
@@ -65,6 +68,11 @@ export interface AuthState {
   updateProfile: (updates: Partial<UserProfile>) => Promise<void>
   refreshUser: () => Promise<void>
   initialize: () => Promise<void>
+  
+  // 비대칭 암호화 인증 관련
+  verifyAuthentication: () => Promise<AuthVerificationResult>
+  validatePermissions: (requiredRole: string) => boolean
+  refreshAuthClaims: () => Promise<void>
 }
 
 export const useSupabaseAuth = create<AuthState>()(
@@ -75,6 +83,7 @@ export const useSupabaseAuth = create<AuthState>()(
       session: null,
       isLoading: true,
       isAuthenticated: false,
+      authClaims: null,
 
       // Google OAuth 로그인
       signInWithGoogle: async (redirectUrl) => {
@@ -86,18 +95,22 @@ export const useSupabaseAuth = create<AuthState>()(
           if (typeof window !== 'undefined') {
             baseUrl = window.location.origin;
           } else {
+            // SSR 환경에서는 환경 변수 사용
             baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 
                      (process.env.NODE_ENV === 'production' 
-                       ? 'https://workly-silk.vercel.app'
+                       ? 'https://workly-silk.vercel.app' 
                        : 'http://localhost:3000');
           }
           
           const finalRedirectUrl = redirectUrl || `${baseUrl}/auth/callback`;
           
-          console.log('🔑 Google OAuth 로그인 시작:', {
+          console.log('🔑 Google OAuth 시작:', {
+            provider: 'google',
+            redirectTo: finalRedirectUrl,
+            currentUrl: typeof window !== 'undefined' ? window.location.href : 'SSR',
             baseUrl,
-            redirectUrl: finalRedirectUrl,
-            environment: process.env.NODE_ENV
+            environment: process.env.NODE_ENV,
+            origin: typeof window !== 'undefined' ? window.location.origin : 'SSR'
           });
 
           const { data, error } = await supabase.auth.signInWithOAuth({
@@ -107,7 +120,7 @@ export const useSupabaseAuth = create<AuthState>()(
               queryParams: {
                 access_type: 'offline',
                 prompt: 'consent',
-              },
+              }
             }
           })
           
@@ -118,7 +131,6 @@ export const useSupabaseAuth = create<AuthState>()(
           }
           
           // 로그인 성공 시 사용자 정보는 onAuthStateChange에서 처리
-          console.log('✅ Google OAuth 요청 성공')
           return { error: null }
         } catch (error) {
           console.error('Google 로그인 예외:', error)
@@ -129,16 +141,13 @@ export const useSupabaseAuth = create<AuthState>()(
 
       // 로그아웃
       signOut: async () => {
-        console.log('🚪 로그아웃 시작')
         set({ isLoading: true })
         
         try {
-          const { error } = await supabase.auth.signOut({ scope: 'global' })
+          const { error } = await supabase.auth.signOut()
           
           if (error) {
             console.error('로그아웃 오류:', error)
-          } else {
-            console.log('✅ Supabase 로그아웃 완료')
           }
           
           // 상태 초기화
@@ -146,23 +155,12 @@ export const useSupabaseAuth = create<AuthState>()(
             user: null,
             session: null,
             isAuthenticated: false,
-            isLoading: false
+            isLoading: false,
+            authClaims: null
           })
           
-          // localStorage 완전 정리
-          if (typeof window !== 'undefined') {
-            localStorage.removeItem('workly-auth-storage')
-            localStorage.removeItem('supabase.auth.token')
-            localStorage.removeItem('workly-supabase-auth-token')
-          }
-          
-          console.log('✅ 로그아웃 상태 초기화 완료')
-          
           // 페이지 새로고침으로 완전 초기화
-          setTimeout(() => {
-            window.location.href = '/'
-          }, 100)
-          
+          window.location.href = '/'
         } catch (error) {
           console.error('로그아웃 예외:', error)
           set({ isLoading: false })
@@ -179,21 +177,22 @@ export const useSupabaseAuth = create<AuthState>()(
           
           if (error) {
             console.error('프로필 업데이트 오류:', error)
-            return
+            throw error
           }
           
-          set({
-            user: { ...user, ...data }
-          })
+          if (data) {
+            set({ user: data as UserProfile })
+          }
         } catch (error) {
           console.error('프로필 업데이트 예외:', error)
+          throw error
         }
       },
 
       // 사용자 정보 새로고침
       refreshUser: async () => {
         const { session } = get()
-        if (!session?.user) return
+        if (!session?.user?.id) return
 
         try {
           const { data, error } = await profiles.get(session.user.id)
@@ -203,20 +202,21 @@ export const useSupabaseAuth = create<AuthState>()(
             return
           }
           
-          set({
-            user: data as UserProfile
-          })
+          if (data) {
+            set({ user: data as UserProfile })
+          }
         } catch (error) {
           console.error('사용자 정보 새로고침 예외:', error)
         }
       },
 
-      // 초기화
+      // 인증 상태 초기화
       initialize: async () => {
-        console.log('🔄 인증 시스템 초기화 시작')
         set({ isLoading: true })
         
         try {
+          console.log('🔄 Auth Store 초기화 시작');
+          
           // 현재 세션 확인
           const { data: { session }, error: sessionError } = await supabase.auth.getSession()
           
@@ -233,7 +233,8 @@ export const useSupabaseAuth = create<AuthState>()(
               user: null, 
               session: null, 
               isAuthenticated: false, 
-              isLoading: false
+              isLoading: false,
+              authClaims: null
             })
             return
           }
@@ -247,107 +248,180 @@ export const useSupabaseAuth = create<AuthState>()(
               
               // 프로필이 없는 경우 자동 생성 (OAuth 로그인 후 첫 접속)
               if (profileError.code === 'PGRST116') {
-                console.log('프로필 없음 - 자동 생성 시도')
                 await createProfileFromAuthUser(session.user)
                 const { data: newProfileData } = await profiles.get(session.user.id)
+                
+                // 비대칭 인증 검증도 수행
+                const verificationResult = await asymmetricAuth.verifyClientToken();
                 
                 set({
                   user: newProfileData as UserProfile,
                   session,
                   isAuthenticated: true,
-                  isLoading: false
+                  isLoading: false,
+                  authClaims: verificationResult.success ? verificationResult.claims : null
                 })
               } else {
                 set({ 
                   user: null, 
                   session: null, 
                   isAuthenticated: false, 
-                  isLoading: false
+                  isLoading: false,
+                  authClaims: null
                 })
               }
               return
             }
             
-            console.log('✅ 프로필 로드 성공')
+            // 비대칭 인증 검증도 수행
+            const verificationResult = await asymmetricAuth.verifyClientToken();
+            
             set({
               user: profileData as UserProfile,
               session,
               isAuthenticated: true,
-              isLoading: false
+              isLoading: false,
+              authClaims: verificationResult.success ? verificationResult.claims : null
             })
           } else {
-            console.log('세션 없음 - 로그아웃 상태')
             set({ 
               user: null, 
               session: null, 
               isAuthenticated: false, 
-              isLoading: false
+              isLoading: false,
+              authClaims: null
             })
           }
           
           // 인증 상태 변경 리스너 설정
           supabase.auth.onAuthStateChange(async (event, session) => {
-            console.log('🔄 Auth state changed:', event, session?.user?.email)
+            console.log('Auth state changed:', event, session?.user?.email)
             
             if (event === 'SIGNED_IN' && session?.user) {
-              console.log('✅ 로그인 이벤트')
               // 로그인: 프로필 정보 로드
               const { data: profileData, error: profileError } = await profiles.get(session.user.id)
               
               if (profileError && profileError.code === 'PGRST116') {
                 // 프로필이 없는 경우 생성
-                console.log('프로필 생성 중...')
                 await createProfileFromAuthUser(session.user)
                 const { data: newProfileData } = await profiles.get(session.user.id)
+                
+                // 비대칭 인증 검증도 수행
+                const verificationResult = await asymmetricAuth.verifyClientToken();
                 
                 set({
                   user: newProfileData as UserProfile,
                   session,
                   isAuthenticated: true,
-                  isLoading: false
+                  isLoading: false,
+                  authClaims: verificationResult.success ? verificationResult.claims : null
                 })
               } else if (!profileError && profileData) {
+                // 비대칭 인증 검증도 수행
+                const verificationResult = await asymmetricAuth.verifyClientToken();
+                
                 set({
                   user: profileData as UserProfile,
                   session,
                   isAuthenticated: true,
-                  isLoading: false
+                  isLoading: false,
+                  authClaims: verificationResult.success ? verificationResult.claims : null
                 })
               }
             } else if (event === 'SIGNED_OUT') {
-              console.log('✅ 로그아웃 이벤트')
               // 로그아웃
               set({
                 user: null,
                 session: null,
                 isAuthenticated: false,
-                isLoading: false
+                isLoading: false,
+                authClaims: null
               })
             } else if (event === 'TOKEN_REFRESHED' && session) {
-              console.log('✅ 토큰 새로고침 이벤트')
-              // 토큰 새로고침: 세션만 업데이트
+              // 토큰 갱신
               set({ session, isLoading: false })
             }
           })
           
         } catch (error) {
           console.error('인증 초기화 예외:', error)
-          set({
-            user: null,
-            session: null,
-            isAuthenticated: false,
-            isLoading: false
+          set({ 
+            user: null, 
+            session: null, 
+            isAuthenticated: false, 
+            isLoading: false,
+            authClaims: null
           })
+        }
+      },
+
+      // 비대칭 암호화 기반 인증 검증
+      verifyAuthentication: async () => {
+        console.log('🔒 비대칭 인증 검증 시작');
+        
+        const result = await asymmetricAuth.verifyClientToken();
+        
+        if (result.success && result.claims) {
+          set({ 
+            authClaims: result.claims,
+            isAuthenticated: true 
+          });
+          console.log('✅ 비대칭 인증 검증 성공');
+        } else {
+          set({ 
+            authClaims: null,
+            isAuthenticated: false 
+          });
+          console.log('❌ 비대칭 인증 검증 실패:', result.error);
+        }
+        
+        return result;
+      },
+
+      // 권한 검증
+      validatePermissions: (requiredRole: string) => {
+        const { authClaims } = get();
+        
+        if (!authClaims) {
+          console.log('권한 검증 실패: 인증 클레임이 없음');
+          return false;
+        }
+        
+        const hasPermission = asymmetricAuth.hasPermission(authClaims, requiredRole);
+        console.log(`권한 검증 ${hasPermission ? '성공' : '실패'}:`, {
+          userRole: authClaims.role,
+          requiredRole,
+          result: hasPermission
+        });
+        
+        return hasPermission;
+      },
+
+      // 인증 클레임 새로고침
+      refreshAuthClaims: async () => {
+        console.log('🔄 인증 클레임 새로고침');
+        
+        const result = await asymmetricAuth.verifyClientToken();
+        
+        if (result.success && result.claims) {
+          set({ authClaims: result.claims });
+          console.log('✅ 클레임 새로고침 성공');
+        } else {
+          set({ authClaims: null });
+          console.log('❌ 클레임 새로고침 실패:', result.error);
         }
       }
     }),
     {
       name: 'workly-auth-storage',
       partialize: (state) => ({
-        // 기본 상태만 저장
+        // 세션 정보는 Supabase 쿠키로 관리되므로 저장하지 않음
+        // 사용자 프로필과 인증 상태만 persist
         user: state.user,
         isAuthenticated: state.isAuthenticated,
+        authClaims: state.authClaims
       }),
+      // 세션이 있을 때만 저장
       skipHydration: false,
     }
   )
@@ -355,8 +429,6 @@ export const useSupabaseAuth = create<AuthState>()(
 
 // OAuth 사용자 정보에서 프로필 생성
 async function createProfileFromAuthUser(user: SupabaseUser) {
-  console.log('👤 프로필 생성:', user.email)
-  
   const userData = {
     id: user.id,
     email: user.email!,
@@ -368,13 +440,73 @@ async function createProfileFromAuthUser(user: SupabaseUser) {
   return await profiles.upsert(userData)
 }
 
-// 편의 함수들
-export const getCurrentUser = () => {
+// 개발 모드 체크 함수
+export const isDevMode = () => {
+  return process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_DEV_MODE === 'true'
+}
+
+// 개발 모드용 가짜 사용자 데이터
+export const getDevUser = (): UserProfile => ({
+  id: 'dev-user-001',
+  email: 'dev@workly.com',
+  first_name: '개발자',
+  last_name: '테스트',
+  avatar_url: 'https://via.placeholder.com/100x100.png?text=DEV',
+  role: 'admin',
+  status: 'active',
+  admin_role: 'super_admin',
+  level: 1,
+  xp: 0,
+  profile: {
+    displayName: '개발자 테스트',
+    bio: '개발 및 테스트용 계정입니다.',
+    location: '서울, 대한민국',
+    website: 'https://workly.com',
+    linkedinUrl: '',
+    githubUrl: ''
+  },
+  preferences: {
+    language: 'ko',
+    timezone: 'Asia/Seoul',
+    dateFormat: 'YYYY-MM-DD',
+    timeFormat: '24h',
+    weekStartDay: 1,
+    notifications: {
+      email: true,
+      push: true,
+      desktop: true,
+      mentions: true,
+      updates: true,
+      marketing: false
+    },
+    privacy: {
+      profileVisibility: 'public',
+      activityVisibility: 'team'
+    }
+  },
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString()
+})
+
+// 편의 함수들 (기존 auth.ts와 호환성 유지)
+export const getCurrentUser = (): UserProfile | null => {
+  if (isDevMode()) {
+    return getDevUser()
+  }
+  
   return useSupabaseAuth.getState().user
 }
 
-export const isAuthenticated = () => {
+export const isAuthenticated = (): boolean => {
+  if (isDevMode()) {
+    return true
+  }
+  
   return useSupabaseAuth.getState().isAuthenticated
 }
 
-export type { UserProfile as AuthUserProfile }
+// 기본 export
+export default useSupabaseAuth
+
+// 다른 파일들과의 호환성을 위한 alias
+export const useAuthStore = useSupabaseAuth
