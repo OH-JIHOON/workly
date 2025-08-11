@@ -9,6 +9,45 @@ const nextConfig = {
     // 빌드 시 TypeScript 오류를 무시 (개발 완료 후 수정 예정)
     ignoreBuildErrors: true,
   },
+
+  // Content Security Policy 헤더 설정
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'Content-Security-Policy',
+value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com https://*.googleapis.com https://*.supabase.co https://vercel.live",
+              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+              "font-src 'self' https://fonts.gstatic.com",
+              "img-src 'self' data: https: blob:",
+              "connect-src 'self' https://*.supabase.co https://accounts.google.com https://*.googleapis.com wss://*.supabase.co https://vercel.live",
+              "frame-src 'self' https://accounts.google.com https://vercel.live",
+              "object-src 'none'",
+              "base-uri 'self'",
+              "form-action 'self'",
+              "frame-ancestors 'self'"
+            ].join('; ')
+          },
+          {
+            key: 'X-Frame-Options',
+            value: 'SAMEORIGIN'
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff'
+          },
+          {
+            key: 'Referrer-Policy',
+            value: 'strict-origin-when-cross-origin'
+          }
+        ],
+      },
+    ]
+  },
   
   // 이미지 최적화 설정
   images: {
