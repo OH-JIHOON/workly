@@ -251,11 +251,15 @@ export const useSupabaseAuth = create<AuthState>()(
                 await createProfileFromAuthUser(session.user)
                 const { data: newProfileData } = await profiles.get(session.user.id)
                 
+                // 비대칭 인증 검증도 수행
+                const verificationResult = await asymmetricAuth.verifyClientToken();
+                
                 set({
                   user: newProfileData as UserProfile,
                   session,
                   isAuthenticated: true,
-                  isLoading: false
+                  isLoading: false,
+                  authClaims: verificationResult.success ? verificationResult.claims : null
                 })
               } else {
                 set({ 
@@ -269,11 +273,15 @@ export const useSupabaseAuth = create<AuthState>()(
               return
             }
             
+            // 비대칭 인증 검증도 수행
+            const verificationResult = await asymmetricAuth.verifyClientToken();
+            
             set({
               user: profileData as UserProfile,
               session,
               isAuthenticated: true,
-              isLoading: false
+              isLoading: false,
+              authClaims: verificationResult.success ? verificationResult.claims : null
             })
           } else {
             set({ 
@@ -298,18 +306,26 @@ export const useSupabaseAuth = create<AuthState>()(
                 await createProfileFromAuthUser(session.user)
                 const { data: newProfileData } = await profiles.get(session.user.id)
                 
+                // 비대칭 인증 검증도 수행
+                const verificationResult = await asymmetricAuth.verifyClientToken();
+                
                 set({
                   user: newProfileData as UserProfile,
                   session,
                   isAuthenticated: true,
-                  isLoading: false
+                  isLoading: false,
+                  authClaims: verificationResult.success ? verificationResult.claims : null
                 })
               } else if (!profileError && profileData) {
+                // 비대칭 인증 검증도 수행
+                const verificationResult = await asymmetricAuth.verifyClientToken();
+                
                 set({
                   user: profileData as UserProfile,
                   session,
                   isAuthenticated: true,
-                  isLoading: false
+                  isLoading: false,
+                  authClaims: verificationResult.success ? verificationResult.claims : null
                 })
               }
             } else if (event === 'SIGNED_OUT') {
@@ -397,11 +413,16 @@ export const useSupabaseAuth = create<AuthState>()(
       }
     }),
     {
-      name: 'supabase-auth-storage',
+      name: 'workly-auth-storage',
       partialize: (state) => ({
-        // session과 user 정보는 Supabase가 자동 관리하므로 저장하지 않음
-        // 필요한 경우에만 특정 설정값들만 persist
+        // 세션 정보는 Supabase 쿠키로 관리되므로 저장하지 않음
+        // 사용자 프로필과 인증 상태만 persist
+        user: state.user,
+        isAuthenticated: state.isAuthenticated,
+        authClaims: state.authClaims
       }),
+      // 세션이 있을 때만 저장
+      skipHydration: false,
     }
   )
 )
