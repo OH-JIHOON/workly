@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { 
   ClipboardDocumentIcon, 
@@ -86,7 +86,7 @@ interface BackendTask {
 }
 
 
-export default function TasksPage() {
+function TasksPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [tasks, setTasks] = useState<WorklyTask[]>([])
@@ -954,5 +954,13 @@ export default function TasksPage() {
         onSave={handleTaskDetailSave}
       />
     </div>
+  )
+}
+
+export default function TasksPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+      <TasksPageContent />
+    </Suspense>
   )
 }

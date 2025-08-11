@@ -400,9 +400,27 @@ function getSupabaseClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
+  // 디버깅을 위한 로그 추가
+  console.log('🔍 Supabase Client 초기화:', {
+    url: supabaseUrl ? `${supabaseUrl.substring(0, 30)}...` : 'undefined',
+    key: supabaseAnonKey ? `${supabaseAnonKey.substring(0, 30)}...` : 'undefined',
+    NODE_ENV: process.env.NODE_ENV
+  });
+
   if (!supabaseUrl || !supabaseAnonKey) {
-    console.error('CRITICAL: Supabase environment variables are not set. Please check your .env.local file and Vercel environment settings.');
-    return createClient('http://localhost:54321', 'dummy-key');
+    console.error('❌ CRITICAL: Supabase environment variables are not set!');
+    console.error('Expected vars:', {
+      NEXT_PUBLIC_SUPABASE_URL: supabaseUrl,
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: supabaseAnonKey ? 'SET' : 'MISSING'
+    });
+    
+    // 개발 환경에서만 fallback 사용
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('🔶 개발 환경: localhost fallback 사용');
+      return createClient('http://localhost:54321', 'dummy-key');
+    } else {
+      throw new Error('Production에서 Supabase 환경 변수가 설정되지 않았습니다.');
+    }
   }
 
   supabaseClient = createClient<Database>(supabaseUrl, supabaseAnonKey, {

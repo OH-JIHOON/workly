@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { 
   PlusIcon, 
@@ -268,7 +268,7 @@ function InboxItemCard({ item, onClick }: { item: InboxItem; onClick: () => void
   )
 }
 
-export default function InboxPage() {
+function InboxPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [inboxItems, setInboxItems] = useState<InboxItem[]>(mockInboxItems)
@@ -601,5 +601,13 @@ export default function InboxPage() {
         />
       )}
     </div>
+  )
+}
+
+export default function InboxPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+      <InboxPageContent />
+    </Suspense>
   )
 }

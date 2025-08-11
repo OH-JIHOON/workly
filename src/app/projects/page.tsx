@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic'
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Plus, Search, Filter, Grid3X3, List, Calendar, Folder, Users, BarChart3, MessageCircle, Target, TrendingUp, UserPlus, Star, CheckCircle2 } from 'lucide-react';
 import Header from '@/components/layout/Header';
@@ -26,7 +26,7 @@ import {
 } from '@/types/project.types';
 
 
-export default function ProjectsPage() {
+function ProjectsPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [projectsData, setProjectsData] = useState<Project[]>([]); // Renamed to avoid conflict
@@ -421,4 +421,12 @@ export default function ProjectsPage() {
       )}
     </div>
   );
+}
+
+export default function ProjectsPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+      <ProjectsPageContent />
+    </Suspense>
+  )
 }

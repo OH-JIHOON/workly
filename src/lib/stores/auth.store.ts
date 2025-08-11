@@ -81,10 +81,34 @@ export const useSupabaseAuth = create<AuthState>()(
         set({ isLoading: true })
         
         try {
+          // 환경에 따른 baseUrl 결정
+          let baseUrl: string;
+          if (typeof window !== 'undefined') {
+            baseUrl = window.location.origin;
+          } else {
+            // SSR 환경에서는 환경 변수 사용
+            baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 
+                     (process.env.NODE_ENV === 'production' 
+                       ? 'https://workly-silk.vercel.app' 
+                       : 'http://localhost:3000');
+          }
+          
+          const finalRedirectUrl = redirectUrl || `${baseUrl}/auth/callback`;
+          
+          console.log('🔑 Google OAuth 시작:', {
+            provider: 'google',
+            redirectTo: finalRedirectUrl,
+            currentUrl: typeof window !== 'undefined' ? window.location.href : 'SSR'
+          });
+
           const { data, error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
-              redirectTo: redirectUrl || `${window.location.origin}/`
+              redirectTo: finalRedirectUrl,
+              queryParams: {
+                access_type: 'offline',
+                prompt: 'consent',
+              }
             }
           })
           

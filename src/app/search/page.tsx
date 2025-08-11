@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { MagnifyingGlassIcon, ArrowLeftIcon, ClockIcon } from '@heroicons/react/24/outline'
 import { 
@@ -157,7 +157,7 @@ function SearchResultItem({ result }: { result: SearchResult }) {
   )
 }
 
-export default function SearchPage() {
+function SearchPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [query, setQuery] = useState('')
@@ -342,5 +342,13 @@ export default function SearchPage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+      <SearchPageContent />
+    </Suspense>
   )
 }

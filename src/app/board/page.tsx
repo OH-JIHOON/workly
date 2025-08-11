@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { X, FileText, Lightbulb, FolderOpen, ClipboardList, BookOpen, Presentation } from 'lucide-react'
 import Header from '@/components/layout/Header'
@@ -198,7 +198,7 @@ function PostCreationModal({
   )
 }
 
-export default function BoardPage() {
+function BoardPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [activeSection, setActiveSection] = useState<BoardSection>('임무 게시판')
@@ -421,5 +421,13 @@ export default function BoardPage() {
         section={activeSection}
       />
     </div>
+  )
+}
+
+export default function BoardPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+      <BoardPageContent />
+    </Suspense>
   )
 }

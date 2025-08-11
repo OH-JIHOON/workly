@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { 
   PlusIcon, 
@@ -290,7 +290,7 @@ function GoalCard({ goal, onClick }: { goal: Goal; onClick: () => void }) {
   )
 }
 
-export default function GoalsPage() {
+function GoalsPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [goals, setGoals] = useState<Goal[]>(mockGoals)
@@ -489,5 +489,13 @@ export default function GoalsPage() {
         }}
       />
     </div>
+  )
+}
+
+export default function GoalsPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+      <GoalsPageContent />
+    </Suspense>
   )
 }
