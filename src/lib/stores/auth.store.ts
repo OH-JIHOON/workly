@@ -81,15 +81,22 @@ export const useSupabaseAuth = create<AuthState>()(
         set({ isLoading: true })
         
         try {
-          // 환경에 따른 baseUrl 결정
+          // 환경에 따른 baseUrl 결정 (안전한 방식)
           let baseUrl: string;
-          if (typeof window !== 'undefined') {
-            baseUrl = window.location.origin;
-          } else {
-            baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 
-                     (process.env.NODE_ENV === 'production' 
-                       ? 'https://workly-silk.vercel.app'
-                       : 'http://localhost:3000');
+          try {
+            if (typeof window !== 'undefined' && window.location) {
+              baseUrl = window.location.origin;
+            } else {
+              baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 
+                       (process.env.NODE_ENV === 'production' 
+                         ? 'https://workly-silk.vercel.app'
+                         : 'http://localhost:3000');
+            }
+          } catch (locationError) {
+            console.warn('location 접근 실패, 기본 URL 사용:', locationError)
+            baseUrl = process.env.NODE_ENV === 'production' 
+              ? 'https://workly-silk.vercel.app'
+              : 'http://localhost:3000';
           }
           
           const finalRedirectUrl = redirectUrl || `${baseUrl}/auth/callback`;
@@ -121,9 +128,17 @@ export const useSupabaseAuth = create<AuthState>()(
           console.log('✅ Google OAuth 요청 성공')
           return { error: null }
         } catch (error) {
-          console.error('Google 로그인 예외:', error)
-          set({ isLoading: false })
-          return { error: error instanceof Error ? error : new Error(String(error)) }
+          console.error('❌ Google 로그인 예외:', error)
+          set({ 
+            isLoading: false,
+            user: null,
+            session: null,
+            isAuthenticated: false
+          })
+          
+          // 안전한 에러 처리
+          const safeError = error instanceof Error ? error : new Error('로그인 중 알 수 없는 오류가 발생했습니다')
+          return { error: safeError }
         }
       },
 
@@ -217,6 +232,12 @@ export const useSupabaseAuth = create<AuthState>()(
         set({ isLoading: true })
         
         try {
+          // 브라우저 환경에서만 실행
+          if (typeof window === 'undefined') {
+            console.log('서버 환경 - 초기화 스킵')
+            set({ isLoading: false })
+            return
+          }
           // 현재 세션 확인
           const { data: { session }, error: sessionError } = await supabase.auth.getSession()
           
@@ -331,13 +352,27 @@ export const useSupabaseAuth = create<AuthState>()(
           })
           
         } catch (error) {
-          console.error('인증 초기화 예외:', error)
+          console.error('❌ 인증 초기화 예외:', error)
+          
+          // 안전한 기본 상태로 설정
           set({
             user: null,
             session: null,
             isAuthenticated: false,
             isLoading: false
           })
+          
+          // Vercel에서 치명적 오류 방지
+          try {
+            // 브라우저에서만 localStorage 정리
+            if (typeof window !== 'undefined') {
+              localStorage.removeItem('workly-auth-storage')
+              localStorage.removeItem('supabase.auth.token')
+              localStorage.removeItem('workly-supabase-auth-token')
+            }
+          } catch (storageError) {
+            console.warn('localStorage 정리 실패 (무시됨):', storageError)
+          }
         }
       }
     }),

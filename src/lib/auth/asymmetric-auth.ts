@@ -132,7 +132,7 @@ export class AsymmetricAuthValidator {
     try {
       console.log('🔒 비대칭 암호화 인증 시작 - 서버 측');
 
-      const serverClient = createClient();
+      const serverClient = await createClient();
 
       // 1. 서버 측 세션 확인
       const { data: { session }, error: sessionError } = await serverClient.auth.getSession();
