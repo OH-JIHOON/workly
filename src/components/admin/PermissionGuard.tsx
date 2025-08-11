@@ -1,10 +1,9 @@
 'use client';
 
 import { ReactNode, useEffect, useState } from 'react';
-import { useSupabaseAuth } from '@/lib/stores/auth.store'; // Corrected Import
-import { ROLE_PERMISSION_GROUPS } from '@/components/admin'; // New Import
-import { UserProfile } from '@/lib/stores/auth.store'; // New Import for UserProfile type
-import { asymmetricAuth, type AuthClaims } from '@/lib/auth/asymmetric-auth';
+import { useSupabaseAuth } from '@/lib/stores/auth.store';
+import { ROLE_PERMISSION_GROUPS } from '@/components/admin';
+import { UserProfile } from '@/lib/stores/auth.store';
 
 // Helper function to get user's permissions based on their admin_role
 const getUserPermissions = (user: UserProfile | null): string[] => {
@@ -85,155 +84,86 @@ export default function PermissionGuard({
   allowSuperAdmin = true,
   children,
 }: PermissionGuardProps) {
-  const { user, authClaims } = useSupabaseAuth();
-  const [isVerifying, setIsVerifying] = useState(true);
+  const { user, isAuthenticated } = useSupabaseAuth();
   const [isAuthorized, setIsAuthorized] = useState(false);
 
   useEffect(() => {
-    let mounted = true;
-
-    const verifyPermissions = async () => {
-      try {
-        console.log('🔒 PermissionGuard 비대칭 권한 검증 시작');
-        
-        // 비대칭 인증 검증
-        const verificationResult = await asymmetricAuth.verifyClientToken();
-        
-        if (!mounted) return;
-        
-        if (!verificationResult.success || !verificationResult.claims) {
-          console.log('❌ 인증 검증 실패, 권한 없음 처리');
-          setIsAuthorized(false);
-          setIsVerifying(false);
-          return;
-        }
-
-        const claims = verificationResult.claims;
-        
-        // 관리자 권한 확인 (store의 user 데이터와 claims 모두 확인)
-        const isAdminFromClaims = asymmetricAuth.isAdmin(claims);
-        const isAdminFromUser = user?.admin_role !== undefined;
-        
-        if (!isAdminFromClaims && !isAdminFromUser) {
-          console.log('❌ 관리자 권한 없음');
-          setIsAuthorized(false);
-          setIsVerifying(false);
-          return;
-        }
-
-        // 슈퍼 관리자 확인
-        const isSuperAdminFromClaims = claims.app_metadata?.admin_role === 'super_admin';
-        const isSuperAdminFromUser = user?.admin_role === 'super_admin';
-        
-        if (allowSuperAdmin && (isSuperAdminFromClaims || isSuperAdminFromUser)) {
-          console.log('✅ 슈퍼 관리자 권한으로 모든 접근 허용');
-          setIsAuthorized(true);
-          setIsVerifying(false);
-          return;
-        }
-
-        // 권한 목록을 배열로 정규화
-        const requiredPermissions = Array.isArray(permissions) ? permissions : [permissions];
-        
-        // 사용자의 권한 목록 (user 데이터 기준)
-        const userPermissions = getUserPermissions(user);
-
-        // 권한 확인 로직
-        const hasRequiredPermission = mode === 'all'
-          ? requiredPermissions.every(permission => userPermissions.includes(permission))
-          : requiredPermissions.some(permission => userPermissions.includes(permission));
-
-        console.log('🔍 권한 검증 결과:', {
-          requiredPermissions,
-          userPermissions,
-          mode,
-          hasRequiredPermission,
-          userId: claims.sub,
-          adminRole: user?.admin_role || claims.app_metadata?.admin_role
-        });
-
-        setIsAuthorized(hasRequiredPermission);
-        setIsVerifying(false);
-
-      } catch (error) {
-        console.error('권한 검증 오류:', error);
-        if (mounted) {
-          setIsAuthorized(false);
-          setIsVerifying(false);
-        }
+    const verifyPermissions = () => {
+      console.log('🔒 단순한 권한 검증 시작');
+      
+      if (!isAuthenticated || !user) {
+        console.log('❌ 인증되지 않음');
+        setIsAuthorized(false);
+        return;
       }
+
+      // 관리자 권한 확인
+      if (!user.admin_role) {
+        console.log('❌ 관리자 권한 없음');
+        setIsAuthorized(false);
+        return;
+      }
+
+      // 슈퍼 관리자 확인
+      if (allowSuperAdmin && user.admin_role === 'super_admin') {
+        console.log('✅ 슈퍼 관리자 권한으로 모든 접근 허용');
+        setIsAuthorized(true);
+        return;
+      }
+
+      // 권한 목록을 배열로 정규화
+      const requiredPermissions = Array.isArray(permissions) ? permissions : [permissions];
+      
+      // 사용자의 권한 목록
+      const userPermissions = getUserPermissions(user);
+
+      // 권한 확인 로직
+      const hasRequiredPermission = mode === 'all'
+        ? requiredPermissions.every(permission => userPermissions.includes(permission))
+        : requiredPermissions.some(permission => userPermissions.includes(permission));
+
+      console.log('🔍 권한 검증 결과:', {
+        requiredPermissions,
+        userPermissions,
+        mode,
+        hasRequiredPermission,
+        userId: user.id,
+        adminRole: user.admin_role
+      });
+
+      setIsAuthorized(hasRequiredPermission);
     };
 
     verifyPermissions();
-
-    return () => {
-      mounted = false;
-    };
-  }, [user, authClaims, permissions, mode, allowSuperAdmin]);
-
-  // 검증 중일 때는 로딩 상태 표시 (또는 fallback)
-  if (isVerifying) {
-    return <>{fallback}</>;
-  }
+  }, [user, isAuthenticated, permissions, mode, allowSuperAdmin]);
 
   return isAuthorized ? <>{children}</> : <>{fallback}</>;
 }
 
 /**
- * 권한 확인을 위한 유틸리티 훅 (비대칭 인증 검증 적용)
+ * 단순한 권한 확인을 위한 유틸리티 훅
  * 컴포넌트 내에서 권한을 확인해야 할 때 사용
  */
 export function usePermissions() {
-  const { user, authClaims } = useSupabaseAuth();
-  const [verifiedClaims, setVerifiedClaims] = useState<AuthClaims | null>(null);
-
-  useEffect(() => {
-    let mounted = true;
-
-    const verifyClaims = async () => {
-      try {
-        const verificationResult = await asymmetricAuth.verifyClientToken();
-        if (mounted && verificationResult.success && verificationResult.claims) {
-          setVerifiedClaims(verificationResult.claims);
-        } else if (mounted) {
-          setVerifiedClaims(null);
-        }
-      } catch (error) {
-        console.error('권한 검증 오류:', error);
-        if (mounted) {
-          setVerifiedClaims(null);
-        }
-      }
-    };
-
-    verifyClaims();
-
-    return () => {
-      mounted = false;
-    };
-  }, [user, authClaims]);
+  const { user, isAuthenticated } = useSupabaseAuth();
 
   const hasPermission = (
     permissions: string | string[],
     mode: 'all' | 'any' = 'all'
   ): boolean => {
-    // 비대칭 검증된 클레임이 없거나 사용자가 없는 경우
-    if (!verifiedClaims || !user || !user.admin_role) {
+    if (!isAuthenticated || !user || !user.admin_role) {
       return false;
     }
 
     // 슈퍼 관리자는 모든 권한을 가진 것으로 처리
-    const isSuperAdminFromClaims = verifiedClaims.app_metadata?.admin_role === 'super_admin';
-    const isSuperAdminFromUser = user.admin_role === 'super_admin';
-    
-    if (isSuperAdminFromClaims || isSuperAdminFromUser) {
+    if (user.admin_role === 'super_admin') {
       return true;
     }
 
     // 권한 목록을 배열로 정규화
     const requiredPermissions = Array.isArray(permissions) ? permissions : [permissions];
     
-    // 사용자의 권한 목록 (새로운 로직)
+    // 사용자의 권한 목록
     const userPermissions = getUserPermissions(user);
 
     // 권한 확인 로직
@@ -251,25 +181,15 @@ export function usePermissions() {
   };
 
   const isAdmin = (): boolean => {
-    if (!verifiedClaims || !user) return false;
-    
-    const isAdminFromClaims = asymmetricAuth.isAdmin(verifiedClaims);
-    const isAdminFromUser = user?.admin_role !== undefined;
-    
-    return isAdminFromClaims || isAdminFromUser;
+    return isAuthenticated && user?.admin_role !== undefined;
   };
 
   const isSuperAdmin = (): boolean => {
-    if (!verifiedClaims || !user) return false;
-    
-    const isSuperAdminFromClaims = verifiedClaims.app_metadata?.admin_role === 'super_admin';
-    const isSuperAdminFromUser = user?.admin_role === 'super_admin';
-    
-    return isSuperAdminFromClaims || isSuperAdminFromUser;
+    return isAuthenticated && user?.admin_role === 'super_admin';
   };
 
   const getAdminRoleLabel = (): string => {
-    const adminRole = user?.admin_role || verifiedClaims?.app_metadata?.admin_role;
+    const adminRole = user?.admin_role;
     
     switch (adminRole) {
       case 'super_admin':
@@ -285,10 +205,6 @@ export function usePermissions() {
     }
   };
 
-  const isVerified = (): boolean => {
-    return verifiedClaims !== null;
-  };
-
   return {
     hasPermission,
     hasAnyPermission,
@@ -296,9 +212,7 @@ export function usePermissions() {
     isAdmin,
     isSuperAdmin,
     getAdminRoleLabel,
-    isVerified,
-    adminRole: user?.admin_role || verifiedClaims?.app_metadata?.admin_role,
-    adminPermissions: getUserPermissions(user),
-    verificationStatus: verifiedClaims ? 'verified' : 'unverified'
+    adminRole: user?.admin_role,
+    adminPermissions: getUserPermissions(user)
   };
 }

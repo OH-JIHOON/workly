@@ -1,17 +1,15 @@
 /**
- * 비대칭 암호화 인증 테스트 페이지
- * 새로운 인증 시스템의 동작을 확인하기 위한 테스트 페이지
+ * 단순한 Supabase 인증 테스트 페이지
+ * supabase.auth.getClaims() API 테스트
  */
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useSupabaseAuth } from '@/lib/stores/auth.store';
-import { asymmetricAuth, type AuthVerificationResult } from '@/lib/auth/asymmetric-auth';
-import { auth } from '@/lib/api/auth.api';
 
 export default function AuthTestPage() {
-  const { user, session, isAuthenticated, verifyAuthentication, validatePermissions, refreshAuthClaims } = useSupabaseAuth();
+  const { user, session, isAuthenticated, getClaims, signInWithGoogle, signOut } = useSupabaseAuth();
   const [testResults, setTestResults] = useState<{ [key: string]: any }>({});
   const [isRunningTests, setIsRunningTests] = useState(false);
 
@@ -51,86 +49,28 @@ export default function AuthTestPage() {
     setIsRunningTests(true);
     setTestResults({});
 
-    await runTest('클라이언트 비대칭 검증', async () => {
-      return await asymmetricAuth.verifyClientToken();
+    await runTest('getClaims API 호출', async () => {
+      return await getClaims();
     });
 
-    await runTest('Auth Store 검증', async () => {
-      return await verifyAuthentication();
+    await runTest('현재 세션 상태', async () => {
+      return {
+        hasUser: !!user,
+        hasSession: !!session,
+        isAuthenticated,
+        userEmail: user?.email,
+        userRole: user?.role
+      };
     });
 
-    await runTest('Auth API 세션 조회', async () => {
-      return await auth.getSession();
-    });
-
-    await runTest('Auth API 사용자 조회', async () => {
-      return await auth.getUser();
-    });
-
-    await runTest('토큰 직접 검증', async () => {
-      return await auth.verifyToken();
-    });
-
-    await runTest('관리자 권한 확인', async () => {
-      return await auth.isAdmin();
-    });
-
-    await runTest('토큰 만료 확인', async () => {
-      return await auth.isTokenExpired();
-    });
-
-    await runTest('토큰 새로고침 필요 여부', async () => {
-      return await auth.needsRefresh();
-    });
-
-    if (isAuthenticated) {
-      await runTest('API 인증 검증', async () => {
-        const response = await fetch('/api/auth/verify', {
-          credentials: 'include'
-        });
-        return await response.json();
+    if (isAuthenticated && session) {
+      await runTest('세션 만료 시간', async () => {
+        return {
+          expiresAt: session.expires_at,
+          expiresAtDate: session.expires_at ? new Date(session.expires_at * 1000).toISOString() : null,
+          isExpired: session.expires_at ? Date.now() > session.expires_at * 1000 : false
+        };
       });
-
-      await runTest('권한 검증 (member)', async () => {
-        const response = await fetch('/api/auth/verify', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include',
-          body: JSON.stringify({
-            action: 'validate',
-            requiredRole: 'member'
-          })
-        });
-        return await response.json();
-      });
-
-      await runTest('권한 검증 (admin)', async () => {
-        const response = await fetch('/api/auth/verify', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include',
-          body: JSON.stringify({
-            action: 'validate',
-            requiredRole: 'admin'
-          })
-        });
-        return await response.json();
-      });
-
-      // 관리자인 경우에만 관리자 API 테스트
-      const isAdminUser = await auth.isAdmin();
-      if (isAdminUser) {
-        await runTest('관리자 API 접근', async () => {
-          const response = await fetch('/api/admin/test', {
-            credentials: 'include'
-          });
-          return await response.json();
-        });
-      }
     }
 
     setIsRunningTests(false);
@@ -139,7 +79,7 @@ export default function AuthTestPage() {
   const handleLogin = async () => {
     try {
       console.log('🔑 로그인 시도');
-      const result = await auth.signInWithGoogle(`${window.location.origin}/auth/callback`);
+      const result = await signInWithGoogle(`${window.location.origin}/auth/callback`);
       if (result.error) {
         console.error('로그인 오류:', result.error);
         alert(`로그인 실패: ${result.error}`);
@@ -153,20 +93,20 @@ export default function AuthTestPage() {
   const handleLogout = async () => {
     try {
       console.log('🚪 로그아웃 시도');
-      await auth.signOut();
+      await signOut();
     } catch (error) {
       console.error('로그아웃 예외:', error);
       alert('로그아웃 중 오류가 발생했습니다');
     }
   };
 
-  const handleRefreshClaims = async () => {
+  const handleGetClaims = async () => {
     try {
-      await refreshAuthClaims();
-      alert('클레임이 새로고침되었습니다');
+      const claims = await getClaims();
+      alert(`Claims: ${JSON.stringify(claims, null, 2)}`);
     } catch (error) {
-      console.error('클레임 새로고침 오류:', error);
-      alert('클레임 새로고침 중 오류가 발생했습니다');
+      console.error('getClaims 오류:', error);
+      alert('getClaims 중 오류가 발생했습니다');
     }
   };
 
@@ -175,7 +115,7 @@ export default function AuthTestPage() {
       <div className="max-w-4xl mx-auto px-4">
         <div className="bg-white rounded-lg shadow-lg p-6">
           <h1 className="text-3xl font-bold text-gray-900 mb-6">
-            🔒 비대칭 암호화 인증 테스트
+            🔒 단순한 Supabase 인증 테스트
           </h1>
 
           {/* 인증 상태 */}
@@ -229,10 +169,10 @@ export default function AuthTestPage() {
                   🚪 로그아웃
                 </button>
                 <button
-                  onClick={handleRefreshClaims}
+                  onClick={handleGetClaims}
                   className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 font-semibold"
                 >
-                  🔄 클레임 새로고침
+                  📋 getClaims 호출
                 </button>
               </>
             )}
@@ -292,14 +232,13 @@ export default function AuthTestPage() {
           {/* 설명 */}
           <div className="mt-8 p-4 bg-blue-50 rounded-lg">
             <h3 className="text-lg font-semibold text-blue-800 mb-2">
-              🔒 비대칭 암호화 인증 시스템
+              📋 단순한 Supabase 인증 시스템
             </h3>
             <div className="text-blue-700 space-y-2">
-              <p>• ECC (P-256) 알고리즘 기반 JWT 검증</p>
-              <p>• 서버는 더 이상 대칭키를 보관하지 않음</p>
-              <p>• Supabase의 공개키를 사용한 안전한 토큰 검증</p>
-              <p>• 클라이언트와 서버 모두에서 일관된 인증 검증</p>
-              <p>• 권한 기반 접근 제어 (RBAC) 지원</p>
+              <p>• supabase.auth.getClaims() API 사용</p>
+              <p>• 기본 Supabase 인증과 세션 관리</p>
+              <p>• 복잡한 비대칭 암호화 로직 제거</p>
+              <p>• 단순하고 직관적인 인증 플로우</p>
             </div>
           </div>
         </div>

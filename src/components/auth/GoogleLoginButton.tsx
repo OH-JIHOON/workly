@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useAuthStore, isDevMode } from '../../lib/stores/auth.store';
+import { useSupabaseAuth } from '../../lib/stores/auth.store';
 
 interface GoogleLoginButtonProps {
   onLogin?: () => void;
@@ -19,7 +19,7 @@ export default function GoogleLoginButton({
   redirectUrl
 }: GoogleLoginButtonProps) {
   const [internalLoading, setInternalLoading] = useState(false);
-  const { signInWithGoogle } = useAuthStore();
+  const { signInWithGoogle } = useSupabaseAuth();
   
   const isLoadingState = externalLoading || internalLoading;
 

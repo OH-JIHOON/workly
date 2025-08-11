@@ -3,7 +3,7 @@ import { createServerClient } from '@supabase/ssr';
 export async function createClient() {
   // 동적으로 cookies import
   const { cookies } = await import('next/headers');
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
 
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

@@ -1,6 +1,6 @@
 /**
- * 단순화된 Supabase 인증 상태 관리
- * 복잡한 비대칭 암호화 없이 기본 Supabase 인증만 사용
+ * 단순한 Supabase 인증 상태 관리
+ * supabase.auth.getClaims() API만 사용
  */
 
 import { create } from 'zustand'
@@ -9,7 +9,7 @@ import { supabase } from '../supabase/client'
 import type { User as SupabaseUser, Session } from '@supabase/supabase-js'
 import { profiles } from '../api/profiles.api'
 
-// 사용자 프로필 타입 (확장된 정보)
+// 사용자 프로필 타입
 export interface UserProfile {
   id: string
   email: string
@@ -65,6 +65,9 @@ export interface AuthState {
   updateProfile: (updates: Partial<UserProfile>) => Promise<void>
   refreshUser: () => Promise<void>
   initialize: () => Promise<void>
+  
+  // getClaims API 사용
+  getClaims: () => Promise<any>
 }
 
 export const useSupabaseAuth = create<AuthState>()(
@@ -81,31 +84,15 @@ export const useSupabaseAuth = create<AuthState>()(
         set({ isLoading: true })
         
         try {
-          // 환경에 따른 baseUrl 결정 (안전한 방식)
-          let baseUrl: string;
-          try {
-            if (typeof window !== 'undefined' && window.location) {
-              baseUrl = window.location.origin;
-            } else {
-              baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 
-                       (process.env.NODE_ENV === 'production' 
-                         ? 'https://workly-silk.vercel.app'
-                         : 'http://localhost:3000');
-            }
-          } catch (locationError) {
-            console.warn('location 접근 실패, 기본 URL 사용:', locationError)
-            baseUrl = process.env.NODE_ENV === 'production' 
-              ? 'https://workly-silk.vercel.app'
-              : 'http://localhost:3000';
-          }
+          const baseUrl = typeof window !== 'undefined' && window.location 
+            ? window.location.origin
+            : (process.env.NODE_ENV === 'production' 
+                ? 'https://workly-silk.vercel.app'
+                : 'http://localhost:3000');
           
           const finalRedirectUrl = redirectUrl || `${baseUrl}/auth/callback`;
           
-          console.log('🔑 Google OAuth 로그인 시작:', {
-            baseUrl,
-            redirectUrl: finalRedirectUrl,
-            environment: process.env.NODE_ENV
-          });
+          console.log('🔑 Google OAuth 로그인:', finalRedirectUrl);
 
           const { data, error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
@@ -121,24 +108,15 @@ export const useSupabaseAuth = create<AuthState>()(
           if (error) {
             console.error('Google 로그인 오류:', error)
             set({ isLoading: false })
-            return { error: error instanceof Error ? error : new Error(String(error)) }
+            return { error }
           }
           
-          // 로그인 성공 시 사용자 정보는 onAuthStateChange에서 처리
           console.log('✅ Google OAuth 요청 성공')
           return { error: null }
         } catch (error) {
-          console.error('❌ Google 로그인 예외:', error)
-          set({ 
-            isLoading: false,
-            user: null,
-            session: null,
-            isAuthenticated: false
-          })
-          
-          // 안전한 에러 처리
-          const safeError = error instanceof Error ? error : new Error('로그인 중 알 수 없는 오류가 발생했습니다')
-          return { error: safeError }
+          console.error('Google 로그인 예외:', error)
+          set({ isLoading: false })
+          return { error: error instanceof Error ? error : new Error(String(error)) }
         }
       },
 
@@ -152,8 +130,6 @@ export const useSupabaseAuth = create<AuthState>()(
           
           if (error) {
             console.error('로그아웃 오류:', error)
-          } else {
-            console.log('✅ Supabase 로그아웃 완료')
           }
           
           // 상태 초기화
@@ -164,16 +140,14 @@ export const useSupabaseAuth = create<AuthState>()(
             isLoading: false
           })
           
-          // localStorage 완전 정리
+          // localStorage 정리
           if (typeof window !== 'undefined') {
             localStorage.removeItem('workly-auth-storage')
             localStorage.removeItem('supabase.auth.token')
             localStorage.removeItem('workly-supabase-auth-token')
           }
           
-          console.log('✅ 로그아웃 상태 초기화 완료')
-          
-          // 페이지 새로고침으로 완전 초기화
+          // 페이지 새로고침
           setTimeout(() => {
             window.location.href = '/'
           }, 100)
@@ -214,7 +188,7 @@ export const useSupabaseAuth = create<AuthState>()(
           const { data, error } = await profiles.get(session.user.id)
           
           if (error) {
-            console.error('사용자 정보 새로고침 오류:', error)
+            console.error('사용자 정보 새로고침 오료:', error)
             return
           }
           
@@ -226,30 +200,30 @@ export const useSupabaseAuth = create<AuthState>()(
         }
       },
 
-      // 초기화
+      // getClaims API 사용
+      getClaims: async () => {
+        try {
+          console.log('📋 getClaims API 호출')
+          const claims = await supabase.auth.getClaims()
+          console.log('✅ getClaims 성공:', claims)
+          return claims
+        } catch (error) {
+          console.error('getClaims 오류:', error)
+          return null
+        }
+      },
+
+      // 초기화 - 단순하게!
       initialize: async () => {
-        console.log('🔄 인증 시스템 초기화 시작')
+        console.log('🔄 인증 시스템 초기화')
         set({ isLoading: true })
         
         try {
-          // 브라우저 환경에서만 실행
-          if (typeof window === 'undefined') {
-            console.log('서버 환경 - 초기화 스킵')
-            set({ isLoading: false })
-            return
-          }
           // 현재 세션 확인
           const { data: { session }, error: sessionError } = await supabase.auth.getSession()
           
-          console.log('세션 확인 결과:', {
-            hasSession: !!session,
-            hasUser: !!session?.user,
-            error: sessionError?.message,
-            userId: session?.user?.id
-          });
-          
-          if (sessionError) {
-            console.error('세션 확인 오류:', sessionError)
+          if (sessionError || !session) {
+            console.log('세션 없음')
             set({ 
               user: null, 
               session: null, 
@@ -258,66 +232,50 @@ export const useSupabaseAuth = create<AuthState>()(
             })
             return
           }
+
+          // 프로필 정보 가져오기
+          const { data: profileData, error: profileError } = await profiles.get(session.user.id)
           
-          if (session?.user) {
-            // 프로필 정보 가져오기
-            const { data: profileData, error: profileError } = await profiles.get(session.user.id)
-            
-            if (profileError) {
-              console.error('프로필 로드 오류:', profileError)
+          if (profileError) {
+            // 프로필이 없으면 생성
+            if (profileError.code === 'PGRST116') {
+              await createProfileFromAuthUser(session.user)
+              const { data: newProfileData } = await profiles.get(session.user.id)
               
-              // 프로필이 없는 경우 자동 생성 (OAuth 로그인 후 첫 접속)
-              if (profileError.code === 'PGRST116') {
-                console.log('프로필 없음 - 자동 생성 시도')
-                await createProfileFromAuthUser(session.user)
-                const { data: newProfileData } = await profiles.get(session.user.id)
-                
-                set({
-                  user: newProfileData as UserProfile,
-                  session,
-                  isAuthenticated: true,
-                  isLoading: false
-                })
-              } else {
-                set({ 
-                  user: null, 
-                  session: null, 
-                  isAuthenticated: false, 
-                  isLoading: false
-                })
-              }
-              return
+              set({
+                user: newProfileData as UserProfile,
+                session,
+                isAuthenticated: true,
+                isLoading: false
+              })
+            } else {
+              set({ 
+                user: null, 
+                session: null, 
+                isAuthenticated: false, 
+                isLoading: false
+              })
             }
-            
-            console.log('✅ 프로필 로드 성공')
-            set({
-              user: profileData as UserProfile,
-              session,
-              isAuthenticated: true,
-              isLoading: false
-            })
-          } else {
-            console.log('세션 없음 - 로그아웃 상태')
-            set({ 
-              user: null, 
-              session: null, 
-              isAuthenticated: false, 
-              isLoading: false
-            })
+            return
           }
+          
+          console.log('✅ 프로필 로드 성공')
+          set({
+            user: profileData as UserProfile,
+            session,
+            isAuthenticated: true,
+            isLoading: false
+          })
           
           // 인증 상태 변경 리스너 설정
           supabase.auth.onAuthStateChange(async (event, session) => {
-            console.log('🔄 Auth state changed:', event, session?.user?.email)
+            console.log('Auth state changed:', event)
             
             if (event === 'SIGNED_IN' && session?.user) {
-              console.log('✅ 로그인 이벤트')
-              // 로그인: 프로필 정보 로드
+              // 로그인
               const { data: profileData, error: profileError } = await profiles.get(session.user.id)
               
               if (profileError && profileError.code === 'PGRST116') {
-                // 프로필이 없는 경우 생성
-                console.log('프로필 생성 중...')
                 await createProfileFromAuthUser(session.user)
                 const { data: newProfileData } = await profiles.get(session.user.id)
                 
@@ -336,7 +294,6 @@ export const useSupabaseAuth = create<AuthState>()(
                 })
               }
             } else if (event === 'SIGNED_OUT') {
-              console.log('✅ 로그아웃 이벤트')
               // 로그아웃
               set({
                 user: null,
@@ -345,45 +302,28 @@ export const useSupabaseAuth = create<AuthState>()(
                 isLoading: false
               })
             } else if (event === 'TOKEN_REFRESHED' && session) {
-              console.log('✅ 토큰 새로고침 이벤트')
-              // 토큰 새로고침: 세션만 업데이트
+              // 토큰 새로고침
               set({ session, isLoading: false })
             }
           })
           
         } catch (error) {
-          console.error('❌ 인증 초기화 예외:', error)
-          
-          // 안전한 기본 상태로 설정
+          console.error('인증 초기화 예외:', error)
           set({
             user: null,
             session: null,
             isAuthenticated: false,
             isLoading: false
           })
-          
-          // Vercel에서 치명적 오류 방지
-          try {
-            // 브라우저에서만 localStorage 정리
-            if (typeof window !== 'undefined') {
-              localStorage.removeItem('workly-auth-storage')
-              localStorage.removeItem('supabase.auth.token')
-              localStorage.removeItem('workly-supabase-auth-token')
-            }
-          } catch (storageError) {
-            console.warn('localStorage 정리 실패 (무시됨):', storageError)
-          }
         }
       }
     }),
     {
       name: 'workly-auth-storage',
       partialize: (state) => ({
-        // 기본 상태만 저장
         user: state.user,
         isAuthenticated: state.isAuthenticated,
       }),
-      skipHydration: false,
     }
   )
 )

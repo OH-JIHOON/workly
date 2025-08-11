@@ -76,8 +76,7 @@ export default function ImplicitCallbackPage() {
 
         const { data, error: sessionError } = await supabase.auth.setSession({
           access_token,
-          refresh_token: refresh_token || '',
-          expires_at: expiresAtTimestamp
+          refresh_token: refresh_token || ''
         });
 
         if (sessionError) {
@@ -100,16 +99,7 @@ export default function ImplicitCallbackPage() {
             expiresAt: new Date((expiresAtTimestamp || 0) * 1000).toISOString()
           });
 
-          // 비대칭 인증 검증 수행
-          console.log('🔒 비대칭 인증 검증 수행 중...');
-          const { verifyAuthentication } = useSupabaseAuth.getState();
-          const verificationResult = await verifyAuthentication();
-          
-          if (verificationResult.success) {
-            console.log('✅ 비대칭 인증 검증 성공');
-          } else {
-            console.warn('⚠️ 비대칭 인증 검증 실패:', verificationResult.error);
-          }
+          console.log('✅ 세션 설정 성공');
 
           // 인증 상태 초기화
           await initialize();

@@ -28,7 +28,7 @@ interface PaginatedResponse<T> {
   page: number
   limit: number
 }
-import { isAuthenticated, initializeApiClients } from '@/lib/auth'
+import { isAuthenticated } from '@/lib/auth'
 import { useCalendarFilterStore } from '@/lib/stores/calendarFilterStore'
 import AdvancedFilterPanel, { AdvancedFilters } from '@/components/ui/AdvancedFilterPanel'
 import TaskDetailModal from '@/components/tasks/TaskDetailModal'
@@ -430,9 +430,6 @@ function TasksPageContent() {
 
   // 로그인 상태 확인 및 데이터 로딩
   useEffect(() => {
-    // API 클라이언트 초기화
-    initializeApiClients()
-    
     const loggedIn = isAuthenticated()
     setIsLoggedIn(loggedIn)
     
