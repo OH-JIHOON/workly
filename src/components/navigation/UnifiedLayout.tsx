@@ -8,7 +8,7 @@ import { isAuthenticated } from '@/lib/auth'
 import BrandHeader from './BrandHeader'
 import PureNavigation from './PureNavigation'
 import UtilityMenu from './UtilityMenu'
-import CPERModal from '@/components/inbox/CPERModal'
+// CPERModal 제거됨 (inbox 페이지 삭제)
 
 /**
  * 통합 네비게이션 레이아웃 컴포넌트
@@ -21,7 +21,7 @@ export default function UnifiedLayout({
 }: UnifiedLayoutProps) {
   const pathname = usePathname()
   const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const [isInboxModalOpen, setIsInboxModalOpen] = useState(false)
+  // inbox 관련 상태 제거됨
   
   // 레이아웃 자동 감지
   const [detectedLayout, setDetectedLayout] = useState<NavigationLayout>('desktop')
@@ -54,24 +54,18 @@ export default function UnifiedLayout({
   }
   
   const handleModalOpen = (modalType: string) => {
-    if (modalType === 'inbox') {
-      setIsInboxModalOpen(true)
-    }
+    // inbox 관련 기능 제거됨
+    console.log('모달 타입:', modalType)
   }
   
-  const handleInboxModalClose = () => {
-    setIsInboxModalOpen(false)
-  }
+  // inbox 모달 핸들러 제거됨
   
   const handleTaskCreated = (task: any) => {
     console.log('CPER 업무 생성:', task)
     // TODO: 실제 업무 생성 로직 구현
   }
   
-  const handleInboxItemCreated = (inboxItem: any) => {
-    console.log('빠른 수집:', inboxItem)
-    // TODO: 실제 수집함 아이템 생성 로직 구현  
-  }
+  // inbox 아이템 생성 핸들러 제거됨
   
   if (shouldHideNavigation) {
     return (
@@ -117,13 +111,7 @@ export default function UnifiedLayout({
           {children}
         </div>
         
-        {/* CPER 수집함 모달 */}
-        <CPERModal
-          isOpen={isInboxModalOpen}
-          onClose={handleInboxModalClose}
-          onTaskCreated={handleTaskCreated}
-          onInboxItemCreated={handleInboxItemCreated}
-        />
+        {/* CPER 수집함 모달 제거됨 */}
       </div>
     )
   }
@@ -171,13 +159,7 @@ export default function UnifiedLayout({
         </nav>
       )}
       
-      {/* CPER 수집함 모달 */}
-      <CPERModal
-        isOpen={isInboxModalOpen}
-        onClose={handleInboxModalClose}
-        onTaskCreated={handleTaskCreated}
-        onInboxItemCreated={handleInboxItemCreated}
-      />
+      {/* CPER 수집함 모달 제거됨 */}
     </div>
   )
 }

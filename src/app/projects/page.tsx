@@ -389,10 +389,7 @@ function ProjectsPageContent() {
           console.log('CPER 업무 생성:', task)
           // TODO: 프로젝트 관련 업무 생성 로직 구현
         }}
-        onInboxItemCreated={(inboxItem) => {
-          console.log('빠른 수집:', inboxItem)
-          // TODO: 프로젝트 관련 아이디어 수집 로직 구현
-        }}
+        // onInboxItemCreated 제거됨
       />
       
       {/* 상세 필터 패널 */}

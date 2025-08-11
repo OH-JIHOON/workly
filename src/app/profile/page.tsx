@@ -425,7 +425,7 @@ export default function ProfilePage() {
       <WorklyFloatingActionButton 
         onAddTask={() => console.log('업무 추가')}
         onAddProject={() => console.log('프로젝트 추가')}
-        onAddGoal={() => console.log('목표 추가')}
+        // onAddGoal 제거됨
       />
     </div>
   )

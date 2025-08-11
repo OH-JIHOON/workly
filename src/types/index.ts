@@ -8,8 +8,8 @@ export * from './api.types';
 export * from './socket.types';
 
 // 워클리 방법론 새로운 타입들
-export * from './goal.types';
-export * from './inbox.types';
+// goal.types 제거됨
+// inbox.types 제거됨
 export * from './navigation.types';
 
 // 어드민 패널 타입들
@@ -21,7 +21,7 @@ export const WORKLY_METHODOLOGY = {
   version: '1.0.0',
   hierarchy: ['Goal', 'Project', 'Task'] as const,
   workflow: ['Capture', 'Plan', 'Execute', 'Review'] as const,
-  navigation: ['Tasks', 'Projects', 'Inbox', 'Goals', 'Profile'] as const,
+  navigation: ['Tasks', 'Projects', 'Profile'] as const,
 } as const;
 
 // CPER 워크플로우 단계별 색상 테마
@@ -60,18 +60,7 @@ export const NAVIGATION_CONFIG = {
     color: '#10B981',
     label: '프로젝트',
   },
-  inbox: {
-    icon: 'Inbox',
-    color: '#F59E0B',
-    label: '수집함',
-    isCenter: true,
-    isEmphasized: true,
-  },
-  goals: {
-    icon: 'Target',
-    color: '#8B5CF6',
-    label: '목표',
-  },
+  // inbox, goals 설정 제거됨
   profile: {
     icon: 'User',
     color: '#6B7280',

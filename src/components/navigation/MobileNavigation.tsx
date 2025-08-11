@@ -20,7 +20,7 @@ import {
 } from '@heroicons/react/24/solid'
 import { isAuthenticated } from '@/lib/auth'
 
-// 워클리 고유 방법론 - 5개 핵심 네비게이션 항목
+// 워클리 고유 방법론 - 3개 핵심 네비게이션 항목 (간소화)
 const navigationItems = [
   { 
     name: '업무', 
@@ -33,19 +33,6 @@ const navigationItems = [
     href: '/projects', 
     icon: FolderIcon, 
     activeIcon: FolderIconSolid 
-  },
-  { 
-    name: '수집함', 
-    href: '/inbox', 
-    icon: InboxIcon, 
-    activeIcon: InboxIconSolid,
-    isCenter: true // CPER 워크플로우 중심
-  },
-  { 
-    name: '목표', 
-    href: '/goals', 
-    icon: FlagIcon, 
-    activeIcon: FlagIconSolid 
   },
   { 
     name: '프로필', 
@@ -94,10 +81,6 @@ export default function MobileNavigation() {
               aria-current={isActive ? 'page' : undefined}
             >
               <Icon className="w-6 h-6" />
-              {/* CPER 워크플로우 중심 표시 */}
-              {item.isCenter && (
-                <div className="absolute top-2 right-1/2 translate-x-1/2 w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse"></div>
-              )}
             </Link>
           )
         })}

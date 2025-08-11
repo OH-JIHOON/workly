@@ -6,7 +6,7 @@ import { SparklesIcon } from '@heroicons/react/24/outline'
 import TriageWizardModal from '@/components/ui/TriageWizardModal'
 import { WorklyTask } from '@/types/workly-core.types'
 import { Task } from '@/types/task.types'
-import { InboxItem } from '@/types/inbox.types'
+// InboxItem 타입 제거됨 (inbox 페이지 삭제)
 
 interface WorklyFloatingActionButtonProps {
   tasks?: WorklyTask[] // 정리 마법사를 위한 업무 목록
@@ -18,9 +18,9 @@ interface WorklyFloatingActionButtonProps {
   // Additional props for different pages
   onAddTask?: () => void
   onAddProject?: () => void
-  onAddGoal?: () => void
+  // onAddGoal 제거됨
   onTaskCreated?: (task: Task) => void
-  onInboxItemCreated?: (inboxItem: InboxItem) => void
+  // onInboxItemCreated 제거됨
 }
 
 export default function WorklyFloatingActionButton({
@@ -28,10 +28,8 @@ export default function WorklyFloatingActionButton({
   onTaskUpdate,
   onTaskDelete,
   onAddTask,
-  onAddProject, 
-  onAddGoal,
-  onTaskCreated,
-  onInboxItemCreated,
+  onAddProject,
+  // onAddGoal, onTaskCreated, onInboxItemCreated 제거됨
   showOnDesktop = true,
   showOnMobile = false
 }: WorklyFloatingActionButtonProps) {
@@ -39,7 +37,7 @@ export default function WorklyFloatingActionButton({
   const [isTriageWizardOpen, setIsTriageWizardOpen] = useState(false)
 
   // PRD 명세: 미분류 업무 20개 초과 시 지능적 유도
-  const untriagedTasks = tasks.filter(task => !task.projectId && !task.goalId)
+  const untriagedTasks = tasks.filter(task => !task.projectId) // goalId 제거됨
   const shouldShowTriagePrompt = untriagedTasks.length >= 20
   
   // 디버깅: 테스트를 위해 업무가 있으면 항상 FAB 표시

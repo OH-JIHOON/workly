@@ -197,7 +197,7 @@ export interface HierarchyAnalytics {
 // 유틸리티 함수들을 위한 인터페이스
 export interface HierarchyUtils {
   // 계층구조 경로 생성
-  getHierarchyPath(task: WorklyTask, project?: Project, goal?: Goal): string
+  getHierarchyPath(task: WorklyTask, project?: Project): string // goal 매개변수 제거됨
   
   // 계층구조 변경 가능 여부 확인
   canChangeHierarchy(task: WorklyTask, newHierarchy: HierarchyChoice): HierarchyValidation
@@ -263,7 +263,7 @@ export interface CPERActions {
   // Capture 단계
   capture: {
     quickCapture(content: string): Promise<string> // InboxItem ID 반환
-    structuredCapture(data: CreateInboxItemDto): Promise<string>
+    // structuredCapture 기능 제거됨 (inbox 기능 삭제)
   }
   
   // Plan 단계
@@ -311,5 +311,13 @@ export const TypeGuards = {
 
 // 기존 타입들 import (순환 참조 방지)
 import { TaskStatus, Priority as TaskPriority, TaskType, Project } from './api.types'
-import { Goal } from './goal.types'
-import { CreateInboxItemDto } from './inbox.types'
+// Goal import 제거됨 (goal.types 삭제)
+// CreateInboxItemDto import 제거됨 (inbox.types 삭제)
+
+// CreateInboxItemDto 대체 타입 정의
+interface CreateInboxItemDto {
+  title: string
+  content?: string
+  source?: string
+  tags?: string[]
+}

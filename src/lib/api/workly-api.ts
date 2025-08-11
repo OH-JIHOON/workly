@@ -6,10 +6,10 @@
 // Re-export everything from the current API structure for backward compatibility
 export * from './tasks.api'
 export * from './projects.api' 
-export * from './goals.api'
+// goals.api 제거됨
 export * from './profiles.api'
 export * from './auth.api'
-export * from './inbox.api'
+// inbox.api 제거됨
 export * from './messages.api'
 export * from './realtime.api'
 

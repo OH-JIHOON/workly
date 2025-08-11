@@ -6,10 +6,10 @@
 // Re-export from specific API modules for backward compatibility
 export * from './api/tasks.api'
 export * from './api/projects.api'
-export * from './api/goals.api'
+// goals.api 제거됨
 export * from './api/profiles.api'
 export * from './api/auth.api'
-export * from './api/inbox.api'
+// inbox.api 제거됨
 export * from './api/messages.api'
 export * from './api/realtime.api'
 

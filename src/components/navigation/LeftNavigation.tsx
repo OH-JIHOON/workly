@@ -19,9 +19,9 @@ import {
   UserIcon as UserIconSolid 
 } from '@heroicons/react/24/solid'
 import { isAuthenticated, logout } from '@/lib/auth'
-import CPERModal from '@/components/inbox/CPERModal'
+// CPERModal 제거됨 (inbox 페이지 삭제)
 
-// 워클리 고유 방법론 - 5개 핵심 네비게이션 항목
+// 워클리 고유 방법론 - 3개 핵심 네비게이션 항목 (간소화)
 const navigationItems = [
   { 
     name: '업무', 
@@ -36,20 +36,6 @@ const navigationItems = [
     activeIcon: FolderIconSolid 
   },
   { 
-    name: '수집함', 
-    href: '/inbox', 
-    icon: InboxIcon, 
-    activeIcon: InboxIconSolid,
-    isCenter: true, // CPER 워크플로우 중심
-    isModal: true // 모달로 열기
-  },
-  { 
-    name: '목표', 
-    href: '/goals', 
-    icon: FlagIcon, 
-    activeIcon: FlagIconSolid 
-  },
-  { 
     name: '프로필', 
     href: '/profile', 
     icon: UserIcon, 
@@ -62,7 +48,7 @@ export default function LeftNavigation() {
   const router = useRouter()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const [isInboxModalOpen, setIsInboxModalOpen] = useState(false)
+  // inbox 모달 상태 제거됨
   const menuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -99,13 +85,9 @@ export default function LeftNavigation() {
     setIsMenuOpen(false)
   }
 
-  const handleInboxClick = () => {
-    setIsInboxModalOpen(true)
-  }
+  // inbox 클릭 핸들러 제거됨
 
-  const handleInboxModalClose = () => {
-    setIsInboxModalOpen(false)
-  }
+  // inbox 모달 핸들러 제거됨
 
   // 바깥 클릭 시 메뉴 닫기
   useEffect(() => {
@@ -145,44 +127,16 @@ export default function LeftNavigation() {
             (item.href !== '/' && pathname.startsWith(item.href))
           const Icon = isActive ? item.activeIcon : item.icon
           
-          // 수집함은 모달로 처리
-          if (item.isModal) {
-            return (
-              <button
-                key={item.name}
-                onClick={handleInboxClick}
-                className={`nav-item ${
-                  item.isCenter ? 'relative' : ''
-                }`}
-                title={item.name}
-                aria-label={item.name}
-              >
-                <Icon className="w-6 h-6" />
-                {/* CPER 워크플로우 중심 표시 */}
-                {item.isCenter && (
-                  <div className="absolute -top-1 -right-1 w-2 h-2 bg-amber-500 rounded-full animate-pulse"></div>
-                )}
-                <span className="sr-only">{item.name}</span>
-              </button>
-            )
-          }
-          
           return (
             <Link
               key={item.name}
               href={item.href}
-              className={`nav-item ${isActive ? 'active' : ''} ${
-                item.isCenter ? 'relative' : ''
-              }`}
+              className={`nav-item ${isActive ? 'active' : ''}`}
               title={item.name}
               aria-label={item.name}
               aria-current={isActive ? 'page' : undefined}
             >
               <Icon className="w-6 h-6" />
-              {/* CPER 워크플로우 중심 표시 */}
-              {item.isCenter && (
-                <div className="absolute -top-1 -right-1 w-2 h-2 bg-amber-500 rounded-full animate-pulse"></div>
-              )}
               <span className="sr-only">{item.name}</span>
             </Link>
           )
@@ -277,19 +231,7 @@ export default function LeftNavigation() {
         )}
       </div>
 
-      {/* CPER 수집함 모달 */}
-      <CPERModal
-        isOpen={isInboxModalOpen}
-        onClose={handleInboxModalClose}
-        onTaskCreated={(task) => {
-          console.log('CPER 업무 생성:', task)
-          // TODO: 실제 업무 생성 로직 구현
-        }}
-        onInboxItemCreated={(inboxItem) => {
-          console.log('빠른 수집:', inboxItem)
-          // TODO: 실제 수집함 아이템 생성 로직 구현
-        }}
-      />
+      {/* CPER 수집함 모달 제거됨 (inbox 페이지 삭제) */}
     </nav>
   )
 }

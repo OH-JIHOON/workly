@@ -83,15 +83,6 @@ export const UTILITY_CONFIG = {
   menu: {
     sections: [
       {
-        title: '게시판',
-        items: [
-          { label: '전체 게시판', action: 'board' },
-          { label: '임무 게시판', action: 'board:mission' },
-          { label: '지식 위키', action: 'board:wiki' },
-          { label: '프로젝트 쇼케이스', action: 'board:showcase' }
-        ]
-      },
-      {
         title: '계정',
         items: [
           { label: '설정', action: 'settings' },
