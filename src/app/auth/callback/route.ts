@@ -2,32 +2,44 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
 export async function GET(request: NextRequest) {
-  console.log('🔄 2025 최신 패턴: 서버사이드 OAuth 콜백 처리');
+  console.log('🔄 비대칭 암호화 OAuth 콜백 처리');
   
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get('code');
   const error = requestUrl.searchParams.get('error');
+  const error_description = requestUrl.searchParams.get('error_description');
   const next = requestUrl.searchParams.get('next') ?? '/';
+
+  // URL fragment에서 토큰 정보 추출 (implicit flow 지원)
+  const access_token = requestUrl.searchParams.get('access_token');
+  const refresh_token = requestUrl.searchParams.get('refresh_token');
+  const expires_at = requestUrl.searchParams.get('expires_at');
+  const token_type = requestUrl.searchParams.get('token_type');
 
   console.log('OAuth 콜백 상태:', { 
     hasCode: !!code,
+    hasAccessToken: !!access_token,
     hasError: !!error,
     error,
+    error_description,
     next,
-    origin: requestUrl.origin
+    origin: requestUrl.origin,
+    tokenType: token_type,
+    expiresAt: expires_at
   });
 
   // OAuth 오류가 있는 경우
   if (error) {
-    console.error('❌ OAuth 제공자 오류:', error);
-    return NextResponse.redirect(`${requestUrl.origin}/auth/login?error=${error}`);
+    console.error('❌ OAuth 제공자 오류:', error, error_description);
+    const errorMessage = error_description || error;
+    return NextResponse.redirect(`${requestUrl.origin}/auth/login?error=${error}&message=${encodeURIComponent(errorMessage)}`);
   }
 
-  // 코드가 있는 경우 세션으로 교환
+  // Authorization Code Flow (권장 방식)
   if (code) {
     try {
-      const supabase = createClient();
-      console.log('🔄 OAuth 코드를 세션으로 교환 중...');
+      const supabase = await createClient();
+      console.log('🔄 Authorization Code Flow: 코드를 세션으로 교환 중...');
       
       const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
       
@@ -39,10 +51,11 @@ export async function GET(request: NextRequest) {
       }
 
       if (data.session && data.user) {
-        console.log('✅ OAuth 인증 성공:', { 
+        console.log('✅ Authorization Code Flow OAuth 인증 성공:', { 
           userId: data.user.id,
           email: data.user.email,
-          provider: data.user.app_metadata?.provider
+          provider: data.user.app_metadata?.provider,
+          authMethod: 'authorization_code'
         });
 
         // 성공적으로 인증 완료 - 메인 페이지로 리다이렉트
@@ -53,14 +66,28 @@ export async function GET(request: NextRequest) {
       }
       
     } catch (error) {
-      console.error('❌ OAuth 콜백 처리 예외:', error);
+      console.error('❌ Authorization Code Flow 처리 예외:', error);
       return NextResponse.redirect(
         `${requestUrl.origin}/auth/login?error=callback_exception&message=${encodeURIComponent(String(error))}`
       );
     }
   }
 
-  // 코드도 오류도 없는 경우
-  console.log('❌ OAuth 콜백 파라미터 누락');
-  return NextResponse.redirect(`${requestUrl.origin}/auth/login?error=missing_parameters`);
+  // Implicit Flow 지원 - URL fragment는 서버에서 접근 불가하므로 클라이언트에서 처리
+  // error가 'missing_parameters'이고 다른 토큰 파라미터가 있다면 implicit flow일 가능성이 높음
+  if (error === 'missing_parameters') {
+    console.log('🔄 Implicit Flow로 추정됨: 클라이언트 사이드 처리를 위해 리다이렉트');
+    return NextResponse.redirect(`${requestUrl.origin}/auth/callback/implicit`);
+  }
+
+  // 파라미터가 부족한 경우
+  console.log('❌ OAuth 콜백 파라미터 부족:', {
+    hasCode: !!code,
+    hasAccessToken: !!access_token,
+    url: request.url,
+    searchParams: Object.fromEntries(requestUrl.searchParams.entries())
+  });
+
+  // URL에 여전히 토큰 정보가 있을 수 있으므로 클라이언트 처리 시도
+  return NextResponse.redirect(`${requestUrl.origin}/auth/callback/implicit`);
 }

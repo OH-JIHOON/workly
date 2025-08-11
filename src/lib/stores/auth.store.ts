@@ -1,6 +1,7 @@
 /**
- * Supabase 기반 인증 상태 관리
+ * Supabase 기반 인증 상태 관리 (비대칭 암호화 적용)
  * Zustand를 사용한 전역 인증 상태
+ * ECC (P-256) 키 기반 JWT 검증 시스템
  */
 
 import { create } from 'zustand'
@@ -8,6 +9,7 @@ import { persist } from 'zustand/middleware'
 import { supabase } from '../supabase/client'
 import type { User as SupabaseUser, Session } from '@supabase/supabase-js'
 import { profiles } from '../api/profiles.api'
+import { asymmetricAuth, type AuthClaims, type AuthVerificationResult } from '../auth/asymmetric-auth'
 
 // 사용자 프로필 타입 (확장된 정보)
 export interface UserProfile {
@@ -58,6 +60,7 @@ export interface AuthState {
   session: Session | null
   isLoading: boolean
   isAuthenticated: boolean
+  authClaims: AuthClaims | null
   
   // 액션
   signInWithGoogle: (redirectUrl?: string) => Promise<{ error?: Error | null }>
@@ -65,6 +68,11 @@ export interface AuthState {
   updateProfile: (updates: Partial<UserProfile>) => Promise<void>
   refreshUser: () => Promise<void>
   initialize: () => Promise<void>
+  
+  // 비대칭 암호화 인증 관련
+  verifyAuthentication: () => Promise<AuthVerificationResult>
+  validatePermissions: (requiredRole: string) => boolean
+  refreshAuthClaims: () => Promise<void>
 }
 
 export const useSupabaseAuth = create<AuthState>()(
@@ -75,6 +83,7 @@ export const useSupabaseAuth = create<AuthState>()(
       session: null,
       isLoading: true,
       isAuthenticated: false,
+      authClaims: null,
 
       // Google OAuth 로그인
       signInWithGoogle: async (redirectUrl) => {
@@ -146,7 +155,8 @@ export const useSupabaseAuth = create<AuthState>()(
             user: null,
             session: null,
             isAuthenticated: false,
-            isLoading: false
+            isLoading: false,
+            authClaims: null
           })
           
           // 페이지 새로고침으로 완전 초기화
@@ -223,7 +233,8 @@ export const useSupabaseAuth = create<AuthState>()(
               user: null, 
               session: null, 
               isAuthenticated: false, 
-              isLoading: false 
+              isLoading: false,
+              authClaims: null
             })
             return
           }
@@ -251,7 +262,8 @@ export const useSupabaseAuth = create<AuthState>()(
                   user: null, 
                   session: null, 
                   isAuthenticated: false, 
-                  isLoading: false 
+                  isLoading: false,
+                  authClaims: null
                 })
               }
               return
@@ -268,7 +280,8 @@ export const useSupabaseAuth = create<AuthState>()(
               user: null, 
               session: null, 
               isAuthenticated: false, 
-              isLoading: false 
+              isLoading: false,
+              authClaims: null
             })
           }
           
@@ -305,7 +318,8 @@ export const useSupabaseAuth = create<AuthState>()(
                 user: null,
                 session: null,
                 isAuthenticated: false,
-                isLoading: false
+                isLoading: false,
+                authClaims: null
               })
             } else if (event === 'TOKEN_REFRESHED' && session) {
               // 토큰 갱신
@@ -319,8 +333,66 @@ export const useSupabaseAuth = create<AuthState>()(
             user: null, 
             session: null, 
             isAuthenticated: false, 
-            isLoading: false 
+            isLoading: false,
+            authClaims: null
           })
+        }
+      },
+
+      // 비대칭 암호화 기반 인증 검증
+      verifyAuthentication: async () => {
+        console.log('🔒 비대칭 인증 검증 시작');
+        
+        const result = await asymmetricAuth.verifyClientToken();
+        
+        if (result.success && result.claims) {
+          set({ 
+            authClaims: result.claims,
+            isAuthenticated: true 
+          });
+          console.log('✅ 비대칭 인증 검증 성공');
+        } else {
+          set({ 
+            authClaims: null,
+            isAuthenticated: false 
+          });
+          console.log('❌ 비대칭 인증 검증 실패:', result.error);
+        }
+        
+        return result;
+      },
+
+      // 권한 검증
+      validatePermissions: (requiredRole: string) => {
+        const { authClaims } = get();
+        
+        if (!authClaims) {
+          console.log('권한 검증 실패: 인증 클레임이 없음');
+          return false;
+        }
+        
+        const hasPermission = asymmetricAuth.hasPermission(authClaims, requiredRole);
+        console.log(`권한 검증 ${hasPermission ? '성공' : '실패'}:`, {
+          userRole: authClaims.role,
+          requiredRole,
+          result: hasPermission
+        });
+        
+        return hasPermission;
+      },
+
+      // 인증 클레임 새로고침
+      refreshAuthClaims: async () => {
+        console.log('🔄 인증 클레임 새로고침');
+        
+        const result = await asymmetricAuth.verifyClientToken();
+        
+        if (result.success && result.claims) {
+          set({ authClaims: result.claims });
+          console.log('✅ 클레임 새로고침 성공');
+        } else {
+          set({ authClaims: null });
+          console.log('❌ 클레임 새로고침 실패:', result.error);
         }
       }
     }),
