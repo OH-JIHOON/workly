@@ -21,6 +21,13 @@ function AuthCallbackPageContent() {
       console.log('🔄 Auth callback 처리 시작');
       console.log('현재 URL:', window.location.href);
       console.log('Search params:', Object.fromEntries(searchParams.entries()));
+      console.log('URL Hash:', window.location.hash);
+      console.log('완전한 URL 파싱:', {
+        origin: window.location.origin,
+        pathname: window.location.pathname,
+        search: window.location.search,
+        hash: window.location.hash
+      });
       
       try {
         // Supabase auth 코드/토큰 교환 처리
@@ -71,6 +78,28 @@ function AuthCallbackPageContent() {
         
         // Auth store 초기화
         await initialize();
+        
+        // 추가적으로 auth state change 이벤트 리스너 설정 (일회성)
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+          console.log('🔄 Auth state change in callback:', { event, hasSession: !!session });
+          
+          if (event === 'SIGNED_IN' && session) {
+            console.log('✅ SIGNED_IN 이벤트 감지, 상태 업데이트');
+            setDisplayStatus('success');
+            setDisplayMessage('로그인이 완료되었습니다.');
+            
+            // 구독 해제 후 리다이렉트
+            subscription.unsubscribe();
+            setTimeout(() => {
+              router.push('/');
+            }, 2000);
+          }
+        });
+        
+        // 5초 후 정리
+        setTimeout(() => {
+          subscription.unsubscribe();
+        }, 5000);
         
       } catch (error) {
         console.error('❌ Auth callback 예외:', error);

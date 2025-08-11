@@ -98,7 +98,10 @@ export const useSupabaseAuth = create<AuthState>()(
           console.log('🔑 Google OAuth 시작:', {
             provider: 'google',
             redirectTo: finalRedirectUrl,
-            currentUrl: typeof window !== 'undefined' ? window.location.href : 'SSR'
+            currentUrl: typeof window !== 'undefined' ? window.location.href : 'SSR',
+            baseUrl,
+            environment: process.env.NODE_ENV,
+            origin: typeof window !== 'undefined' ? window.location.origin : 'SSR'
           });
 
           const { data, error } = await supabase.auth.signInWithOAuth({
