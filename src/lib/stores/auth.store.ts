@@ -84,13 +84,18 @@ export const useSupabaseAuth = create<AuthState>()(
         set({ isLoading: true })
         
         try {
-          const baseUrl = typeof window !== 'undefined' && window.location 
-            ? window.location.origin
-            : (process.env.NODE_ENV === 'production' 
-                ? 'https://workly-silk.vercel.app'
-                : 'http://localhost:3000');
-          
-          const finalRedirectUrl = redirectUrl || `${baseUrl}/auth/callback`;
+          const getURL = () => {
+            let url =
+              process?.env?.NEXT_PUBLIC_SITE_URL ?? // 운영 환경에서는 이 변수를 사용합니다.
+              process?.env?.NEXT_PUBLIC_VERCEL_URL ?? // Vercel 프리뷰 환경에서 자동으로 설정됩니다.
+              'http://localhost:3000/';
+            // URL에 http가 없으면 붙여주고, 마지막에 항상 '/'가 있도록 보장합니다.
+            url = url.includes('http') ? url : `https://${url}`;
+            url = url.charAt(url.length - 1) === '/' ? url : `${url}/`;
+            return url;
+          };
+
+          const finalRedirectUrl = redirectUrl || `${getURL()}auth/callback`;
           
           console.log('🔑 Google OAuth 로그인:', finalRedirectUrl);
 
