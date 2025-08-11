@@ -381,7 +381,7 @@ export default function ResponsiveTaskCard({
     dragImage.className = 'w-12 h-12 bg-blue-100 border-2 border-blue-300 rounded-lg flex items-center justify-center text-xs font-medium text-blue-700 shadow-lg'
     dragImage.style.position = 'absolute'
     dragImage.style.top = '-1000px'
-    dragImage.innerHTML = task.title.substring(0, 2).toUpperCase()
+    dragImage.textContent = task.title.substring(0, 2).toUpperCase()
     document.body.appendChild(dragImage)
     
     e.dataTransfer.setDragImage(dragImage, 24, 24)
