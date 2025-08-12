@@ -17,8 +17,7 @@ import MainContainer from '@/components/layout/MainContainer'
 import CalendarToggleFAB from '@/components/ui/CalendarToggleFAB'
 import LoginBanner from '@/components/ui/LoginBanner'
 import QuickAddInput from '@/components/ui/QuickAddInput'
-import ResponsiveWorkCard from '@/components/works/ResponsiveWorkCard'
-import CollapsibleCalendar from '@/components/works/CollapsibleCalendar'
+// ResponsiveWorkCard, CollapsibleCalendar 제거됨 - 목업 상태였음
 import { WorkStatus, WorkPriority, WorkType, WorkDetail } from '@/types/work.types'
 // PaginatedResponse 타입을 로컬에서 정의
 interface PaginatedResponse<T> {
@@ -29,7 +28,7 @@ interface PaginatedResponse<T> {
 }
 import { isAuthenticated } from '@/lib/auth'
 // AdvancedFilterPanel 제거됨 - 간단한 필터만 사용
-import WorkDetailModal from '@/components/works/WorkDetailModal'
+// WorkDetailModal 제거됨 - 목업 상태였음
 import { api } from '@/lib/api'
 
 // 워클리 업무 인터페이스 (레거시 GTDWork 대체)
@@ -772,30 +771,20 @@ function WorksPageContent() {
               {filteredWorks.map((task) => (
                 <div 
                   key={task.id}
-                  className={`
-                    ${newlyCreatedTaskId === task.id 
-                      ? 'animate-slide-in-from-top' 
-                      : ''
-                    }
-                  `}
+                  className="p-4 bg-white rounded-lg border border-gray-200 hover:shadow-sm transition-shadow"
                 >
-                  <ResponsiveWorkCard
-                    task={task}
-                    onClick={() => handleTaskClick(task)}
-                    onDelete={handleTaskDelete}
-                    onDelegate={handleTaskDelegate}
-                    onDefer={handleTaskDefer}
-                    onConvertToProject={handleTaskConvertToProject}
-                    onToggleComplete={handleToggleComplete}
-                    onDragStart={handleDragStart}
-                    onDragEnd={handleDragEnd}
-                    isDragMode={isDragMode}
-                    onSetDueDate={(taskId, date) => handleTaskUpdate(taskId, { dueDate: date })}
-                    onDueDateUpdated={(taskId, date) => {
-                      console.log(`업무 ${taskId}의 마감일이 ${date}로 업데이트됨`)
-                    }}
-                    keepCalendarOpen={isDragMode}
-                  />
+                  <h3 className="font-medium text-gray-900">{task.title}</h3>
+                  {task.description && (
+                    <p className="text-sm text-gray-600 mt-1">{task.description}</p>
+                  )}
+                  <div className="flex items-center justify-between mt-2">
+                    <span className="text-xs text-gray-500">
+                      {task.priority} 우선순위
+                    </span>
+                    <span className="text-xs px-2 py-1 bg-gray-100 rounded">
+                      {task.status}
+                    </span>
+                  </div>
                 </div>
               ))}
             </div>
@@ -825,18 +814,7 @@ function WorksPageContent() {
         </div>
       )}
       
-      {/* 접이식 캘린더 - 컴포저 위에 표시 */}
-      <div className="fixed left-0 right-0 md:left-64 z-[60]" style={{ bottom: isLoggedIn ? '80px' : '0px' }}>
-        <CollapsibleCalendar
-          isExpanded={isCalendarExpanded}
-          onDateSelect={handleDateSelect}
-          onClose={handleCalendarClose}
-          onToggle={handleCalendarToggle}
-          tasksWithDates={getTasksWithDates()}
-          keepOpenOnDrop={true}
-          isDragMode={isDragMode}
-        />
-      </div>
+      {/* 캘린더 기능 제거됨 - 목업 상태였음 */}
       
       {/* 캘린더 토글 FAB - 임시 숨김 */}
       {false && (
@@ -856,16 +834,7 @@ function WorksPageContent() {
       
       {/* 상세 필터 패널 제거됨 - 간단한 필터만 사용 */}
       
-      {/* 업무 상세 모달 */}
-      <WorkDetailModal
-        work={selectedWork}
-        isOpen={isWorkDetailOpen}
-        onClose={() => {
-          setIsWorkDetailOpen(false)
-          setSelectedWork(null)
-        }}
-        onSave={handleWorkDetailSave}
-      />
+      {/* 업무 상세 모달 제거됨 - 목업 상태였음 */}
     </div>
   )
 }
