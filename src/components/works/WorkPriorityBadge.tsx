@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { TaskPriority } from '@/types/task.types';
+import { TaskPriority } from '@/types/work.types';
 import { ArrowUp, ArrowDown, Minus } from 'lucide-react';
 
 interface TaskPriorityBadgeProps {

@@ -13,7 +13,7 @@ interface ContentHeaderProps {
 export default function ContentHeader({ title, className = '' }: ContentHeaderProps) {
   return (
     <header 
-      className={`sticky top-0 h-[60px] bg-background z-40 w-full ${className}`}
+      className={`sticky top-0 h-[60px] bg-background z-50 w-full ${className}`}
       role="banner"
     >
       <div className="w-full max-w-[720px] mx-auto h-full flex items-center justify-center px-6 md:px-0">

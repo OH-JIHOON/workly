@@ -2,8 +2,8 @@
 
 import React, { useState } from 'react';
 import { ChevronDown, Check } from 'lucide-react';
-import { TaskStatus } from '@/types/task.types';
-import TaskStatusBadge from './TaskStatusBadge';
+import { TaskStatus } from '@/types/work.types';
+import WorkStatusBadge from './WorkStatusBadge';
 
 interface TaskStatusSelectorProps {
   currentStatus: TaskStatus;

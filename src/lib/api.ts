@@ -1,21 +1,14 @@
 /**
- * Legacy API module for backward compatibility
- * Re-exports from specific API modules
+ * Simplified API module
+ * Re-exports from active API modules only
  */
 
-// Re-export from specific API modules for backward compatibility
+// Re-export from active API modules
 export * from './api/tasks.api'
-export * from './api/projects.api'
-// goals.api 제거됨
 export * from './api/profiles.api'
 export * from './api/auth.api'
-// inbox.api 제거됨
-export * from './api/messages.api'
-export * from './api/realtime.api'
 
-// Legacy API client for backward compatibility (deprecated)
+// Simplified API client
 export const api = {
-  // Placeholder for legacy API calls - use specific API modules instead
-  deprecated: true,
-  message: 'Use specific API modules from ./api/ directory instead'
+  message: 'Use specific API modules from ./api/ directory'
 }

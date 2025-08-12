@@ -6,7 +6,7 @@ import {
   TaskWizardData, 
   TaskPriority, 
   CreateTaskDto
-} from '@/types/task.types'
+} from '@/types/work.types'
 import { X, ArrowLeft, ArrowRight, CheckCircle, Clock, Users } from 'lucide-react'
 
 interface TaskCreationWizardProps {

@@ -27,56 +27,7 @@ export interface HierarchyChoice {
   }
 }
 
-// CPER 단계별 상태
-export enum CPERStage {
-  CAPTURED = 'captured',     // 수집됨
-  PLANNED = 'planned',       // 계획됨
-  EXECUTING = 'executing',   // 실행 중
-  COMPLETED = 'completed',   // 완료됨
-  REVIEWED = 'reviewed'      // 검토됨
-}
-
-// CPER 워크플로우 데이터
-export interface CPERWorkflowData {
-  stage: CPERStage
-  capturedAt: string
-  plannedAt?: string
-  executionStartedAt?: string
-  completedAt?: string
-  reviewedAt?: string
-  
-  // 계획 단계 데이터
-  planningData?: {
-    isActionable: boolean
-    canComplete2Minutes: boolean
-    timeEstimate: number        // 분 단위
-    priorityReasoning: string
-    hierarchyChoice: HierarchyChoice
-    nextAction?: string
-  }
-  
-  // 실행 단계 데이터
-  executionData?: {
-    isToday: boolean
-    isFocused: boolean
-    startedAt?: string
-    pausedAt?: string
-    actualTimeSpent: number     // 분 단위
-    progressNotes: string[]
-  }
-  
-  // 검토 단계 데이터
-  reviewData?: {
-    lessonsLearned: string[]
-    improvements: string[]
-    goalContribution: number    // 0-100 (목표 기여도)
-    projectContribution: number // 0-100 (프로젝트 기여도)
-    satisfaction: number        // 1-5 (만족도)
-    wouldDoAgain: boolean
-  }
-}
-
-// 확장된 업무 인터페이스 (기존 Task 확장)
+// 간단한 업무 인터페이스 (CPER 제거)
 export interface WorklyTask {
   // 기본 정보 (기존 Task 인터페이스와 호환)
   id: string
@@ -95,9 +46,6 @@ export interface WorklyTask {
   hierarchyType: HierarchyType
   projectId?: string      // 프로젝트 연결 (선택적)
   goalId?: string         // 목표 연결 (선택적, 직접 연결 또는 프로젝트 통해 간접 연결)
-  
-  // CPER 워크플로우
-  cperWorkflow: CPERWorkflowData
   
   // 실행 관련
   isToday: boolean
@@ -197,7 +145,7 @@ export interface HierarchyAnalytics {
 // 유틸리티 함수들을 위한 인터페이스
 export interface HierarchyUtils {
   // 계층구조 경로 생성
-  getHierarchyPath(task: WorklyTask, project?: Project): string // goal 매개변수 제거됨
+  getHierarchyPath(task: WorklyTask, project?: Project): string
   
   // 계층구조 변경 가능 여부 확인
   canChangeHierarchy(task: WorklyTask, newHierarchy: HierarchyChoice): HierarchyValidation
@@ -258,40 +206,33 @@ export interface TodayTasksOptimized {
   }
 }
 
-// CPER 단계별 액션 정의
-export interface CPERActions {
-  // Capture 단계
-  capture: {
-    quickCapture(content: string): Promise<string> // InboxItem ID 반환
-    // structuredCapture 기능 제거됨 (inbox 기능 삭제)
+// 간단한 업무 액션 인터페이스 (CPER 제거)
+export interface TaskActions {
+  // 기본 액션
+  create: {
+    quickCreate(title: string): Promise<string> // Task ID 반환
+    createWithDetails(taskData: Partial<WorklyTask>): Promise<string>
   }
   
-  // Plan 단계
-  plan: {
-    clarifyItem(inboxItemId: string, clarification: CPERWorkflowData['planningData']): Promise<void>
-    convertToTask(inboxItemId: string, hierarchyChoice: HierarchyChoice): Promise<string> // Task ID 반환
-  }
-  
-  // Execute 단계
+  // 실행 관련
   execute: {
     setTodayTasks(taskIds: string[]): Promise<void>
     setFocusedTask(taskId: string): Promise<void>
-    startExecution(taskId: string): Promise<void>
     updateProgress(taskId: string, progressNote: string): Promise<void>
     completeTask(taskId: string): Promise<void>
   }
   
-  // Review 단계
-  review: {
-    addReview(taskId: string, reviewData: CPERWorkflowData['reviewData']): Promise<void>
+  // 분석
+  analytics: {
     getInsights(taskId: string): Promise<HierarchyAnalytics>
+    generateReport(period: 'week' | 'month' | 'quarter'): Promise<any>
   }
 }
 
-// 타입 가드 함수들
+// 타입 가드 함수들 (CPER 제거)
 export const TypeGuards = {
   isWorklyTask: (obj: any): obj is WorklyTask => {
-    return obj && typeof obj.hierarchyType === 'string' && obj.cperWorkflow
+    return obj && typeof obj.hierarchyType === 'string' && typeof obj.id === 'string'
   },
   
   isIndependentTask: (task: WorklyTask): boolean => {
@@ -311,13 +252,10 @@ export const TypeGuards = {
 
 // 기존 타입들 import (순환 참조 방지)
 import { TaskStatus, Priority as TaskPriority, TaskType, Project } from './api.types'
-// Goal import 제거됨 (goal.types 삭제)
-// CreateInboxItemDto import 제거됨 (inbox.types 삭제)
 
-// CreateInboxItemDto 대체 타입 정의
-interface CreateInboxItemDto {
+// 빠른 업무 생성을 위한 타입
+interface QuickCreateTaskDto {
   title: string
-  content?: string
-  source?: string
+  description?: string
   tags?: string[]
 }

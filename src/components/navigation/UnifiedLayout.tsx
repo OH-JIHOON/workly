@@ -8,7 +8,7 @@ import { isAuthenticated } from '@/lib/auth'
 import BrandHeader from './BrandHeader'
 import PureNavigation from './PureNavigation'
 import UtilityMenu from './UtilityMenu'
-// CPERModal 제거됨 (inbox 페이지 삭제)
+// 모달 관련 컴포넌트들 (inbox 페이지 삭제됨)
 
 /**
  * 통합 네비게이션 레이아웃 컴포넌트
@@ -61,7 +61,7 @@ export default function UnifiedLayout({
   // inbox 모달 핸들러 제거됨
   
   const handleTaskCreated = (task: any) => {
-    console.log('CPER 업무 생성:', task)
+    console.log('업무 생성:', task)
     // TODO: 실제 업무 생성 로직 구현
   }
   
@@ -111,7 +111,7 @@ export default function UnifiedLayout({
           {children}
         </div>
         
-        {/* CPER 수집함 모달 제거됨 */}
+        {/* 수집함 모달 제거됨 */}
       </div>
     )
   }
@@ -122,7 +122,7 @@ export default function UnifiedLayout({
       {/* 상단 헤더 (유틸리티 메뉴 + 브랜드) */}
       {!isProjectDetailPage && (
         <header 
-          className="sticky top-0 h-[60px] bg-background z-40 w-full border-b border-border"
+          className="sticky top-0 h-[60px] bg-background z-30 w-full border-b border-border"
           role="banner"
         >
           <div className="w-full max-w-[720px] mx-auto h-full flex items-center px-6">
@@ -159,7 +159,7 @@ export default function UnifiedLayout({
         </nav>
       )}
       
-      {/* CPER 수집함 모달 제거됨 */}
+      {/* 수집함 모달 제거됨 */}
     </div>
   )
 }

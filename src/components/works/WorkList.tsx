@@ -12,10 +12,10 @@ import {
   Trash2,
   Eye
 } from 'lucide-react';
-import TaskStatusBadge from './TaskStatusBadge';
-import TaskPriorityBadge from './TaskPriorityBadge';
-import TaskStatusSelector from './TaskStatusSelector';
-import { Task, TaskStatus } from '@/types/task.types';
+import WorkStatusBadge from './WorkStatusBadge';
+import WorkPriorityBadge from './WorkPriorityBadge';
+import WorkStatusSelector from './WorkStatusSelector';
+import { Task, TaskStatus } from '@/types/work.types';
 
 interface TaskListProps {
   tasks: Task[];

@@ -12,7 +12,7 @@ import {
   EllipsisHorizontalIcon,
   CalendarIcon
 } from '@heroicons/react/24/outline'
-import { TaskStatus, TaskPriority } from '@/types/task.types'
+import { TaskStatus, TaskPriority } from '@/types/work.types'
 import { useIsTouch } from '@/hooks/useDeviceType'
 
 // 워클리 업무 인터페이스

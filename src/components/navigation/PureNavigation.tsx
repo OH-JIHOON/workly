@@ -65,7 +65,7 @@ export default function PureNavigation({
                 aria-label={item.name}
               >
                 <Icon className="w-6 h-6" />
-                {/* CPER 워크플로우 중심 표시 */}
+                {/* 중심 항목 표시 */}
                 {item.isCenter && (
                   <div className="absolute -top-1 -right-1 w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
                 )}
@@ -93,7 +93,7 @@ export default function PureNavigation({
               onClick={() => onItemClick?.(item)}
             >
               <Icon className="w-6 h-6" />
-              {/* CPER 워크플로우 중심 표시 */}
+              {/* 중심 항목 표시 */}
               {item.isCenter && (
                 <div className="absolute -top-1 -right-1 w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
               )}
@@ -132,7 +132,7 @@ export default function PureNavigation({
               aria-label={item.name}
             >
               <Icon className="w-6 h-6" />
-              {/* CPER 워크플로우 중심 표시 */}
+              {/* 중심 항목 표시 */}
               {item.isCenter && (
                 <div className="absolute top-2 right-1/2 translate-x-1/2 w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse" />
               )}
@@ -158,7 +158,7 @@ export default function PureNavigation({
             onClick={() => onItemClick?.(item)}
           >
             <Icon className="w-6 h-6" />
-            {/* CPER 워크플로우 중심 표시 */}
+            {/* 중심 항목 표시 */}
             {item.isCenter && (
               <div className="absolute top-2 right-1/2 translate-x-1/2 w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse" />
             )}

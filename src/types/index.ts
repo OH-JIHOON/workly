@@ -24,8 +24,8 @@ export const WORKLY_METHODOLOGY = {
   navigation: ['Tasks', 'Projects', 'Profile'] as const,
 } as const;
 
-// CPER 워크플로우 단계별 색상 테마
-export const CPER_THEME = {
+// 워크플로우 단계별 색상 테마
+export const WORKFLOW_THEME = {
   capture: {
     primary: '#3B82F6',   // Blue
     secondary: '#DBEAFE',

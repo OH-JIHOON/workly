@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { TaskStatus } from '@/types/task.types';
+import { TaskStatus } from '@/types/work.types';
 
 interface TaskStatusBadgeProps {
   status: TaskStatus;

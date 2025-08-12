@@ -14,13 +14,12 @@ import {
 } from '@heroicons/react/24/outline'
 import ContentHeader from '@/components/layout/ContentHeader'
 import MainContainer from '@/components/layout/MainContainer'
-import SimpleFilterChips from '@/components/ui/SimpleFilterChips'
 import CalendarToggleFAB from '@/components/ui/CalendarToggleFAB'
 import LoginBanner from '@/components/ui/LoginBanner'
 import QuickAddInput from '@/components/ui/QuickAddInput'
-import ResponsiveTaskCard from '@/components/tasks/ResponsiveTaskCard'
-import CollapsibleCalendar from '@/components/tasks/CollapsibleCalendar'
-import { TaskStatus, TaskPriority, TaskType, TaskDetail } from '@/types/task.types'
+import ResponsiveWorkCard from '@/components/works/ResponsiveWorkCard'
+import CollapsibleCalendar from '@/components/works/CollapsibleCalendar'
+import { WorkStatus, WorkPriority, WorkType, WorkDetail } from '@/types/work.types'
 // PaginatedResponse 타입을 로컬에서 정의
 interface PaginatedResponse<T> {
   data: T[]
@@ -29,19 +28,18 @@ interface PaginatedResponse<T> {
   limit: number
 }
 import { isAuthenticated } from '@/lib/auth'
-import { useCalendarFilterStore } from '@/lib/stores/calendarFilterStore'
-import AdvancedFilterPanel, { AdvancedFilters } from '@/components/ui/AdvancedFilterPanel'
-import TaskDetailModal from '@/components/tasks/TaskDetailModal'
+// AdvancedFilterPanel 제거됨 - 간단한 필터만 사용
+import WorkDetailModal from '@/components/works/WorkDetailModal'
 import { api } from '@/lib/api'
 
-// 워클리 업무 인터페이스 (레거시 GTDTask 대체)
-interface WorklyTask {
+// 워클리 업무 인터페이스 (레거시 GTDWork 대체)
+interface WorklyWork {
   id: string
   title: string
   description?: string
-  status: TaskStatus
-  priority: TaskPriority
-  type: TaskType
+  status: WorkStatus
+  priority: WorkPriority
+  type: WorkType
   goalId?: string  // 워클리 방법론: 목표 연계 (선택적)
   projectId?: string  // 워클리 방법론: 프로젝트 연계 (선택적)
   assigneeId: string
@@ -60,13 +58,13 @@ interface WorklyTask {
 }
 
 // API 응답 타입 (백엔드와 호환)
-interface BackendTask {
+interface BackendWork {
   id: string
   title: string
   description?: string
-  status: TaskStatus
-  priority: TaskPriority
-  type: TaskType
+  status: WorkStatus
+  priority: WorkPriority
+  type: WorkType
   projectId?: string
   goalId?: string
   assigneeId: string
@@ -86,10 +84,10 @@ interface BackendTask {
 }
 
 
-function TasksPageContent() {
+function WorksPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [tasks, setTasks] = useState<WorklyTask[]>([])
+  const [works, setWorks] = useState<WorklyWork[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [activeFilters, setActiveFilters] = useState<string[]>([])
@@ -104,16 +102,16 @@ function TasksPageContent() {
   const [newlyCreatedTaskId, setNewlyCreatedTaskId] = useState<string | null>(null)
 
   
-  // 캘린더 필터 상태 구독
-  const { showNoDue, showOverdue } = useCalendarFilterStore()
+  // 캘린더 필터 제거됨
+  const showNoDue = false
+  const showOverdue = false
   
   // 상세 필터 상태 관리
-  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
-  const [advancedFilters, setAdvancedFilters] = useState<AdvancedFilters>({})
+  // AdvancedFilters 제거됨 - 간단한 필터만 사용
   
   // 업무 상세 모달 상태 관리
-  const [selectedTask, setSelectedTask] = useState<TaskDetail | null>(null)
-  const [isTaskDetailOpen, setIsTaskDetailOpen] = useState(false)
+  const [selectedWork, setSelectedWork] = useState<WorkDetail | null>(null)
+  const [isWorkDetailOpen, setIsWorkDetailOpen] = useState(false)
   
   // 목업 프로젝트와 목표 데이터
   const availableProjects = [
@@ -127,75 +125,71 @@ function TasksPageContent() {
   ]
   
   // 백엔드 응답을 프론트엔드 형식으로 변환
-  const transformBackendTask = (backendTask: BackendTask): WorklyTask => {
+  const transformBackendWork = (backendWork: BackendWork): WorklyWork => {
     const today = new Date()
-    const dueDate = backendTask.dueDate ? new Date(backendTask.dueDate) : null
+    const dueDate = backendWork.dueDate ? new Date(backendWork.dueDate) : null
     
     return {
-      id: backendTask.id,
-      title: backendTask.title,
-      description: backendTask.description,
-      status: backendTask.status,
-      priority: backendTask.priority,
-      type: backendTask.type,
-      goalId: backendTask.goalId,
-      projectId: backendTask.projectId,
-      assigneeId: backendTask.assigneeId,
+      id: backendWork.id,
+      title: backendWork.title,
+      description: backendWork.description,
+      status: backendWork.status,
+      priority: backendWork.priority,
+      type: backendWork.type,
+      goalId: backendWork.goalId,
+      projectId: backendWork.projectId,
+      assigneeId: backendWork.assigneeId,
       assignee: {
-        id: backendTask.assignee.id,
-        name: `${backendTask.assignee.firstName} ${backendTask.assignee.lastName}`,
-        email: backendTask.assignee.email
+        id: backendWork.assignee.id,
+        name: `${backendWork.assignee.firstName} ${backendWork.assignee.lastName}`,
+        email: backendWork.assignee.email
       },
-      dueDate: backendTask.dueDate,
-      scheduledDate: backendTask.startDate,
-      tags: backendTask.tags || [],
-      createdAt: backendTask.createdAt,
-      updatedAt: backendTask.updatedAt,
+      dueDate: backendWork.dueDate,
+      scheduledDate: backendWork.startDate,
+      tags: backendWork.tags || [],
+      createdAt: backendWork.createdAt,
+      updatedAt: backendWork.updatedAt,
       // 오늘 할 일 계산: 마감일이 오늘이거나 이미 지났고 완료되지 않은 업무
-      isToday: dueDate ? (dueDate <= today && backendTask.status !== TaskStatus.COMPLETED) : false,
-      isFocused: backendTask.priority === TaskPriority.URGENT || backendTask.priority === TaskPriority.HIGH
+      isToday: dueDate ? (dueDate <= today && backendWork.status !== WorkStatus.COMPLETED) : false,
+      isFocused: backendWork.priority === WorkPriority.URGENT || backendWork.priority === WorkPriority.HIGH
     }
   }
   
   // 상세 필터가 활성화되었는지 확인
-  const hasAdvancedFilters = Boolean(
-    advancedFilters.dueDate || 
-    advancedFilters.status?.length || 
-    advancedFilters.projectIds?.length || 
-    advancedFilters.goalIds?.length
-  )
+  // hasAdvancedFilters 제거됨 - 간단한 필터만 사용
+  const hasAdvancedFilters = false
 
   // 간소화된 필터 옵션들 (실시간 업데이트)
   const filterOptions = [
     { 
       key: 'today',
       label: '오늘 할 일',
-      count: tasks.filter(t => t.isToday && t.status !== TaskStatus.COMPLETED).length
+      count: works.filter(t => t.isToday && t.status !== WorkStatus.COMPLETED).length
     },
     { 
       key: 'in-progress',
       label: '진행 중',
-      count: tasks.filter(t => t.status === TaskStatus.IN_PROGRESS).length
+      count: works.filter(t => t.status === WorkStatus.IN_PROGRESS).length
     },
     { 
       key: 'completed',
       label: '완료됨',
-      count: tasks.filter(t => t.status === TaskStatus.COMPLETED).length
+      count: works.filter(t => t.status === WorkStatus.COMPLETED).length
     },
     { 
       key: 'high-priority',
       label: '중요 업무',
-      count: tasks.filter(t => t.priority === TaskPriority.HIGH || t.priority === TaskPriority.URGENT).length
+      count: works.filter(t => t.priority === WorkPriority.HIGH || t.priority === WorkPriority.URGENT).length
     },
     { 
       key: 'all',
       label: '전체 업무',
-      count: tasks.length
+      count: works.length
     }
   ]
 
   // 통합 필터링 로직 (기본 + 캘린더 + 상세 필터)
-  const filteredTasks = tasks.filter(task => {
+  const filteredWorks = works.filter(task => {
     // 1. 기본 필터 적용
     let includeTask = !activeFilters.length
     
@@ -203,14 +197,14 @@ function TasksPageContent() {
       includeTask = activeFilters.some(filter => {
         switch (filter) {
           case 'today':
-            return task.isToday && task.status !== TaskStatus.COMPLETED
+            return task.isToday && task.status !== WorkStatus.COMPLETED
           case 'in-progress':
-            return task.status === TaskStatus.IN_PROGRESS
+            return task.status === WorkStatus.IN_PROGRESS
           case 'completed':
-            return task.status === TaskStatus.COMPLETED
+            return task.status === WorkStatus.COMPLETED
           case 'high-priority':
-            return (task.priority === TaskPriority.HIGH || task.priority === TaskPriority.URGENT) && 
-                   task.status !== TaskStatus.COMPLETED
+            return (task.priority === WorkPriority.HIGH || task.priority === WorkPriority.URGENT) && 
+                   task.status !== WorkStatus.COMPLETED
           case 'all':
             return true
           default:
@@ -230,96 +224,50 @@ function TasksPageContent() {
         calendarMatch = true
       }
       
-      if (showOverdue && taskDueDate && taskDueDate < today && task.status !== TaskStatus.COMPLETED) {
+      if (showOverdue && taskDueDate && taskDueDate < today && task.status !== WorkStatus.COMPLETED) {
         calendarMatch = true  
       }
       
       includeTask = includeTask && calendarMatch
     }
 
-    // 3. 상세 필터 적용
-    if (hasAdvancedFilters) {
-      let advancedMatch = true
-      
-      // 마감일 필터
-      if (advancedFilters.dueDate) {
-        const today = new Date()
-        const taskDueDate = task.dueDate ? new Date(task.dueDate) : null
-        
-        switch (advancedFilters.dueDate) {
-          case 'overdue':
-            advancedMatch = advancedMatch && !!(taskDueDate && taskDueDate < today && task.status !== TaskStatus.COMPLETED)
-            break
-          case 'today':
-            advancedMatch = advancedMatch && !!(taskDueDate && taskDueDate.toDateString() === today.toDateString())
-            break
-          case 'this-week':
-            if (taskDueDate) {
-              const weekFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000)
-              advancedMatch = advancedMatch && taskDueDate >= today && taskDueDate <= weekFromNow
-            } else {
-              advancedMatch = false
-            }
-            break
-          case 'no-due':
-            advancedMatch = advancedMatch && !taskDueDate
-            break
-        }
-      }
-      
-      // 상태 필터
-      if (advancedFilters.status?.length) {
-        advancedMatch = advancedMatch && advancedFilters.status.includes(task.status)
-      }
-      
-      // 프로젝트 필터
-      if (advancedFilters.projectIds?.length) {
-        advancedMatch = advancedMatch && !!(task.projectId && advancedFilters.projectIds.includes(task.projectId))
-      }
-      
-      // 목표 필터
-      if (advancedFilters.goalIds?.length) {
-        advancedMatch = advancedMatch && !!(task.goalId && advancedFilters.goalIds.includes(task.goalId))
-      }
-      
-      includeTask = includeTask && advancedMatch
-    }
+    // 상세 필터 제거됨 - 간단한 인터페이스를 위해
     
     return includeTask
   })
 
   // 경험치 계산 함수
-  const calculateExperience = (task: WorklyTask): number => {
+  const calculateExperience = (task: WorklyWork): number => {
     let baseXP = 10 // 기본 경험치
     
     // 우선순위별 경험치 배수
     switch (task.priority) {
-      case TaskPriority.URGENT:
+      case WorkPriority.URGENT:
         baseXP *= 3
         break
-      case TaskPriority.HIGH:
+      case WorkPriority.HIGH:
         baseXP *= 2
         break
-      case TaskPriority.MEDIUM:
+      case WorkPriority.MEDIUM:
         baseXP *= 1.5
         break
-      case TaskPriority.LOW:
+      case WorkPriority.LOW:
         baseXP *= 1
         break
     }
     
     // 업무 유형별 추가 경험치
     switch (task.type) {
-      case TaskType.EPIC:
+      case WorkType.EPIC:
         baseXP += 50
         break
-      case TaskType.FEATURE:
+      case WorkType.FEATURE:
         baseXP += 30
         break
-      case TaskType.BUG:
+      case WorkType.BUG:
         baseXP += 20
         break
-      case TaskType.IMPROVEMENT:
+      case WorkType.IMPROVEMENT:
         baseXP += 15
         break
     }
@@ -339,20 +287,20 @@ function TasksPageContent() {
   // 업무 완료 토글 핸들러
   const handleToggleComplete = async (taskId: string, completed: boolean): Promise<{ xpGained?: number }> => {
     try {
-      const task = tasks.find(t => t.id === taskId)
+      const task = works.find(t => t.id === taskId)
       if (!task) return { xpGained: 0 }
 
       // 낙관적 업데이트
-      setTasks(prevTasks => 
+      setWorks(prevTasks => 
         prevTasks.map(t => 
           t.id === taskId 
-            ? { ...t, status: completed ? TaskStatus.COMPLETED : TaskStatus.TODO }
+            ? { ...t, status: completed ? WorkStatus.COMPLETED : WorkStatus.TODO }
             : t
         )
       )
 
       // 백엔드 API 호출
-      const newStatus = completed ? TaskStatus.COMPLETED : TaskStatus.TODO
+      const newStatus = completed ? WorkStatus.COMPLETED : WorkStatus.TODO
       console.log('🔄 API 호출:', { taskId, completed, newStatus })
       // TODO: 실제 API 호출로 교체
       console.log('Mock API call - task status update:', { taskId, newStatus })
@@ -380,10 +328,10 @@ function TasksPageContent() {
       console.error('업무 상태 변경 실패:', error)
       
       // 실패 시 롤백
-      setTasks(prevTasks => 
+      setWorks(prevTasks => 
         prevTasks.map(t => 
           t.id === taskId 
-            ? { ...t, status: completed ? TaskStatus.TODO : TaskStatus.COMPLETED }
+            ? { ...t, status: completed ? WorkStatus.TODO : WorkStatus.COMPLETED }
             : t
         )
       )
@@ -411,15 +359,15 @@ function TasksPageContent() {
         total: 0, 
         page: 1, 
         limit: 10 
-      } as PaginatedResponse<BackendTask>
+      } as PaginatedResponse<BackendWork>
       
       // items 배열에서 실제 태스크 데이터 추출
-      const backendTasks = (response as any).items || (response as any).data || []
+      const backendWorks = (response as any).items || (response as any).data || []
       
       // 프론트엔드 형식으로 변환
-      const transformedTasks = backendTasks.map(transformBackendTask)
+      const transformedWorks = backendWorks.map(transformBackendWork)
       
-      setTasks(transformedTasks)
+      setWorks(transformedWorks)
     } catch (err) {
       console.error('업무 로딩 실패:', err)
       setError('업무를 불러오는데 실패했습니다.')
@@ -460,18 +408,7 @@ function TasksPageContent() {
       setActiveFilters([])
     }
     
-    if (advanced) {
-      try {
-        const parsedAdvanced = JSON.parse(decodeURIComponent(advanced))
-        setAdvancedFilters(parsedAdvanced)
-      } catch (e) {
-        console.warn('Invalid advanced filters in URL:', e)
-        setAdvancedFilters({}) // 파싱 실패 시 빈 객체
-      }
-    } else {
-      // URL에 고급 필터가 없으면 빈 상태로 유지
-      setAdvancedFilters({})
-    }
+    // advanced 파라미터 제거됨 - 간단한 필터만 사용
   }, [searchParams])
 
   // 필터 상태가 변경될 때 URL 업데이트
@@ -482,22 +419,20 @@ function TasksPageContent() {
       params.set('filters', encodeURIComponent(JSON.stringify(activeFilters)))
     }
     
-    if (hasAdvancedFilters) {
-      params.set('advanced', encodeURIComponent(JSON.stringify(advancedFilters)))
-    }
+    // 상세 필터 URL 파라미터 제거됨
     
     const newUrl = params.toString() ? `?${params.toString()}` : window.location.pathname
     window.history.replaceState({}, '', newUrl)
-  }, [activeFilters, advancedFilters, hasAdvancedFilters])
+  }, [activeFilters, hasAdvancedFilters])
 
 
-  const handleTaskClick = async (task: WorklyTask) => {
+  const handleTaskClick = async (task: WorklyWork) => {
     try {
       // 실제 API에서 상세 정보 가져오기
       // worklyAPI는 deprecated이므로 목업 데이터 사용
       const taskDetail = {
         ...task,
-        // TaskDetail에 필요한 추가 필드들
+        // WorkDetail에 필요한 추가 필드들
         descriptionMarkdown: task.description || '',
         checklist: [],
         relationships: [],
@@ -507,7 +442,7 @@ function TasksPageContent() {
         actualHours: 0,
         progress: 0,
         customFields: {},
-        subtasks: [],
+        subworks: [],
         labels: [],
         estimatedTimeMinutes: 0,
         loggedTimeMinutes: 0,
@@ -516,14 +451,14 @@ function TasksPageContent() {
         dependents: [],
         watchers: [],
         timeEntries: []
-      } as TaskDetail
+      } as WorkDetail
       
-      setSelectedTask(taskDetail)
-      setIsTaskDetailOpen(true)
+      setSelectedWork(taskDetail)
+      setIsWorkDetailOpen(true)
     } catch (error) {
       console.error('업무 상세 정보 로딩 실패:', error)
-      // 에러 시 기본 TaskDetail 생성
-      const basicTaskDetail: TaskDetail = {
+      // 에러 시 기본 WorkDetail 생성
+      const basicWorkDetail: WorkDetail = {
         ...task,
         descriptionMarkdown: task.description || '',
         checklist: [],
@@ -533,7 +468,7 @@ function TasksPageContent() {
         actualHours: 0,
         progress: 0,
         customFields: {},
-        subtasks: [],
+        subworks: [],
         labels: [],
         comments: [],
         dependencies: [],
@@ -544,13 +479,13 @@ function TasksPageContent() {
         loggedTimeMinutes: 0,
       }
       
-      setSelectedTask(basicTaskDetail)
-      setIsTaskDetailOpen(true)
+      setSelectedWork(basicWorkDetail)
+      setIsWorkDetailOpen(true)
     }
   }
   
   // 업무 상세 저장 핸들러
-  const handleTaskDetailSave = async (taskDetail: TaskDetail) => {
+  const handleWorkDetailSave = async (taskDetail: WorkDetail) => {
     if (!isAuthenticated()) {
       alert('로그인이 필요합니다.')
       return
@@ -571,13 +506,13 @@ function TasksPageContent() {
 
       // TODO: 실제 API 호출로 교체
       console.log('Mock API call - update task detail:', { taskId: taskDetail.id, updateData })
-      const updatedBackendTask = { id: taskDetail.id } as BackendTask
+      const updatedBackendWork = { id: taskDetail.id } as BackendWork
       
       // 백엔드 응답을 프론트엔드 형식으로 변환
-      const updatedTask = transformBackendTask(updatedBackendTask)
+      const updatedTask = transformBackendWork(updatedBackendWork)
 
       // 로컬 상태 업데이트
-      setTasks(prevTasks => 
+      setWorks(prevTasks => 
         prevTasks.map(task => 
           task.id === taskDetail.id ? updatedTask : task
         )
@@ -598,24 +533,24 @@ function TasksPageContent() {
     try {
       // TODO: 실제 API 호출로 교체
       console.log('Mock API call - create task:', { title })
-      const newBackendTask = { 
+      const newBackendWork = { 
         id: 'mock-' + Date.now(),
         title,
-        status: TaskStatus.TODO,
-        priority: TaskPriority.MEDIUM,
-        type: TaskType.TASK,
+        status: WorkStatus.TODO,
+        priority: WorkPriority.MEDIUM,
+        type: WorkType.WORK,
         tags: [],
         assigneeId: 'mock-user',
         assignee: { id: 'mock-user', name: 'Mock User', email: 'mock@example.com' },
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
-      } as BackendTask
+      } as BackendWork
 
       // 백엔드 응답을 프론트엔드 형식으로 변환
-      const newTask = transformBackendTask(newBackendTask)
+      const newTask = transformBackendWork(newBackendWork)
 
       // 리스트 최상단에 추가
-      setTasks(prevTasks => [newTask, ...prevTasks])
+      setWorks(prevTasks => [newTask, ...prevTasks])
       
       // 새로 생성된 업무 애니메이션 적용
       setNewlyCreatedTaskId(newTask.id)
@@ -631,7 +566,7 @@ function TasksPageContent() {
   }
 
   // 정리 마법사: 업무 업데이트
-  const handleTaskUpdate = async (taskId: string, updates: Partial<WorklyTask>) => {
+  const handleTaskUpdate = async (taskId: string, updates: Partial<WorklyWork>) => {
     if (!isAuthenticated()) {
       alert('로그인이 필요합니다.')
       return
@@ -652,13 +587,13 @@ function TasksPageContent() {
 
       // TODO: 실제 API 호출로 교체
       console.log('Mock API call - update task:', { taskId, updateData })
-      const updatedBackendTask = { id: taskId, ...updateData } as BackendTask
+      const updatedBackendWork = { id: taskId, ...updateData } as BackendWork
 
       // 백엔드 응답을 프론트엔드 형식으로 변환
-      const updatedTask = transformBackendTask(updatedBackendTask)
+      const updatedTask = transformBackendWork(updatedBackendWork)
 
       // 로컬 상태 업데이트
-      setTasks(prevTasks => 
+      setWorks(prevTasks => 
         prevTasks.map(task => 
           task.id === taskId ? updatedTask : task
         )
@@ -685,7 +620,7 @@ function TasksPageContent() {
       console.log('Mock API call - delete task:', { taskId })
 
       // 로컬 상태에서 제거
-      setTasks(prevTasks => prevTasks.filter(task => task.id !== taskId))
+      setWorks(prevTasks => prevTasks.filter(task => task.id !== taskId))
     } catch (err) {
       console.error('업무 삭제 실패:', err)
       alert('업무 삭제에 실패했습니다.')
@@ -756,7 +691,7 @@ function TasksPageContent() {
   const handleTaskDefer = (taskId: string) => {
     console.log('보류:', taskId)
     // TODO: 보류 기능 구현
-    handleTaskUpdate(taskId, { status: TaskStatus.DEFERRED })
+    handleTaskUpdate(taskId, { status: WorkStatus.DEFERRED })
   }
 
   const handleTaskConvertToProject = (taskId: string) => {
@@ -768,7 +703,7 @@ function TasksPageContent() {
   const getTasksWithDates = () => {
     const tasksWithDates: { [dateKey: string]: number } = {}
     
-    tasks.forEach(task => {
+    works.forEach(task => {
       if (task.dueDate) {
         const dateKey = task.dueDate.split('T')[0] // YYYY-MM-DD 형식
         tasksWithDates[dateKey] = (tasksWithDates[dateKey] || 0) + 1
@@ -817,18 +752,7 @@ function TasksPageContent() {
       
       {/* 메인 콘텐츠 */}
       <MainContainer className="pb-20 md:pb-20">
-        {/* 필터 관리자 - 로그인된 사용자만 표시 */}
-        {isLoggedIn && (
-          <div className="mb-4">
-            <SimpleFilterChips
-              options={filterOptions}
-              activeFilters={activeFilters}
-              onFilterChange={setActiveFilters}
-              onAdvancedFilterClick={() => setShowAdvancedFilters(true)}
-              hasAdvancedFilters={hasAdvancedFilters}
-            />
-          </div>
-        )}
+        {/* 필터 관리자 제거됨 - 더 간결한 인터페이스를 위해 */}
 
         {/* 업무 목록 */}
         <div className="workly-list-card overflow-hidden">
@@ -837,7 +761,7 @@ function TasksPageContent() {
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
               <p className="workly-caption mt-2">업무를 불러오는 중...</p>
             </div>
-          ) : filteredTasks.length === 0 ? (
+          ) : filteredWorks.length === 0 ? (
             <div className="p-8 text-center">
               <ClipboardDocumentIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
               <h3 className="workly-card-title text-gray-600 mb-1">Work가 없습니다</h3>
@@ -845,7 +769,7 @@ function TasksPageContent() {
             </div>
           ) : (
             <div className="divide-y divide-gray-100">
-              {filteredTasks.map((task) => (
+              {filteredWorks.map((task) => (
                 <div 
                   key={task.id}
                   className={`
@@ -855,7 +779,7 @@ function TasksPageContent() {
                     }
                   `}
                 >
-                  <ResponsiveTaskCard
+                  <ResponsiveWorkCard
                     task={task}
                     onClick={() => handleTaskClick(task)}
                     onDelete={handleTaskDelete}
@@ -930,34 +854,26 @@ function TasksPageContent() {
         </div>
       )}
       
-      {/* 상세 필터 패널 */}
-      <AdvancedFilterPanel
-        isOpen={showAdvancedFilters}
-        onClose={() => setShowAdvancedFilters(false)}
-        filters={advancedFilters}
-        onFiltersChange={setAdvancedFilters}
-        availableProjects={availableProjects}
-        availableGoals={availableGoals}
-      />
+      {/* 상세 필터 패널 제거됨 - 간단한 필터만 사용 */}
       
       {/* 업무 상세 모달 */}
-      <TaskDetailModal
-        task={selectedTask}
-        isOpen={isTaskDetailOpen}
+      <WorkDetailModal
+        work={selectedWork}
+        isOpen={isWorkDetailOpen}
         onClose={() => {
-          setIsTaskDetailOpen(false)
-          setSelectedTask(null)
+          setIsWorkDetailOpen(false)
+          setSelectedWork(null)
         }}
-        onSave={handleTaskDetailSave}
+        onSave={handleWorkDetailSave}
       />
     </div>
   )
 }
 
-export default function TasksPage() {
+export default function WorksPage() {
   return (
     <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
-      <TasksPageContent />
+      <WorksPageContent />
     </Suspense>
   )
 }

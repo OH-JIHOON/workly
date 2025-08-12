@@ -78,7 +78,7 @@ export interface NavigationSettings {
 }
 
 // 워클리 방법론 워크플로우 단계
-export enum CPERStep {
+export enum WorkflowStep {
   CAPTURE = 'capture',   // 수집
   PLAN = 'plan',        // 계획
   EXECUTE = 'execute',  // 실행
@@ -87,9 +87,9 @@ export enum CPERStep {
 
 // 워크플로우 상태
 export interface WorkflowState {
-  currentStep: CPERStep;
-  completedSteps: CPERStep[];
-  nextStep?: CPERStep;
+  currentStep: WorkflowStep;
+  completedSteps: WorkflowStep[];
+  nextStep?: WorkflowStep;
   progress: number; // 0-100
 }
 

@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
-import { useCalendarFilterStore } from '@/lib/stores/calendarFilterStore'
 
 interface CollapsibleCalendarProps {
   isExpanded: boolean
@@ -29,8 +28,9 @@ export default function CollapsibleCalendar({
   const [animatingDate, setAnimatingDate] = useState<string | null>(null)
   const calendarRef = useRef<HTMLDivElement>(null)
   
-  // 전역 캘린더 필터 상태
-  const { showNoDue, showOverdue, setShowNoDue, setShowOverdue } = useCalendarFilterStore()
+  // 캘린더 필터 제거됨 - 간단한 인터페이스를 위해
+  const [showNoDue, setShowNoDue] = useState(false)
+  const [showOverdue, setShowOverdue] = useState(false)
 
   // 달력 바깥 클릭 감지
   useEffect(() => {

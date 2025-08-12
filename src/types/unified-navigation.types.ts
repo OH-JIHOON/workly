@@ -14,7 +14,7 @@ export interface NavigationItem {
   href: string
   icon: ComponentType<{ className?: string }>
   activeIcon: ComponentType<{ className?: string }>
-  isCenter?: boolean  // CPER 워크플로우 중심 표시
+  isCenter?: boolean  // 중심 항목 표시
   isModal?: boolean   // 모달로 열기
 }
 

@@ -3,14 +3,13 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Search, Filter, SortAsc, SortDesc } from 'lucide-react';
 import MainContainer from '@/components/layout/MainContainer';
-import TaskList from '@/components/tasks/TaskList';
-import SimpleFilterChips from '@/components/ui/SimpleFilterChips';
-import TaskCreationWizard from '@/components/tasks/TaskCreationWizard';
+import WorkList from '@/components/works/WorkList';
+import WorkCreationWizard from '@/components/works/WorkCreationWizard';
 import { useSupabaseAuth } from '@/lib/stores/auth.store'; // New Import
-import { tasks } from '@/lib/api/tasks.api'; // New Import
+// import { works } from '@/lib/api/works.api'; // TODO: 변경 예정
 import { projects } from '@/lib/api/projects.api'; // New Import
 import { profiles } from '@/lib/api/profiles.api'; // New Import
-import { Task, CreateTaskDto, TaskStatus, SmartFilter } from '@/types/task.types';
+import { Task, CreateTaskDto, TaskStatus, SmartFilter } from '@/types/work.types';
 
 interface TaskCounts {
   today: number;
@@ -276,16 +275,39 @@ export default function TasksPage() {
 
       {/* 필터 및 검색 */}
       <div className="space-y-4 mb-6">
-        {/* 스마트 필터 */}
-        <SimpleFilterChips
-          options={[
-            { key: 'today', label: '오늘', count: taskCounts.today },
-            { key: 'completed', label: '완료됨', count: taskCounts.completed },
-            { key: 'all', label: '전체', count: taskCounts.all }
-          ]}
-          activeFilters={[currentFilter]}
-          onFilterChange={(filters) => setCurrentFilter(filters[0] as SmartFilter || 'all')}
-        />
+        {/* 스마트 필터 - 간단한 버튼 형태로 변경 */}
+        <div className="flex space-x-2">
+          <button
+            onClick={() => setCurrentFilter('today')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              currentFilter === 'today'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            오늘 ({taskCounts.today})
+          </button>
+          <button
+            onClick={() => setCurrentFilter('completed')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              currentFilter === 'completed'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            완료됨 ({taskCounts.completed})
+          </button>
+          <button
+            onClick={() => setCurrentFilter('all')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              currentFilter === 'all'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            전체 ({taskCounts.all})
+          </button>
+        </div>
 
         {/* 검색 및 정렬 */}
         <div className="flex flex-col sm:flex-row gap-4">

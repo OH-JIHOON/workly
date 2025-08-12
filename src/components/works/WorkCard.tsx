@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { GTDTask, TaskStatus, TaskPriority } from '@/types/task.types'
+import { GTDTask, TaskStatus, TaskPriority } from '@/types/work.types'
 
 interface TaskCardProps {
   task: GTDTask

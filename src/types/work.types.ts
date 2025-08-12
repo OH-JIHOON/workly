@@ -1,9 +1,9 @@
 /**
- * Task 관련 타입 정의
+ * Work 관련 타입 정의 - 워클리의 최소 작업 단위
  */
 
-// Task 상태 (백엔드와 호환)
-export enum TaskStatus {
+// Work 상태 (백엔드와 호환)
+export enum WorkStatus {
   TODO = 'todo',
   IN_PROGRESS = 'in-progress', // 백엔드 호환: in-progress (하이픈)
   IN_REVIEW = 'in-review',
@@ -14,17 +14,17 @@ export enum TaskStatus {
   CANCELLED = 'cancelled',
 }
 
-// Task 우선순위
-export enum TaskPriority {
+// Work 우선순위
+export enum WorkPriority {
   LOW = 'low',
   MEDIUM = 'medium',
   HIGH = 'high',
   URGENT = 'urgent',
 }
 
-// Task 타입
-export enum TaskType {
-  TASK = 'task',
+// Work 타입
+export enum WorkType {
+  WORK = 'work', // 기본 워클리 작업 단위
   BUG = 'bug',
   FEATURE = 'feature',
   IMPROVEMENT = 'improvement',
@@ -33,7 +33,7 @@ export enum TaskType {
 }
 
 // 기본 사용자 정보
-export interface TaskUser {
+export interface WorkUser {
   id: string;
   name: string; // 백엔드 호환성을 위해 추가
   firstName?: string; // 선택적으로 변경
@@ -43,15 +43,15 @@ export interface TaskUser {
 }
 
 // 프로젝트 정보
-export interface TaskProject {
+export interface WorkProject {
   id: string;
   name: string;
   description?: string;
   ownerId: string;
 }
 
-// 태스크 레이블
-export interface TaskLabel {
+// 워크 레이블
+export interface WorkLabel {
   id: string;
   name: string;
   color: string;
@@ -66,36 +66,36 @@ export interface TimeEntry {
   startTime: string;
   endTime?: string;
   userId: string;
-  user: TaskUser;
+  user: WorkUser;
 }
 
-// 태스크 댓글
-export interface TaskComment {
+// 워크 댓글
+export interface WorkComment {
   id: string;
   content: string;
   authorId: string;
-  author: TaskUser;
+  author: WorkUser;
   createdAt: string;
   updatedAt: string;
 }
 
-// 태스크 의존성
-export interface TaskDependency {
+// 워크 의존성
+export interface WorkDependency {
   id: string;
-  dependentTaskId: string;
-  dependsOnTaskId: string;
-  dependentTask: Task;
-  dependsOnTask: Task;
+  dependentWorkId: string;
+  dependsOnWorkId: string;
+  dependentWork: Work;
+  dependsOnWork: Work;
 }
 
-// 메인 태스크 인터페이스
-export interface Task {
+// 메인 워크 인터페이스 - 워클리의 최소 작업 단위
+export interface Work {
   id: string;
   title: string;
   description?: string;
-  status: TaskStatus;
-  priority: TaskPriority;
-  type: TaskType;
+  status: WorkStatus;
+  priority: WorkPriority;
+  type: WorkType;
   dueDate?: string;
   startDate?: string;
   completedAt?: string;
@@ -103,7 +103,7 @@ export interface Task {
   goalId?: string;
   assigneeId?: string;
   reporterId?: string; // 선택적으로 변경
-  parentTaskId?: string;
+  parentWorkId?: string;
   estimatedHours?: number;
   actualHours?: number; // 선택적으로 변경
   progress?: number; // 선택적으로 변경
@@ -114,35 +114,35 @@ export interface Task {
   updatedAt: string;
 
   // Relations
-  project?: TaskProject;
-  assignee?: TaskUser;
-  reporter?: TaskUser; // 선택적으로 변경
-  parentTask?: Task;
-  subtasks?: Task[]; // 선택적으로 변경
-  labels?: TaskLabel[]; // 선택적으로 변경
-  comments?: TaskComment[]; // 선택적으로 변경
-  dependencies?: TaskDependency[]; // 선택적으로 변경
-  dependents?: TaskDependency[]; // 선택적으로 변경
-  watchers?: TaskUser[]; // 선택적으로 변경
+  project?: WorkProject;
+  assignee?: WorkUser;
+  reporter?: WorkUser; // 선택적으로 변경
+  parentWork?: Work;
+  subworks?: Work[]; // 선택적으로 변경
+  labels?: WorkLabel[]; // 선택적으로 변경
+  comments?: WorkComment[]; // 선택적으로 변경
+  dependencies?: WorkDependency[]; // 선택적으로 변경
+  dependents?: WorkDependency[]; // 선택적으로 변경
+  watchers?: WorkUser[]; // 선택적으로 변경
   timeEntries?: TimeEntry[]; // 선택적으로 변경
 
   // Computed properties
   isOverdue?: boolean;
   isDueSoon?: boolean;
-  hasSubtasks?: boolean;
+  hasSubworks?: boolean;
   hasDependencies?: boolean;
   hasBlockingDependencies?: boolean;
 }
 
-// 태스크 생성 DTO
-export interface CreateTaskDto {
+// 워크 생성 DTO
+export interface CreateWorkDto {
   title: string;
   description?: string;
   projectId?: string;
   assigneeId?: string;
-  parentTaskId?: string;
-  priority?: TaskPriority;
-  type?: TaskType;
+  parentWorkId?: string;
+  priority?: WorkPriority;
+  type?: WorkType;
   dueDate?: string;
   startDate?: string;
   estimatedHours?: number;
@@ -151,13 +151,13 @@ export interface CreateTaskDto {
   customFields?: Record<string, any>;
 }
 
-// 태스크 업데이트 DTO
-export interface UpdateTaskDto {
+// 워크 업데이트 DTO
+export interface UpdateWorkDto {
   title?: string;
   description?: string;
-  status?: TaskStatus;
-  priority?: TaskPriority;
-  type?: TaskType;
+  status?: WorkStatus;
+  priority?: WorkPriority;
+  type?: WorkType;
   dueDate?: string;
   startDate?: string;
   estimatedHours?: number;
@@ -167,13 +167,13 @@ export interface UpdateTaskDto {
   customFields?: Record<string, any>;
 }
 
-// 태스크 쿼리 DTO
-export interface TaskQueryDto {
+// 워크 쿼리 DTO
+export interface WorkQueryDto {
   page?: number;
   limit?: number;
-  status?: TaskStatus;
-  priority?: TaskPriority;
-  type?: TaskType;
+  status?: WorkStatus;
+  priority?: WorkPriority;
+  type?: WorkType;
   projectId?: string;
   assigneeId?: string;
   reporterId?: string;
@@ -181,7 +181,7 @@ export interface TaskQueryDto {
   search?: string;
   sortBy?: string;
   sortOrder?: 'ASC' | 'DESC';
-  includeSubtasks?: boolean;
+  includeSubworks?: boolean;
   labelIds?: string[];
   tags?: string[];
 }
@@ -201,8 +201,8 @@ export type GTDContext = 'inbox' | 'next' | 'waiting' | 'someday';
 // 스마트 필터
 export type SmartFilter = 'today' | 'completed' | 'all';
 
-// 태스크 통계
-export interface TaskStats {
+// 워크 통계
+export interface WorkStats {
   total: number;
   todo: number;
   inProgress: number;
@@ -211,55 +211,43 @@ export interface TaskStats {
   overdue: number;
 }
 
-// 태스크 활동
-export interface TaskActivity {
+// 워크 활동
+export interface WorkActivity {
   id: string;
   type: 'created' | 'updated' | 'commented' | 'status_changed' | 'assigned';
   description: string;
   userId: string;
-  user: TaskUser;
-  taskId: string;
+  user: WorkUser;
+  workId: string;
   createdAt: string;
   metadata?: { [key: string]: any };
 }
 
-// 태스크 배치 작업
-export interface TaskBatchOperation {
-  taskIds: string[];
+// 워크 배치 작업
+export interface WorkBatchOperation {
+  workIds: string[];
   operation: 'update_status' | 'update_priority' | 'assign' | 'add_labels' | 'delete';
   data: any;
 }
 
-// 태스크 필터 설정
-export interface TaskFilterSettings {
-  status?: TaskStatus[];
-  priority?: TaskPriority[];
-  assigneeIds?: string[];
-  projectIds?: string[];
-  labelIds?: string[];
-  tags?: string[];
-  dateRange?: {
-    start: string;
-    end: string;
-  };
-}
+// TaskFilterSettings 제거됨 - 더 간단한 필터링 시스템으로 통합
 
-// 태스크 보드 컬럼
-export interface TaskBoardColumn {
+// 워크 보드 컬럼
+export interface WorkBoardColumn {
   id: string;
   title: string;
-  status: TaskStatus;
+  status: WorkStatus;
   limit?: number;
-  tasks: Task[];
+  works: Work[];
 }
 
-// 태스크 보드
-export interface TaskBoard {
+// 워크 보드
+export interface WorkBoard {
   id: string;
   name: string;
   description?: string;
   projectId?: string;
-  columns: TaskBoardColumn[];
+  columns: WorkBoardColumn[];
   settings?: {
     swimlanes?: 'none' | 'assignee' | 'priority' | 'type';
     grouping?: 'none' | 'project' | 'assignee';
@@ -276,7 +264,7 @@ export interface MomentumScore {
 }
 
 // GTD 기반 업무 확장
-export interface GTDTask extends Task {
+export interface GTDWork extends Work {
   momentumScore: MomentumScore;
   gtdContext: GTDContext;
   isActionable: boolean;
@@ -286,17 +274,17 @@ export interface GTDTask extends Task {
 }
 
 // 업무 생성 위자드 단계
-export type TaskWizardStep = 'collect' | 'clarify' | 'organize' | 'execute';
+export type WorkWizardStep = 'collect' | 'clarify' | 'organize' | 'execute';
 
 // 업무 생성 위자드 데이터
-export interface TaskWizardData {
-  step: TaskWizardStep;
+export interface WorkWizardData {
+  step: WorkWizardStep;
   title: string;
   isActionable?: boolean;
   canComplete2Minutes?: boolean;
   belongsToProject?: boolean;
   projectId?: string;
-  priority?: TaskPriority;
+  priority?: WorkPriority;
   dueDate?: string;
   estimatedHours?: number;
   assigneeId?: string;
@@ -314,14 +302,14 @@ export interface ChecklistItem {
 }
 
 // 업무 관계 타입
-export type TaskRelationshipType = 'blocks' | 'blocked_by' | 'related' | 'parent' | 'child';
+export type WorkRelationshipType = 'blocks' | 'blocked_by' | 'related' | 'parent' | 'child';
 
 // 업무 관계
-export interface TaskRelationship {
+export interface WorkRelationship {
   id: string;
-  targetTaskId: string;
-  type: TaskRelationshipType;
-  targetTask?: Task;
+  targetWorkId: string;
+  type: WorkRelationshipType;
+  targetWork?: Work;
 }
 
 // 위키 레퍼런스
@@ -333,21 +321,49 @@ export interface WikiReference {
 }
 
 // 확장된 업무 상세 정보
-export interface TaskDetail extends Task {
+export interface WorkDetail extends Work {
   descriptionMarkdown?: string;
   checklist: ChecklistItem[];
-  relationships: TaskRelationship[];
+  relationships: WorkRelationship[];
   wikiReferences: WikiReference[];
   estimatedTimeMinutes?: number;
   loggedTimeMinutes?: number;
 }
 
 // 업무 상세 업데이트 DTO
-export interface UpdateTaskDetailDto extends UpdateTaskDto {
+export interface UpdateWorkDetailDto extends UpdateWorkDto {
   descriptionMarkdown?: string;
   checklist?: ChecklistItem[];
-  relationships?: TaskRelationship[];
+  relationships?: WorkRelationship[];
   wikiReferences?: WikiReference[];
   estimatedTimeMinutes?: number;
   loggedTimeMinutes?: number;
 }
+
+// ========================
+// 호환성을 위한 기존 타입 alias
+// ========================
+export type TaskStatus = WorkStatus;
+export type TaskPriority = WorkPriority;
+export type TaskType = WorkType;
+export type Task = Work;
+export type TaskUser = WorkUser;
+export type TaskProject = WorkProject;
+export type TaskLabel = WorkLabel;
+export type TaskComment = WorkComment;
+export type TaskDependency = WorkDependency;
+export type CreateTaskDto = CreateWorkDto;
+export type UpdateTaskDto = UpdateWorkDto;
+export type TaskQueryDto = WorkQueryDto;
+export type TaskStats = WorkStats;
+export type TaskActivity = WorkActivity;
+export type TaskBatchOperation = WorkBatchOperation;
+export type TaskBoardColumn = WorkBoardColumn;
+export type TaskBoard = WorkBoard;
+export type GTDTask = GTDWork;
+export type TaskWizardStep = WorkWizardStep;
+export type TaskWizardData = WorkWizardData;
+export type TaskRelationshipType = WorkRelationshipType;
+export type TaskRelationship = WorkRelationship;
+export type TaskDetail = WorkDetail;
+export type UpdateTaskDetailDto = UpdateWorkDetailDto;
