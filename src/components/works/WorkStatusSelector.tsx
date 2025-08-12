@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { ChevronDown, Check } from 'lucide-react';
-import { TaskStatus } from '@/types/work.types';
+import { WorkStatus as TaskStatus } from '@/types/work.types';
 import WorkStatusBadge from './WorkStatusBadge';
 
 interface TaskStatusSelectorProps {

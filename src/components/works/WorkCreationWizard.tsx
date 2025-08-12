@@ -2,10 +2,10 @@
 
 import React, { useState } from 'react'
 import { 
-  TaskWizardStep, 
-  TaskWizardData, 
-  TaskPriority, 
-  CreateTaskDto
+  WorkWizardStep as TaskWizardStep, 
+  WorkWizardData as TaskWizardData, 
+  WorkPriority as TaskPriority, 
+  CreateWorkDto as CreateTaskDto
 } from '@/types/work.types'
 import { X, ArrowLeft, ArrowRight, CheckCircle, Clock, Users } from 'lucide-react'
 

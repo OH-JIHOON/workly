@@ -9,7 +9,7 @@ import { useSupabaseAuth } from '@/lib/stores/auth.store'; // New Import
 // import { works } from '@/lib/api/works.api'; // TODO: 변경 예정
 import { projects } from '@/lib/api/projects.api'; // New Import
 import { profiles } from '@/lib/api/profiles.api'; // New Import
-import { Task, CreateTaskDto, TaskStatus, SmartFilter } from '@/types/work.types';
+import { Work as Task, CreateWorkDto as CreateTaskDto, WorkStatus as TaskStatus, SmartFilter } from '@/types/work.types';
 
 interface TaskCounts {
   today: number;
@@ -81,7 +81,7 @@ export default function TasksPage() {
       setError(null);
 
       // 모든 태스크 로드
-      const { data: allTasks, error: tasksError } = await tasks.list(user!.id); // Use user.id
+      const { data: allTasks, error: tasksError } = await (works as any).list(user!.id); // Use user.id
       if (tasksError) throw tasksError;
       setTasksData(allTasks || []); // Changed setTasks to setTasksData
 
@@ -207,7 +207,7 @@ export default function TasksPage() {
 
   const handleCreateTask = async (taskData: CreateTaskDto) => {
     try {
-      await (tasks as any).create(taskData as any); // Type assertion for API compatibility
+      await (works as any).create(taskData as any); // Type assertion for API compatibility
       await loadTasks(); // 태스크 목록 새로고침
     } catch (err) {
       console.error('태스크 생성 실패:', err);
@@ -217,7 +217,7 @@ export default function TasksPage() {
 
   const handleStatusChange = async (taskId: string, status: TaskStatus) => {
     try {
-      await (tasks as any).update(taskId, { status: status as any }); // Type assertion for API compatibility
+      await (works as any).update(taskId, { status: status as any }); // Type assertion for API compatibility
       await loadTasks(); // 태스크 목록 새로고침
     } catch (err) {
       console.error('태스크 상태 변경 실패:', err);
@@ -232,7 +232,7 @@ export default function TasksPage() {
   const handleTaskDelete = async (task: Task) => {
     if (confirm(`"${task.title}" 태스크를 삭제하시겠습니까?`)) {
       try {
-        await tasks.delete(task.id); // Use new tasks.delete
+        await (works as any).delete(task.id); // Use new works.delete
         await loadTasks(); // 태스크 목록 새로고침
       } catch (err) {
         console.error('태스크 삭제 실패:', err);
@@ -350,7 +350,7 @@ export default function TasksPage() {
       </div>
 
       {/* 태스크 목록 */}
-      <TaskList
+      <WorkList
         tasks={filteredTasks}
         onStatusChange={handleStatusChange}
         onTaskEdit={handleTaskEdit}
@@ -368,7 +368,7 @@ export default function TasksPage() {
       />
 
       {/* 태스크 생성 마법사 */}
-      <TaskCreationWizard
+      <WorkCreationWizard
         isOpen={isCreationWizardOpen}
         onClose={() => setIsCreationWizardOpen(false)}
         onSubmit={handleCreateTask}
