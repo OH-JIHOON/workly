@@ -273,22 +273,7 @@ export interface GTDWork extends Work {
   clarified: boolean;
 }
 
-// 업무 생성 위자드 단계
-export type WorkWizardStep = 'collect' | 'clarify' | 'organize' | 'execute';
-
-// 업무 생성 위자드 데이터
-export interface WorkWizardData {
-  step: WorkWizardStep;
-  title: string;
-  isActionable?: boolean;
-  canComplete2Minutes?: boolean;
-  belongsToProject?: boolean;
-  projectId?: string;
-  priority?: WorkPriority;
-  dueDate?: string;
-  estimatedHours?: number;
-  assigneeId?: string;
-}
+// 업무 생성 위자드 관련 타입 제거됨
 
 // 홈 대시보드 필터 (GTD 방법론 기반)
 export type HomeDashboardFilter = 'today' | 'inbox' | 'someday' | 'completed' | 'all';
@@ -361,8 +346,7 @@ export type TaskBatchOperation = WorkBatchOperation;
 export type TaskBoardColumn = WorkBoardColumn;
 export type TaskBoard = WorkBoard;
 export type GTDTask = GTDWork;
-export type TaskWizardStep = WorkWizardStep;
-export type TaskWizardData = WorkWizardData;
+// TaskWizard 타입 alias 제거됨
 export type TaskRelationshipType = WorkRelationshipType;
 export type TaskRelationship = WorkRelationship;
 export type TaskDetail = WorkDetail;

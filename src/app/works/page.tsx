@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Search, Filter, SortAsc, SortDesc } from 'lucide-react';
 import MainContainer from '@/components/layout/MainContainer';
 import WorkList from '@/components/works/WorkList';
-import WorkCreationWizard from '@/components/works/WorkCreationWizard';
 import { useSupabaseAuth } from '@/lib/stores/auth.store'; // New Import
 // import { works } from '@/lib/api/works.api'; // TODO: 변경 예정
 import { projects } from '@/lib/api/projects.api'; // New Import
@@ -54,8 +53,7 @@ export default function TasksPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOption, setSortOption] = useState<string>('dueDate-asc');
 
-  // UI 상태
-  const [isCreationWizardOpen, setIsCreationWizardOpen] = useState(false);
+  // UI 상태 - 제거됨
   const [projects, setProjects] = useState<Array<{ id: string; name: string }>>([]);
   const [assignees, setAssignees] = useState<Array<{ id: string; firstName: string; lastName: string }>>([]);
 
@@ -264,13 +262,7 @@ export default function TasksPage() {
           <h1 className="text-3xl font-bold text-gray-900">태스크 관리</h1>
           <p className="text-gray-600 mt-1">GTD 방법론을 활용한 체계적인 태스크 관리</p>
         </div>
-        <button
-          onClick={() => setIsCreationWizardOpen(true)}
-          className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          <Plus className="w-5 h-5" />
-          <span>새 태스크</span>
-        </button>
+        {/* 새 태스크 버튼 - 하단 QuickAdd로 대체됨 */}
       </div>
 
       {/* 필터 및 검색 */}
@@ -367,13 +359,7 @@ export default function TasksPage() {
         }
       />
 
-      {/* 태스크 생성 마법사 */}
-      <WorkCreationWizard
-        isOpen={isCreationWizardOpen}
-        onClose={() => setIsCreationWizardOpen(false)}
-        onSubmit={handleCreateTask}
-        projects={projects}
-      />
+      {/* WorkCreationWizard 제거됨 - 하단 QuickAdd 사용 */}
     </MainContainer>
   );
 }
