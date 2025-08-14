@@ -3,17 +3,14 @@
  * 모든 핵심 타입을 중앙에서 관리
  */
 
-// 기존 타입들
-export * from './api.types';
-export * from './socket.types';
+// 핵심 타입들 - 중복 방지를 위해 선택적 export
+export * from './work.types';
+export * from './workly-core.types';
+export * from './unified-navigation.types';
 
-// 워클리 방법론 새로운 타입들
-// goal.types 제거됨
-// inbox.types 제거됨
-export * from './navigation.types';
-
-// 어드민 패널 타입들
-export * from './admin.types';
+// 기존 타입들 (중복 회피) - 실제 존재하는 타입만 export
+export type { UserPreferences } from './api.types';
+export type { NavigationItem } from './navigation.types';
 
 // 워클리 방법론 핵심 상수
 export const WORKLY_METHODOLOGY = {

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import { UnifiedLayoutProps, NavigationLayout } from '@/types/unified-navigation.types'
 import { NAVIGATION_ITEMS, NAVIGATION_CONFIG } from '@/constants/navigation'
-import { isAuthenticated } from '@/lib/auth'
+import { useAuth } from '@/lib/stores/auth.store'
 import BrandHeader from './BrandHeader'
 import PureNavigation from './PureNavigation'
 import UtilityMenu from './UtilityMenu'
@@ -20,7 +20,7 @@ export default function UnifiedLayout({
   hideNavigation = false 
 }: UnifiedLayoutProps) {
   const pathname = usePathname()
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const { isAuthenticated: isLoggedIn } = useAuth()
   // inbox 관련 상태 제거됨
   
   // 레이아웃 자동 감지
@@ -38,10 +38,6 @@ export default function UnifiedLayout({
   
   const layout = layoutProp || detectedLayout
   
-  // 인증 상태 확인
-  useEffect(() => {
-    setIsLoggedIn(isAuthenticated())
-  }, [])
   
   // 인증 관련 페이지에서는 네비게이션을 숨김
   const isAuthPage = pathname?.startsWith('/auth')

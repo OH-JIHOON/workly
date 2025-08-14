@@ -4,14 +4,10 @@
  */
 
 // Re-export everything from the current API structure for backward compatibility
-export * from './tasks.api'
-export * from './projects.api' 
-// goals.api 제거됨
+export * from './works.api'
 export * from './profiles.api'
 export * from './auth.api'
-// inbox.api 제거됨
-export * from './messages.api'
-export * from './realtime.api'
+// Legacy APIs removed: tasks.api, projects.api, messages.api, realtime.api
 
 // Legacy worklyAPI object for backward compatibility (deprecated)
 export const worklyAPI = {

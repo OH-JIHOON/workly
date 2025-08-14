@@ -8,11 +8,11 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
-import { useSupabaseAuth } from '@/lib/stores/auth.store';
+import { useAuth } from '@/lib/stores/auth.store';
 
 export default function ImplicitCallbackPage() {
   const router = useRouter();
-  const { initialize } = useSupabaseAuth();
+  const { initialize } = useAuth();
   const [status, setStatus] = useState<'processing' | 'success' | 'error'>('processing');
   const [error, setError] = useState<string | null>(null);
 

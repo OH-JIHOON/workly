@@ -6,6 +6,7 @@ node_modules
 .mcp.json
 repomix-output.xml
 .claude/
+.gemini/
 .github/
 .taskmaster/
 .vscode/

@@ -6,10 +6,10 @@
 'use client';
 
 import { useState } from 'react';
-import { useSupabaseAuth } from '@/lib/stores/auth.store';
+import { useAuth } from '@/lib/stores/auth.store';
 
 export default function AuthTestPage() {
-  const { user, session, isAuthenticated, getClaims, signInWithGoogle, signOut } = useSupabaseAuth();
+  const { user, session, isAuthenticated, getClaims, signInWithGoogle, signOut } = useAuth();
   const [testResults, setTestResults] = useState<{ [key: string]: any }>({});
   const [isRunningTests, setIsRunningTests] = useState(false);
 

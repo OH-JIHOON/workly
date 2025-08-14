@@ -7,8 +7,8 @@ export enum WorkStatus {
   TODO = 'todo',
   IN_PROGRESS = 'in-progress', // 백엔드 호환: in-progress (하이픈)
   IN_REVIEW = 'in-review',
-  DONE = 'done',
-  COMPLETED = 'completed', // 백엔드 호환성을 위해 추가
+  COMPLETED = 'completed', // 기본 완료 상태
+  DONE = 'done', // 호환성
   BLOCKED = 'blocked', 
   DEFERRED = 'deferred',
   CANCELLED = 'cancelled',
@@ -24,7 +24,8 @@ export enum WorkPriority {
 
 // Work 타입
 export enum WorkType {
-  WORK = 'work', // 기본 워클리 작업 단위
+  TASK = 'task', // 기본 작업 단위 (Supabase와 호환)
+  WORK = 'work', // 워클리 작업 단위 (호환성)
   BUG = 'bug',
   FEATURE = 'feature',
   IMPROVEMENT = 'improvement',

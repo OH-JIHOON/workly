@@ -7,7 +7,7 @@ import { FolderIcon, PlusIcon } from '@heroicons/react/24/outline'
 import ContentHeader from '@/components/layout/ContentHeader'
 import MainContainer from '@/components/layout/MainContainer'
 import LoginBanner from '@/components/ui/LoginBanner'
-import { isAuthenticated } from '@/lib/auth'
+import { useAuth } from '@/lib/stores/auth.store'
 
 // 단순한 프로젝트 인터페이스
 interface SimpleProject {
@@ -21,14 +21,11 @@ interface SimpleProject {
 function ProjectsPageContent() {
   const [projects, setProjects] = useState<SimpleProject[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const { isAuthenticated } = useAuth()
 
   // 로그인 상태 확인
   useEffect(() => {
-    const loggedIn = isAuthenticated()
-    setIsLoggedIn(loggedIn)
-    
-    if (loggedIn) {
+    if (isAuthenticated) {
       // TODO: 실제 프로젝트 데이터 로딩
       setTimeout(() => {
         setProjects([]) // 현재는 빈 배열
@@ -37,11 +34,11 @@ function ProjectsPageContent() {
     } else {
       setIsLoading(false)
     }
-  }, [])
+  }, [isAuthenticated])
 
   // 새 프로젝트 생성
   const handleCreateProject = () => {
-    if (!isAuthenticated()) {
+    if (!isAuthenticated) {
       alert('로그인이 필요합니다.')
       return
     }
@@ -63,7 +60,7 @@ function ProjectsPageContent() {
   return (
     <div className="min-h-screen bg-gray-50">
       <ContentHeader title="Workspaces" />
-      <LoginBanner />
+      
       
       <MainContainer className="pb-20 md:pb-20">
         {/* 프로젝트 목록 */}
@@ -78,7 +75,7 @@ function ProjectsPageContent() {
               <FolderIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
               <h3 className="workly-card-title text-gray-600 mb-1">워크스페이스가 없습니다</h3>
               <p className="workly-caption mb-4">새로운 워크스페이스를 만들어보세요!</p>
-              {isLoggedIn && (
+              {isAuthenticated && (
                 <button
                   onClick={handleCreateProject}
                   className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -114,7 +111,7 @@ function ProjectsPageContent() {
       </MainContainer>
       
       {/* 플로팅 추가 버튼 (모바일) */}
-      {isLoggedIn && (
+      {isAuthenticated && (
         <div className="md:hidden fixed right-4 bottom-20 z-50">
           <button
             onClick={handleCreateProject}
@@ -126,7 +123,7 @@ function ProjectsPageContent() {
       )}
       
       {/* 데스크톱 추가 버튼 */}
-      {isLoggedIn && (
+      {isAuthenticated && (
         <div className="hidden md:block fixed bottom-4 right-4 z-50">
           <button
             onClick={handleCreateProject}

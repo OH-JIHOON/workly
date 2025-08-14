@@ -2,13 +2,13 @@
 
 import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useSupabaseAuth } from '@/lib/stores/auth.store'
+import { useAuth } from '@/lib/stores/auth.store'
 import GoogleLoginButton from '@/components/auth/GoogleLoginButton'
 
 function LoginPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { session } = useSupabaseAuth()
+  const { session } = useAuth()
   const [errorMessage, setErrorMessage] = useState<string>('')
 
   useEffect(() => {

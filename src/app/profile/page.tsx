@@ -9,8 +9,7 @@ import {
 import ContentHeader from '@/components/layout/ContentHeader'
 import MainContainer from '@/components/layout/MainContainer'
 import LoginBanner from '@/components/ui/LoginBanner'
-import { isAuthenticated } from '@/lib/auth'
-import { useSupabaseAuth } from '@/lib/stores/auth.store'
+import { useAuth } from '@/lib/stores/auth.store'
 
 // 단순한 사용자 정보 인터페이스
 interface SimpleUser {
@@ -23,22 +22,20 @@ interface SimpleUser {
 }
 
 export default function ProfilePage() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const { user, signOut } = useSupabaseAuth()
+  const { user, signOut, isAuthenticated } = useAuth()
   
-  // 목업 사용자 데이터
+  // 사용자 데이터 (실제 Supabase 사용자 정보 활용)
   const mockUser: SimpleUser = {
-    name: user?.first_name + ' ' + user?.last_name || '워클리 사용자',
+    name: user?.user_metadata?.full_name || 
+          user?.user_metadata?.name || 
+          (user?.email?.split('@')[0] + ' 님') || 
+          '워클리 사용자',
     email: user?.email || 'workly@example.com',
-    avatar: user?.avatar_url,
-    joinedAt: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString(),
+    avatar: user?.user_metadata?.avatar_url || user?.user_metadata?.picture,
+    joinedAt: user?.created_at || new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString(),
     totalTasksCompleted: 156,
     currentStreak: 7,
   }
-
-  useEffect(() => {
-    setIsLoggedIn(isAuthenticated())
-  }, [])
 
   const handleLogout = async () => {
     if (confirm('로그아웃 하시겠습니까?')) {
@@ -54,10 +51,10 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <ContentHeader title="Worker" />
-      <LoginBanner />
+      
       
       <MainContainer className="pb-20 md:pb-20">
-        {isLoggedIn ? (
+        {isAuthenticated ? (
           <div className="space-y-6">
             {/* 프로필 정보 카드 */}
             <div className="bg-white rounded-lg border p-6">

@@ -1,0 +1,219 @@
+-- 샘플 워크 데이터 생성 (개발/테스트용)
+-- 실제 사용자가 있을 때만 실행되도록 조건부 처리
+
+-- 샘플 프로젝트 생성
+INSERT INTO public.projects (id, title, description, status, priority, owner_id, color, created_at, updated_at)
+VALUES 
+  ('sample-proj-1', '워클리 플랫폼 개발', 'Next.js와 Supabase를 활용한 업무 관리 플랫폼 개발', 'in-progress', 'high', 
+   COALESCE((SELECT id FROM public.profiles LIMIT 1), gen_random_uuid()), 
+   '#3B82F6', NOW(), NOW()),
+  ('sample-proj-2', 'UI/UX 개선', '사용자 경험 향상을 위한 인터페이스 개선 프로젝트', 'planning', 'medium', 
+   COALESCE((SELECT id FROM public.profiles LIMIT 1), gen_random_uuid()), 
+   '#10B981', NOW(), NOW())
+ON CONFLICT (id) DO NOTHING;
+
+-- 샘플 워크 생성 (사용자가 존재할 때만)
+INSERT INTO public.tasks (
+  id, title, description, status, priority, type, 
+  project_id, assignee_id, reporter_id, 
+  due_date, tags, estimated_hours,
+  created_at, updated_at
+)
+SELECT 
+  'sample-work-' || generate_series,
+  CASE generate_series
+    WHEN 1 THEN '워클리 최소 작업 단위 구현'
+    WHEN 2 THEN 'Supabase 데이터베이스 스키마 설계'
+    WHEN 3 THEN 'Next.js API 라우트 구현'
+    WHEN 4 THEN 'React 컴포넌트 개발'
+    WHEN 5 THEN 'work 대시보드 UI 구현'
+    WHEN 6 THEN '인증 시스템 통합'
+    WHEN 7 THEN '실시간 업데이트 기능'
+    WHEN 8 THEN '모바일 반응형 디자인'
+    WHEN 9 THEN '성능 최적화'
+    WHEN 10 THEN '배포 및 테스트'
+    ELSE 'Work 기능 ' || generate_series
+  END,
+  CASE generate_series
+    WHEN 1 THEN '워클리의 핵심인 work(최소 작업 단위)를 완전히 구현합니다. Supabase와 Next.js를 활용하여 CRUD 기능과 실시간 동기화를 지원합니다.'
+    WHEN 2 THEN 'PostgreSQL과 Supabase를 활용한 확장성 높은 데이터베이스 스키마를 설계하고 구현합니다.'
+    WHEN 3 THEN 'RESTful API 엔드포인트를 구현하여 프론트엔드와 백엔드 간의 원활한 데이터 통신을 지원합니다.'
+    WHEN 4 THEN '재사용 가능한 React 컴포넌트를 개발하여 일관된 사용자 인터페이스를 제공합니다.'
+    WHEN 5 THEN '직관적이고 효율적인 워크 관리 대시보드를 구현합니다.'
+    ELSE '워클리 플랫폼의 핵심 기능을 개발합니다.'
+  END,
+  CASE (generate_series % 4)
+    WHEN 1 THEN 'todo'
+    WHEN 2 THEN 'in-progress'
+    WHEN 3 THEN 'completed'
+    WHEN 0 THEN 'in-review'
+  END::task_status,
+  CASE (generate_series % 4)
+    WHEN 1 THEN 'high'
+    WHEN 2 THEN 'medium'
+    WHEN 3 THEN 'urgent'
+    WHEN 0 THEN 'low'
+  END::task_priority,
+  CASE (generate_series % 5)
+    WHEN 1 THEN 'feature'
+    WHEN 2 THEN 'task'
+    WHEN 3 THEN 'improvement'
+    WHEN 4 THEN 'bug'
+    WHEN 0 THEN 'epic'
+  END::task_type,
+  CASE WHEN generate_series <= 7 THEN 'sample-proj-1' 
+       WHEN generate_series <= 10 THEN 'sample-proj-2' 
+       ELSE NULL END,
+  (SELECT id FROM public.profiles LIMIT 1),
+  (SELECT id FROM public.profiles LIMIT 1),
+  CASE WHEN generate_series % 3 = 0 THEN NOW() + INTERVAL '7 days'
+       WHEN generate_series % 3 = 1 THEN NOW() + INTERVAL '3 days'
+       ELSE NOW() + INTERVAL '1 day'
+  END,
+  CASE (generate_series % 3)
+    WHEN 0 THEN ARRAY['urgent', 'frontend']
+    WHEN 1 THEN ARRAY['backend', 'database']
+    WHEN 2 THEN ARRAY['ui', 'design']
+  END,
+  CASE WHEN generate_series <= 5 THEN 8.0
+       WHEN generate_series <= 8 THEN 4.0
+       ELSE 2.0
+  END,
+  NOW() - INTERVAL '1 day' * (generate_series - 1),
+  NOW()
+FROM generate_series(1, 12)
+WHERE EXISTS (SELECT 1 FROM public.profiles LIMIT 1)
+ON CONFLICT (id) DO NOTHING;
+
+-- 샘플 프로젝트 진행률 업데이트
+UPDATE public.projects 
+SET progress = (
+  SELECT CASE 
+    WHEN COUNT(*) = 0 THEN 0
+    ELSE ROUND((COUNT(*) FILTER (WHERE status = 'completed')::DECIMAL / COUNT(*)) * 100)
+  END
+  FROM public.tasks 
+  WHERE project_id = projects.id
+)
+WHERE id IN ('sample-proj-1', 'sample-proj-2');
+
+-- 오늘 할 일 태그 추가 (일부 워크에)
+UPDATE public.tasks 
+SET tags = array_append(tags, 'today')
+WHERE id IN ('sample-work-1', 'sample-work-2', 'sample-work-4')
+AND EXISTS (SELECT 1 FROM public.profiles LIMIT 1);
+
+-- 진행률 업데이트 (진행중인 워크에 대해)
+UPDATE public.tasks 
+SET progress = CASE 
+  WHEN status = 'completed' THEN 100
+  WHEN status = 'in-review' THEN 90
+  WHEN status = 'in-progress' THEN 
+    CASE WHEN RANDOM() > 0.5 THEN 60 ELSE 30 END
+  ELSE 0
+END
+WHERE id LIKE 'sample-work-%';
+
+-- 코멘트 추가 (TODO: 향후 comments 테이블 생성 시 활용)
+-- 현재는 description에 업데이트 정보 포함
+
+COMMENT ON TABLE public.tasks IS '워클리 업무(work) 테이블 - 최소 작업 단위를 관리합니다';
+COMMENT ON COLUMN public.tasks.title IS '워크 제목';
+COMMENT ON COLUMN public.tasks.description IS '워크 상세 설명';
+COMMENT ON COLUMN public.tasks.status IS '워크 진행 상태';
+COMMENT ON COLUMN public.tasks.priority IS '워크 우선순위';
+COMMENT ON COLUMN public.tasks.type IS '워크 유형';
+COMMENT ON COLUMN public.tasks.tags IS '워크 태그 배열';
+COMMENT ON COLUMN public.tasks.progress IS '워크 진행률 (0-100)';
+
+-- 개발자를 위한 유용한 뷰 생성
+CREATE OR REPLACE VIEW public.work_summary AS
+SELECT 
+  t.id,
+  t.title,
+  t.status,
+  t.priority,
+  t.type,
+  t.progress,
+  t.due_date,
+  t.tags,
+  p.title as project_title,
+  assignee.first_name || ' ' || assignee.last_name as assignee_name,
+  t.created_at,
+  t.updated_at,
+  -- 추가 계산 필드들
+  CASE 
+    WHEN t.due_date < NOW() AND t.status NOT IN ('completed', 'cancelled') THEN true
+    ELSE false
+  END as is_overdue,
+  CASE 
+    WHEN t.due_date::date = CURRENT_DATE OR 'today' = ANY(t.tags) THEN true
+    ELSE false
+  END as is_today,
+  CASE 
+    WHEN t.priority IN ('high', 'urgent') THEN true
+    ELSE false
+  END as is_high_priority
+FROM public.tasks t
+LEFT JOIN public.projects p ON t.project_id = p.id
+LEFT JOIN public.profiles assignee ON t.assignee_id = assignee.id
+ORDER BY t.created_at DESC;
+
+COMMENT ON VIEW public.work_summary IS '워크 요약 정보를 제공하는 뷰 - 개발 및 디버깅용';
+
+-- 통계를 위한 함수 개선
+CREATE OR REPLACE FUNCTION get_work_stats(user_uuid uuid)
+RETURNS json AS $$
+DECLARE
+  stats json;
+BEGIN
+  SELECT json_build_object(
+    'total', COUNT(*),
+    'todo', COUNT(*) FILTER (WHERE status = 'todo'),
+    'in_progress', COUNT(*) FILTER (WHERE status = 'in-progress'),
+    'in_review', COUNT(*) FILTER (WHERE status = 'in-review'),
+    'completed', COUNT(*) FILTER (WHERE status = 'completed'),
+    'blocked', COUNT(*) FILTER (WHERE status = 'blocked'),
+    'deferred', COUNT(*) FILTER (WHERE status = 'deferred'),
+    'cancelled', COUNT(*) FILTER (WHERE status = 'cancelled'),
+    'overdue', COUNT(*) FILTER (WHERE due_date < NOW() AND status NOT IN ('completed', 'cancelled')),
+    'today', COUNT(*) FILTER (WHERE (due_date::date = CURRENT_DATE OR 'today' = ANY(tags)) AND status NOT IN ('completed', 'cancelled')),
+    'high_priority', COUNT(*) FILTER (WHERE priority IN ('high', 'urgent') AND status NOT IN ('completed', 'cancelled')),
+    'by_priority', json_build_object(
+      'low', COUNT(*) FILTER (WHERE priority = 'low'),
+      'medium', COUNT(*) FILTER (WHERE priority = 'medium'),
+      'high', COUNT(*) FILTER (WHERE priority = 'high'),
+      'urgent', COUNT(*) FILTER (WHERE priority = 'urgent')
+    ),
+    'by_type', json_build_object(
+      'task', COUNT(*) FILTER (WHERE type = 'task'),
+      'feature', COUNT(*) FILTER (WHERE type = 'feature'),
+      'bug', COUNT(*) FILTER (WHERE type = 'bug'),
+      'improvement', COUNT(*) FILTER (WHERE type = 'improvement'),
+      'epic', COUNT(*) FILTER (WHERE type = 'epic')
+    )
+  ) INTO stats
+  FROM public.tasks 
+  WHERE assignee_id = user_uuid OR reporter_id = user_uuid;
+  
+  RETURN stats;
+END;
+$$ language plpgsql security definer;
+
+COMMENT ON FUNCTION get_work_stats IS '사용자별 워크 통계를 JSON으로 반환 - 대시보드용';
+
+-- 인덱스 추가 (성능 최적화)
+CREATE INDEX IF NOT EXISTS idx_tasks_today 
+ON public.tasks (assignee_id, due_date) 
+WHERE due_date::date = CURRENT_DATE OR 'today' = ANY(tags);
+
+CREATE INDEX IF NOT EXISTS idx_tasks_priority_status 
+ON public.tasks (priority, status) 
+WHERE status NOT IN ('completed', 'cancelled');
+
+CREATE INDEX IF NOT EXISTS idx_tasks_overdue 
+ON public.tasks (due_date, status) 
+WHERE due_date < NOW() AND status NOT IN ('completed', 'cancelled');
+
+-- 샘플 데이터 생성 완료
+SELECT 'Sample work data created successfully! 🎉' as message;

@@ -10,7 +10,7 @@ import {
   UserIcon,
   Cog6ToothIcon
 } from '@heroicons/react/24/outline'
-import { isAuthenticated, logout, getCurrentUser } from '@/lib/auth'
+import { useAuth } from '@/lib/stores/auth.store'
 
 interface HamburgerMenuProps {
   className?: string
@@ -19,16 +19,13 @@ interface HamburgerMenuProps {
 export default function HamburgerMenu({ className = '' }: HamburgerMenuProps) {
   const router = useRouter()
   const [isOpen, setIsOpen] = useState(false)
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const [user, setUser] = useState<any>(null)
+  const { isAuthenticated, user, signOut } = useAuth()
   const [mounted, setMounted] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
     setMounted(true)
-    setIsLoggedIn(isAuthenticated())
-    setUser(getCurrentUser())
   }, [])
 
   // 바깥 클릭/터치 시 메뉴 닫기
@@ -57,9 +54,7 @@ export default function HamburgerMenu({ className = '' }: HamburgerMenuProps) {
   const handleLogout = async () => {
     if (confirm('로그아웃 하시겠습니까?')) {
       try {
-        await logout()
-        setIsLoggedIn(false)
-        setUser(null)
+        await signOut()
         setIsOpen(false)
         router.push('/auth/login')
       } catch (error) {
@@ -140,7 +135,7 @@ export default function HamburgerMenu({ className = '' }: HamburgerMenuProps) {
             }}
           >
             {/* 사용자 정보 */}
-            {isLoggedIn && user && (
+            {isAuthenticated && user && (
               <div className="p-4 border-b border-gray-100">
                 <div className="flex items-center space-x-3">
                   <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
@@ -183,7 +178,7 @@ export default function HamburgerMenu({ className = '' }: HamburgerMenuProps) {
               })}
 
               {/* 로그인/로그아웃 */}
-              {isLoggedIn ? (
+              {isAuthenticated ? (
                 <button
                   onClick={handleLogout}
                   className="w-full flex items-center px-4 py-3 text-left text-red-600 hover:bg-red-50 transition-colors border-t border-gray-100 mt-2"

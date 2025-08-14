@@ -4,7 +4,7 @@
  */
 
 // Re-export from active API modules
-export * from './api/tasks.api'
+export * from './api/works.api'
 export * from './api/profiles.api'
 export * from './api/auth.api'
 

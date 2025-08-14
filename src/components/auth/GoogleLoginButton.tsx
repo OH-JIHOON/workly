@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useSupabaseAuth } from '../../lib/stores/auth.store';
+import { useAuth } from '../../lib/stores/auth.store';
 
 interface GoogleLoginButtonProps {
   onLogin?: () => void;
@@ -19,7 +19,7 @@ export default function GoogleLoginButton({
   redirectUrl
 }: GoogleLoginButtonProps) {
   const [internalLoading, setInternalLoading] = useState(false);
-  const { signInWithGoogle } = useSupabaseAuth();
+  const { signInWithGoogle } = useAuth();
   
   const isLoadingState = externalLoading || internalLoading;
 
@@ -36,14 +36,8 @@ export default function GoogleLoginButton({
     setInternalLoading(true);
     
     try {
-      const { error } = await signInWithGoogle(redirectUrl);
-      
-      if (error) {
-        console.error('❌ Google 로그인 오류:', error);
-        alert('로그인 중 오류가 발생했습니다. 다시 시도해주세요.');
-      } else {
-        console.log('✅ Google OAuth 요청 성공 - 리다이렉트 대기 중...');
-      }
+      await signInWithGoogle();
+      console.log('✅ Google OAuth 요청 성공 - 리다이렉트 대기 중...');
       // 성공 시 Supabase가 자동으로 리다이렉트 처리
     } catch (error) {
       console.error('❌ Google 로그인 예외:', error);
