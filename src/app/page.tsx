@@ -13,7 +13,8 @@ import { useWorks } from '@/hooks/useWorks'
 import { useAuth } from '@/lib/stores/auth.store'
 
 function WorksPageContent() {
-  const { createWork } = useWorks()
+  // 상위에서 상태 관리하여 WorkList와 QuickAddInput이 동일한 상태를 공유
+  const worksState = useWorks()
   const { isAuthenticated, user, isLoading } = useAuth()
 
   // 빠른 워크 생성 핸들러
@@ -24,7 +25,7 @@ function WorksPageContent() {
     }
 
     try {
-      await createWork({ title })
+      await worksState.createWork({ title })
     } catch (error) {
       console.error('워크 생성 실패:', error)
       alert('워크 생성에 실패했습니다.')
@@ -61,7 +62,7 @@ function WorksPageContent() {
       <ContentHeader title="Work" />
       
       <MainContainer className="pb-20 md:pb-20">
-        <WorkList />
+        <WorkList worksState={worksState} />
       </MainContainer>
       
       {/* 데스크톱: 메인 컨텐츠 영역(720px) 하단에 fixed 고정 */}

@@ -17,8 +17,7 @@ export async function middleware(request: NextRequest) {
     '/inbox',
     '/goals',
     '/board',
-    '/admin',
-    '/works'
+    '/admin'
   ]
 
   // 관리자 전용 라우트
