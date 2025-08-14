@@ -6,15 +6,19 @@ import { Card } from '@/components/ui/Card';
 import { useWorks } from '@/hooks/useWorks';
 import { useAuth } from '@/lib/stores/auth.store';
 
-export function WorkList() {
-  const { works, loading, error, fetchWorks, updateWorkStatus } = useWorks();
+interface WorkListProps {
+  worksState: ReturnType<typeof useWorks>;
+}
+
+export function WorkList({ worksState }: WorkListProps) {
+  const { works, loading, error, fetchWorks, updateWorkStatus } = worksState;
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
 
   useEffect(() => {
     if (isAuthenticated && !authLoading) {
       fetchWorks({});
     }
-  }, [isAuthenticated, authLoading]);
+  }, [isAuthenticated, authLoading, fetchWorks]);
 
   const handleStatusChange = (id: string, status: WorkStatus) => {
     updateWorkStatus(id, status);

@@ -5,8 +5,12 @@ import { useWorks } from '@/hooks/useWorks';
 import { useAuth } from '@/lib/stores/auth.store';
 import { WorkPriority, WorkType } from '@/types/work.types';
 
-export function WorkComposer() {
-  const { createWork, loading } = useWorks();
+interface WorkComposerProps {
+  worksState: ReturnType<typeof useWorks>;
+}
+
+export function WorkComposer({ worksState }: WorkComposerProps) {
+  const { createWork, loading } = worksState;
   const { isAuthenticated } = useAuth();
   const [title, setTitle] = useState('');
 
